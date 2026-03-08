@@ -10,8 +10,7 @@ const REGISTER_FUNCTION = 'registerPieComponent'
 const SHADCN_REGISTRY_SOURCE_FILENAME = 'registry.json'
 const SHADCN_REGISTRY_DIRECTORY = 'r'
 const SHADCN_REGISTRY_INDEX_FILENAME = 'index.json'
-const SHADCN_ITEM_SCHEMA =
-    'https://ui.shadcn.com/schema/registry-item.json'
+const SHADCN_ITEM_SCHEMA = 'https://ui.shadcn.com/schema/registry-item.json'
 
 const ts = TJS.ts
 
