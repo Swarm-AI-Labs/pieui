@@ -1,5 +1,6 @@
 #!/usr/bin/env sh
 
-bunx tsc --noEmit
-bun run lint
+set -e
 
+bun run typecheck
+bunx lint-staged
