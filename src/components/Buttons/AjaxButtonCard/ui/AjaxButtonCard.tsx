@@ -1,11 +1,11 @@
 import { AjaxButtonCardProps } from '../types'
-import PieCard from '../../../PieCard'
+import { PieCard } from '../../../PieCard'
 import { useAjaxSubmit } from '../../../../util/ajaxCommonUtils'
 import parse from 'html-react-parser'
 import Radium from 'radium'
 import { sx2radium } from '../../../../util/sx2radium.ts'
 
-const AjaxButtonCard = ({
+const AjaxButtonCard = Radium(({
     data,
     setUiAjaxConfiguration,
 }: AjaxButtonCardProps) => {
@@ -46,6 +46,7 @@ const AjaxButtonCard = ({
             </button>
         </PieCard>
     )
-}
+})
 
-export default Radium(AjaxButtonCard)
+export { AjaxButtonCard }
+

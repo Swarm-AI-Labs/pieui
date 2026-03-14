@@ -1,1 +1,1 @@
-export { default } from './ui/IOEventsCard'
+export { IOEventsCard } from './ui/IOEventsCard'

@@ -1,7 +1,7 @@
 import parse from 'html-react-parser'
 import { useState, useEffect } from 'react'
 import MarkdownRender from './Markdown'
-import UI from '../../../../UI'
+import {UI} from '../../../../UI'
 import MessageAvatar from './MessageAvatar'
 import ChatOption from './ChatOption'
 import { Message } from '../../types'

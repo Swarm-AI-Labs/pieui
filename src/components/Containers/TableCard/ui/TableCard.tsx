@@ -1,7 +1,7 @@
 import { CSSProperties, useContext, useEffect, useState } from 'react'
 import { TableCardProps } from '../types'
 import { SetUiAjaxConfigurationType, UIConfigType } from '../../../../types'
-import PieCard from '../../../PieCard'
+import {PieCard} from '../../../PieCard'
 import { StringCell } from './StringCell'
 import { ContentCell } from './ContentCell'
 import NavigateContext from '../../../../util/navigate'
@@ -230,4 +230,4 @@ const TableCard = ({ data, setUiAjaxConfiguration }: TableCardProps) => {
     )
 }
 
-export default TableCard
+export { TableCard }

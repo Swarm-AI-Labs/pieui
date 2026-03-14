@@ -1,4 +1,4 @@
-import PieCard from '../../../PieCard'
+import {PieCard} from '../../../PieCard'
 import { OpenAIVoiceAgentCardProps } from '../types'
 import Radium from 'radium'
 import type { RealtimeItem } from '@openai/agents/realtime'
@@ -17,7 +17,7 @@ import { sx2radium } from '../../../../util/sx2radium'
 import parse from 'html-react-parser'
 import { usePieConfig } from '../../../../util/pieConfig.ts'
 
-const OpenAIVoiceAgentCard = ({
+const OpenAIVoiceAgentCard = Radium(({
     data,
     setUiAjaxConfiguration,
 }: OpenAIVoiceAgentCardProps) => {
@@ -302,6 +302,6 @@ const OpenAIVoiceAgentCard = ({
             />
         </PieCard>
     )
-}
+})
 
-export default Radium(OpenAIVoiceAgentCard)
+export { OpenAIVoiceAgentCard }

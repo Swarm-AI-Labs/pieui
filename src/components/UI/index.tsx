@@ -77,4 +77,4 @@ function UI({
     return node
 }
 
-export default UI
+export { UI }

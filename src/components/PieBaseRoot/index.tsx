@@ -96,4 +96,4 @@ const PieBaseRoot = (props: PieBaseRootProps) => {
     )
 }
 
-export default PieBaseRoot
+export { PieBaseRoot }

@@ -1,1 +1,1 @@
-export { default } from './ui/UnionCard'
+export { UnionCard } from './ui/UnionCard'

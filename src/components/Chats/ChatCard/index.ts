@@ -1,1 +1,1 @@
-export { default } from './ui/ChatCard'
+export { ChatCard } from './ui/ChatCard'

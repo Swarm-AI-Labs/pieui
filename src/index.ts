@@ -1,10 +1,10 @@
 'use client'
 
-export { default as UI } from './components/UI'
-export { default as PieRoot } from './components/PieRoot'
-export { default as PieTelegramRoot } from './components/PieTelegramRoot'
-export { default as PieBaseRoot } from './components/PieBaseRoot'
-export { default as PieCard } from './components/PieCard'
+export { UI } from './components/UI'
+export { PieRoot } from './components/PieRoot'
+export { PieTelegramRoot } from './components/PieTelegramRoot'
+export { PieBaseRoot } from './components/PieBaseRoot'
+export { PieCard } from './components/PieCard'
 export { registerPieComponent } from './util/registry'
 export {
     initializePieComponents,
@@ -24,7 +24,7 @@ export type {
 
 export { useAjaxSubmit } from './util/ajaxCommonUtils'
 export {
-    default as useOpenAIWebRTC,
+    useOpenAIWebRTC,
     type OpenAIEvent,
     type UseOpenAIWebRTCReturn,
 } from './util/useOpenAIWebRTC'

@@ -1,1 +1,1 @@
-export { default } from './ui/BoxCard'
+export { BoxCard } from './ui/BoxCard'

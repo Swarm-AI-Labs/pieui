@@ -1,1 +1,1 @@
-export { default } from './ui/TableCard'
+export { TableCard } from './ui/TableCard'

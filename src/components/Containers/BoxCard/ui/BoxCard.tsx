@@ -1,13 +1,13 @@
 import { BoxCardData } from '../types'
-import UI from '../../../UI'
+import {UI} from '../../../UI'
 import { SetUiAjaxConfigurationType, UIConfigType } from '../../../../types'
-import PieCard from '../../../PieCard'
+import {PieCard} from '../../../PieCard'
 import { sx2radium } from '../../../../util/sx2radium'
 import Radium from 'radium'
 import { MouseEventHandler, useContext } from 'react'
 import NavigateContext from '../../../../util/navigate.ts'
 
-const BoxCard = ({
+const BoxCard = Radium(({
     data,
     content,
     setUiAjaxConfiguration,
@@ -42,6 +42,6 @@ const BoxCard = ({
             </div>
         </PieCard>
     )
-}
+})
 
-export default Radium(BoxCard)
+export { BoxCard }

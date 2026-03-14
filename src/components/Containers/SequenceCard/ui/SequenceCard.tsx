@@ -1,11 +1,11 @@
 import { UIConfigType } from '../../../../types'
 import { SequenceCardProps } from '../types'
-import PieCard from '../../../PieCard'
-import UI from '../../../UI'
+import {PieCard} from '../../../PieCard'
+import {UI} from '../../../UI'
 import Radium from 'radium'
 import { sx2radium } from '../../../../util/sx2radium.ts'
 
-const SequenceCard = ({
+const SequenceCard = Radium(({
     data,
     content,
     setUiAjaxConfiguration,
@@ -26,6 +26,6 @@ const SequenceCard = ({
             </div>
         </PieCard>
     )
-}
+})
 
-export default Radium(SequenceCard)
+export { SequenceCard }

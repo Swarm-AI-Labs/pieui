@@ -1,1 +1,1 @@
-export { default } from './ui/RedirectButtonCard'
+export { RedirectButtonCard } from './ui/RedirectButtonCard'

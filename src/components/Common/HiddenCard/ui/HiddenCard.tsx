@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { HiddenCardProps } from '../types'
-import PieCard from '../../../PieCard'
+import { PieCard } from '../../../PieCard'
 
 const HiddenCard = ({ data }: HiddenCardProps) => {
     const {
@@ -36,4 +36,4 @@ const HiddenCard = ({ data }: HiddenCardProps) => {
     )
 }
 
-export default HiddenCard
+export { HiddenCard }

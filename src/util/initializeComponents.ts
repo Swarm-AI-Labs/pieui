@@ -1,21 +1,21 @@
 import { registerPieComponent } from './registry'
 
 // Import all components that need registration
-import SequenceCard from '../components/Containers/SequenceCard/ui/SequenceCard'
-import UnionCard from '../components/Containers/UnionCard/ui/UnionCard'
-import AjaxGroupCard from '../components/Containers/AjaxGroupCard/ui/AjaxGroupCard'
+import {SequenceCard} from '../components'
+import {UnionCard} from '../components'
+import {AjaxGroupCard} from '../components'
 
-import AjaxButtonCard from '../components/Buttons/AjaxButtonCard/ui/AjaxButtonCard'
+import {AjaxButtonCard} from '../components'
 
-import ChatCard from '../components/Chats/ChatCard/ui/ChatCard'
-import HiddenCard from '../components/Common/HiddenCard'
-import AutoRedirectCard from '../components/Common/AutoRedirectCard'
-import HTMLEmbedCard from '../components/Common/HTMLEmbedCard'
-import IOEventsCard from '../components/Common/IOEventsCard'
-import RedirectButtonCard from '../components/Buttons/RedirectButtonCard'
+import {ChatCard} from '../components'
+import {HiddenCard} from '../components'
+import {AutoRedirectCard} from '../components'
+import {HTMLEmbedCard} from '../components'
+import {IOEventsCard} from '../components'
+import {RedirectButtonCard} from '../components'
 import { OpenAIVoiceAgentCard } from '../components'
-import TableCard from '../components/Containers/TableCard'
-import BoxCard from '../components/Containers/BoxCard'
+import {TableCard} from '../components'
+import {BoxCard} from '../components'
 
 let initialized = false
 

@@ -1,1 +1,1 @@
-export { default } from './ui/OpenAIVoiceAgentCard'
+export { OpenAIVoiceAgentCard } from './ui/OpenAIVoiceAgentCard'

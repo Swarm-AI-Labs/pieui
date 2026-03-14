@@ -198,4 +198,4 @@ const PieCard = ({
     return children
 }
 
-export default PieCard
+export { PieCard }
