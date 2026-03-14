@@ -1,9 +1,9 @@
-import {PieCard} from '../../../PieCard'
+import { PieCard } from '../../../PieCard'
 import { useEffect, useState } from 'react'
 import parse from 'html-react-parser'
 import { HTMLEmbedCardProps } from '../types'
 import Radium from 'radium'
-import {useOpenAIWebRTC} from '../../../../util/useOpenAIWebRTC'
+import { useOpenAIWebRTC } from '../../../../util/useOpenAIWebRTC'
 
 const HTMLEmbedCard = Radium(({ data }: HTMLEmbedCardProps) => {
     const {

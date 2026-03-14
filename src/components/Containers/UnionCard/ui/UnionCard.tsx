@@ -1,7 +1,7 @@
 import { UIConfigType } from '../../../../types'
 import { UnionCardProps } from '../types'
-import {PieCard} from '../../../PieCard'
-import {UI} from '../../../UI'
+import { PieCard } from '../../../PieCard'
+import { UI } from '../../../UI'
 
 const UnionCard = ({
     data,

@@ -1,5 +1,5 @@
 import { SetUiAjaxConfigurationType, UIConfigType } from '../../../../types'
-import {UI} from '../../../UI'
+import { UI } from '../../../UI'
 
 export const ContentCell = ({
     data,

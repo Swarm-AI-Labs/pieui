@@ -1,4 +1,4 @@
-import {PieCard} from '../../../PieCard'
+import { PieCard } from '../../../PieCard'
 import { FSLLoginCardProps } from '../types'
 import { MouseEventHandler } from 'react'
 

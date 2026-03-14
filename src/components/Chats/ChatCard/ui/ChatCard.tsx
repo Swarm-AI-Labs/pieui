@@ -126,4 +126,3 @@ const ChatCard = ({ data, setUiAjaxConfiguration }: ChatCardProps) => {
 }
 
 export { ChatCard }
-
