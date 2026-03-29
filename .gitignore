@@ -49,3 +49,4 @@ pids
 *.njsproj
 *.sln
 *.sw?
+example/.next
