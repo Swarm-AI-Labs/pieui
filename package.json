@@ -32,7 +32,7 @@
     },
     "scripts": {
         "build": "rm -rf ./dist && rm -rf pieui-*.tgz && bun run build:clean && NODE_ENV=production bun run build:esm && NODE_ENV=production bun run build:cjs && NODE_ENV=production bun run build:components:esm && NODE_ENV=production bun run build:components:cjs && bun run build:banner && NODE_ENV=production bun run build:types && NODE_ENV=production bun run build:cli && bun src/cli.ts postbuild --src-dir src --out-dir dist && bun pm pack",
-        "build:banner": "for f in dist/index.esm.js dist/index.js dist/components/index.esm.js dist/components/index.js; do [ -f \"$f\" ] && sed -i '' '1s/^/\"use client\";\\n/' $f; done",
+        "build:banner": "node -e \"const fs=require('fs');['dist/index.esm.js','dist/index.js','dist/components/index.esm.js','dist/components/index.js'].forEach(f=>{if(fs.existsSync(f)){fs.writeFileSync(f,'\\\"use client\\\";\\n'+fs.readFileSync(f,'utf8'))}})\"",
         "build:clean": "rm -rf dist",
         "build:esm": "bun build src/index.ts --outfile dist/index.esm.js --format esm --target browser --jsx=automatic --jsx-import-source=react --external react --external react-dom --external highlight.js --external rehype-highlight --external glob --external typescript --external typescript-json-schema --external @tanstack/react-query --external fsl-authorization --minify",
         "build:cjs": "bun build src/index.ts --outfile dist/index.js --format cjs --target node --jsx=automatic --jsx-import-source=react --external react --external react-dom --external highlight.js --external rehype-highlight --external glob --external typescript --external @tanstack/react-query --external typescript-json-schema --external fsl-authorization --minify",
