@@ -86,17 +86,13 @@ const PieTelegramRootContent: React.FC<PieRootProps> = ({
             if (!isPieComponentsInitialized()) {
                 return
             }
-            const querySymbol = location.search ? '&' : ''
-            const initData = webApp?.initData
-                ? `${querySymbol}initData=${encodeURIComponent(webApp.initData)}`
-                : ''
+            const params = new URLSearchParams(location.search)
+            params.set('root', 'telegram')
+            if (webApp?.initData) {
+                params.set('initData', webApp.initData)
+            }
             const apiEndpoint =
-                '/api/content' +
-                location.pathname +
-                (location.search.startsWith('?')
-                    ? location.search
-                    : `?${location.search}`) +
-                initData
+                '/api/content' + location.pathname + '?' + params.toString()
 
             if (renderingLogEnabled) {
                 console.log(

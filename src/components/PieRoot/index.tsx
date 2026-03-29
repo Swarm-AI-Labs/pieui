@@ -84,12 +84,10 @@ const PieRootContent = ({
             if (!apiServer || !isPieComponentsInitialized()) {
                 return
             }
+            const params = new URLSearchParams(location.search)
+            params.set('root', 'web')
             const apiEndpoint =
-                '/api/content' +
-                location.pathname +
-                (location.search.startsWith('?')
-                    ? location.search
-                    : `?${location.search}`)
+                '/api/content' + location.pathname + '?' + params.toString()
             if (renderingLogEnabled) {
                 console.log(
                     '[PieRoot] Fetching UI configuration from:',

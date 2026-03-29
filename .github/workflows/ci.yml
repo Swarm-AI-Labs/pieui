@@ -29,32 +29,5 @@ jobs:
             - name: Build package
               run: bun run build
 
-            - name: Verify build output
-              run: |
-                  echo "Checking build outputs..."
-                  test -f dist/index.js && echo "✅ CommonJS build exists"
-                  test -f dist/index.esm.js && echo "✅ ESM build exists"
-                  test -f dist/index.d.ts && echo "✅ TypeScript definitions exist"
-
-                  ESM_SIZE=$(wc -c < dist/index.esm.js)
-                  CJS_SIZE=$(wc -c < dist/index.js)
-                  echo "ESM size: ${ESM_SIZE} bytes"
-                  echo "CJS size: ${CJS_SIZE} bytes"
-
-                  if [ "$ESM_SIZE" -lt 10000 ]; then
-                    echo "❌ ESM bundle is too small (${ESM_SIZE} bytes) - likely a broken build"
-                    exit 1
-                  fi
-                  if [ "$CJS_SIZE" -lt 10000 ]; then
-                    echo "❌ CJS bundle is too small (${CJS_SIZE} bytes) - likely a broken build"
-                    exit 1
-                  fi
-                  echo "✅ Bundle sizes look correct"
-
-            - name: Check package size
-              run: |
-                  echo "Package size analysis:"
-                  ls -lh dist/
-                  echo ""
-                  echo "Total dist size:"
-                  du -sh dist/
+            - name: Verify build exports
+              run: node scripts/verify-exports.mjs
