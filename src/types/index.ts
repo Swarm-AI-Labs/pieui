@@ -121,12 +121,23 @@ export type MaxScreenCapture = {
     disableScreenCapture: () => void
 }
 
-export type MaxHapticImpactStyle = 'soft' | 'light' | 'medium' | 'heavy' | 'rigid'
+export type MaxHapticImpactStyle =
+    | 'soft'
+    | 'light'
+    | 'medium'
+    | 'heavy'
+    | 'rigid'
 export type MaxHapticNotificationType = 'error' | 'success' | 'warning'
 
 export type MaxHapticFeedback = {
-    impactOccurred: (style: MaxHapticImpactStyle, disableVibrationFallback?: boolean) => void
-    notificationOccurred: (type: MaxHapticNotificationType, disableVibrationFallback?: boolean) => void
+    impactOccurred: (
+        style: MaxHapticImpactStyle,
+        disableVibrationFallback?: boolean
+    ) => void
+    notificationOccurred: (
+        type: MaxHapticNotificationType,
+        disableVibrationFallback?: boolean
+    ) => void
     selectionChanged: (disableVibrationFallback?: boolean) => void
 }
 
@@ -189,7 +200,9 @@ export type MaxWebApp = {
     openLink: (url: string) => void
     openMaxLink: (url: string) => void
     shareContent: (text: string, link: string) => void
-    shareMaxContent: (content: MaxShareTextContent | MaxShareMediaContent) => void
+    shareMaxContent: (
+        content: MaxShareTextContent | MaxShareMediaContent
+    ) => void
     downloadFile: (url: string, fileName: string) => void
     requestScreenMaxBrightness: () => void
     restoreScreenBrightness: () => void
