@@ -1,3 +1,5 @@
+'use client'
+
 import { ReactNode, useContext, useEffect } from 'react'
 import SocketIOContext from '../util/socket'
 import { useIsSupported } from '../util/useIsSupported'

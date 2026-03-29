@@ -1,5 +1,14 @@
 import { ComponentType, ReactNode } from 'react'
-import { ShowPopupOptions } from '@telegram-apps/sdk'
+
+export type ShowPopupOptions = {
+    title?: string
+    message: string
+    buttons?: Array<{
+        id?: string
+        type?: 'default' | 'ok' | 'close' | 'cancel' | 'destructive'
+        text?: string
+    }>
+}
 
 export type WebAppUser = {
     id: string

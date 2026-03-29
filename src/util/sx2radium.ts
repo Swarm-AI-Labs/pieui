@@ -1,6 +1,10 @@
 import { CSSProperties } from 'react'
-import Radium from 'radium'
 
+/**
+ * Converts sx-style objects to CSSProperties.
+ * Note: CSS keyframe animations defined as objects in `animationName`
+ * are no longer supported after Radium removal. Use CSS @keyframes instead.
+ */
 export function sx2radium(
     sx: Record<string, any> | CSSProperties | undefined
 ): CSSProperties {
@@ -8,14 +12,5 @@ export function sx2radium(
         return {}
     }
 
-    const copy = { ...sx }
-    if ('animationName' in copy && typeof copy.animationName === 'object') {
-        const uniqueAnimationName =
-            'radiumAnimation_' + Math.random().toString(36).substring(2, 8)
-        copy.animationName = Radium.keyframes(
-            copy.animationName,
-            uniqueAnimationName
-        )
-    }
-    return copy
+    return { ...sx } as CSSProperties
 }

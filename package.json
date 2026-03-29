@@ -15,7 +15,9 @@
     "files": [
         "dist"
     ],
-    "sideEffects": false,
+    "sideEffects": [
+        "*.css"
+    ],
     "exports": {
         ".": {
             "import": "./dist/index.esm.js",
@@ -91,7 +93,6 @@
         "@openai/agents": "^0.4.5",
         "@tanstack/react-query": "^5.90.20",
         "@telegram-apps/sdk": "^3.11.8",
-        "@types/radium": "^0.24.8",
         "annyang": "^2.6.1",
         "axios": "^1.13.2",
         "axios-date-transformer": "^1.2.1",
@@ -99,11 +100,9 @@
         "clsx": "^2.1.1",
         "html-react-parser": "^5.2.16",
         "mitt": "^3.0.1",
-        "radium": "^0.26.2",
         "react-toastify": "^11.0.5",
         "socket.io-client": "^4.8.3",
         "tailwind-merge": "^3.4.0",
-        "vm2": "^3.10.0",
         "zod": "^4.3.6",
         "zod-from-json-schema": "^0.5.2"
     }

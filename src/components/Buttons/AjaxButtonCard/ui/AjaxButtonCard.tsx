@@ -2,8 +2,7 @@ import { AjaxButtonCardProps } from '../types'
 import PieCard from '../../../PieCard'
 import { useAjaxSubmit } from '../../../../util/ajaxCommonUtils'
 import parse from 'html-react-parser'
-import Radium from 'radium'
-import { sx2radium } from '../../../../util/sx2radium.ts'
+
 
 const AjaxButtonCard = ({
     data,
@@ -33,7 +32,7 @@ const AjaxButtonCard = ({
                 className="box-border flex min-h-12 w-full min-w-min cursor-pointer items-center justify-center gap-4 rounded-l border border-black bg-white text-center text-black hover:bg-neutral-300"
                 value={name}
                 onClick={() => ajaxSubmit()}
-                style={sx2radium(sx)}
+                style={sx}
                 type="button"
             >
                 {iconUrl && iconPosition === 'start' && (
@@ -48,4 +47,4 @@ const AjaxButtonCard = ({
     )
 }
 
-export default Radium(AjaxButtonCard)
+export default AjaxButtonCard

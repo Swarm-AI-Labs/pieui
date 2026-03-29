@@ -1,7 +1,20 @@
+'use client'
+
 import { createContext } from 'react'
 import { Centrifuge } from 'centrifuge'
 
-export const getCentrifuge = (apiServer: string, centrifugeServer?: string) => {
+const centrifugeCache = new Map<string, Centrifuge>()
+
+export const getCentrifuge = (
+    apiServer: string,
+    centrifugeServer?: string
+): Centrifuge | null => {
+    if (!centrifugeServer) return null
+
+    const cacheKey = `${apiServer}::${centrifugeServer}`
+    const existing = centrifugeCache.get(cacheKey)
+    if (existing) return existing
+
     async function getToken() {
         const res = await fetch(apiServer + 'api/centrifuge/gen_token')
         if (!res.ok) {
@@ -16,18 +29,10 @@ export const getCentrifuge = (apiServer: string, centrifugeServer?: string) => {
         return data.token
     }
 
-    return centrifugeServer
-        ? new Centrifuge(centrifugeServer || '', {
-              getToken,
-          })
-        : null
+    const instance = new Centrifuge(centrifugeServer, { getToken })
+    centrifugeCache.set(cacheKey, instance)
+    return instance
 }
-
-// export const centrifuge =
-//     getCentrifugeServer() ?
-//     new Centrifuge(getCentrifugeServer() || '', {
-//         getToken,
-//     }): null
 
 const CentrifugeIOContext = createContext<Centrifuge | null>(null)
 export default CentrifugeIOContext

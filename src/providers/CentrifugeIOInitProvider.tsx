@@ -1,3 +1,5 @@
+'use client'
+
 import { ReactNode, useContext, useEffect } from 'react'
 import CentrifugeIOContext from '../util/centrifuge'
 import { useIsSupported } from '../util/useIsSupported'

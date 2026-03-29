@@ -1,3 +1,5 @@
+'use client'
+
 import { createContext, useContext } from 'react'
 import { PieConfig } from '../types'
 
@@ -11,12 +13,12 @@ export const usePieConfig = () => {
     return context
 }
 
-// Helper functions that match the old API
 export const useApiServer = () => {
     const { apiServer } = usePieConfig()
     return apiServer
 }
 
+/** @deprecated Use useApiServer() instead */
 export const getApiServer = useApiServer
 
 export const useCentrifugeServer = () => {
@@ -24,6 +26,7 @@ export const useCentrifugeServer = () => {
     return centrifugeServer
 }
 
+/** @deprecated Use useCentrifugeServer() instead */
 export const getCentrifugeServer = useCentrifugeServer
 
 export const useIsRenderingLogEnabled = () => {
@@ -31,6 +34,7 @@ export const useIsRenderingLogEnabled = () => {
     return enableRenderingLog
 }
 
+/** @deprecated Use useIsRenderingLogEnabled() instead */
 export const isRenderingLogEnabled = useIsRenderingLogEnabled
 
 export const usePageProcessor = () => {
@@ -38,12 +42,7 @@ export const usePageProcessor = () => {
     return pageProcessor
 }
 
+/** @deprecated Use usePageProcessor() instead */
 export const getPageProcessor = usePageProcessor
-
-//
-// export const useOnNavigate = () => {
-//     const { onN } = usePieConfig()
-//     return pageProcessor
-// }
 
 export const PIEBREAK = '__piedemo__'

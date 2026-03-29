@@ -1,3 +1,5 @@
+'use client'
+
 import { UIConfigType, SetUiAjaxConfigurationType } from '../../types'
 import { getRegistryEntry } from '../../util/registry'
 import { Suspense, useContext, ReactNode } from 'react'

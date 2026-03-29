@@ -1,24 +1,21 @@
+'use client'
+
 import { io, Socket } from 'socket.io-client'
 import { createContext } from 'react'
 
-// export const socket = io(getApiServer(), {
-//     autoConnect: false,
-//     transports: ['websocket'],
-// })
+const socketCache = new Map<string, Socket>()
 
-export const getSocket = (apiServer: string) =>
-    io(apiServer, {
+export const getSocket = (apiServer: string): Socket => {
+    const existing = socketCache.get(apiServer)
+    if (existing) return existing
+
+    const socket = io(apiServer, {
         autoConnect: false,
         transports: ['websocket'],
     })
-
-/*
-const onPieInitEvent = (event) => {
-    window.sid = event.sid
-    console.log(`Connected: ${window.sid}`)
+    socketCache.set(apiServer, socket)
+    return socket
 }
-socket.on(`pieinit`, onPieInitEvent)
-*/
 
 const SocketIOContext = createContext<Socket | null>(null)
 

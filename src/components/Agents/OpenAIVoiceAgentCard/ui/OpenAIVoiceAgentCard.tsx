@@ -1,6 +1,5 @@
 import PieCard from '../../../PieCard'
 import { OpenAIVoiceAgentCardProps } from '../types'
-import Radium from 'radium'
 import type { RealtimeItem } from '@openai/agents/realtime'
 import { useEffect, useState, useMemo, useRef } from 'react'
 import {
@@ -13,7 +12,6 @@ import { getAjaxSubmit } from '../../../../util/ajaxCommonUtils'
 import { UIConfigType, UIEventType } from '../../../../types'
 import { z } from 'zod'
 import { convertJsonSchemaToZod } from 'zod-from-json-schema'
-import { sx2radium } from '../../../../util/sx2radium'
 import parse from 'html-react-parser'
 import { usePieConfig } from '../../../../util/pieConfig.ts'
 
@@ -276,7 +274,7 @@ const OpenAIVoiceAgentCard = ({
                         }
                     }
                 }}
-                style={sx2radium(
+                style={(
                     isConnected ? sxMap['enabled'] : sxMap['disabled']
                 )}
                 type="button"
@@ -304,4 +302,4 @@ const OpenAIVoiceAgentCard = ({
     )
 }
 
-export default Radium(OpenAIVoiceAgentCard)
+export default OpenAIVoiceAgentCard

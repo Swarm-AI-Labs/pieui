@@ -6,7 +6,7 @@ import PieCard from '../../../PieCard'
 import { IOEventData, IOEventsCardProps, NotificationEvent } from '../types'
 import { useContext } from 'react'
 import NavigateContext from '../../../../util/navigate.ts'
-import { ShowPopupOptions } from '@telegram-apps/sdk'
+import { ShowPopupOptions } from '../../../../types'
 
 const createTransition = (name?: string) => {
     if (name === 'bounce') {

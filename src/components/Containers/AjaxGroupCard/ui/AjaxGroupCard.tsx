@@ -5,8 +5,7 @@ import { UIConfigType, UIEventType } from '../../../../types'
 import PieCard from '../../../PieCard'
 import MittContext from '../../../../util/mitt'
 import FallbackContext from '../../../../util/fallback'
-import { registerPieComponent } from '../../../../util/registry'
-import Radium from 'radium'
+
 
 const AjaxGroupCard = ({ data, content }: AjaxGroupCardProps) => {
     const {
@@ -55,7 +54,7 @@ const AjaxGroupCard = ({ data, content }: AjaxGroupCardProps) => {
             setIsLoading(false)
             if (!noReturn) {
                 for (const ev of events) {
-                    mitt.emit(ev.name, ev.data)
+                    mitt?.emit(ev.name, ev.data)
                 }
             }
         }
@@ -94,4 +93,4 @@ const AjaxGroupCard = ({ data, content }: AjaxGroupCardProps) => {
     )
 }
 
-export default Radium(AjaxGroupCard)
+export default AjaxGroupCard

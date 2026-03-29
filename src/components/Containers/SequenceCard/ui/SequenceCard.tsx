@@ -2,8 +2,6 @@ import { UIConfigType } from '../../../../types'
 import { SequenceCardProps } from '../types'
 import PieCard from '../../../PieCard'
 import UI from '../../../UI'
-import Radium from 'radium'
-import { sx2radium } from '../../../../util/sx2radium.ts'
 
 const SequenceCard = ({
     data,
@@ -13,7 +11,7 @@ const SequenceCard = ({
     const { name, sx } = data
     return (
         <PieCard card={name} data={data}>
-            <div style={sx2radium(sx)} id={name}>
+            <div style={sx} id={name}>
                 {content.map((obj: UIConfigType, i: number) => {
                     return (
                         <UI
@@ -28,4 +26,4 @@ const SequenceCard = ({
     )
 }
 
-export default Radium(SequenceCard)
+export default SequenceCard

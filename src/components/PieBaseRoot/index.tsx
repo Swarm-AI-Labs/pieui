@@ -1,8 +1,9 @@
+'use client'
+
 import { useEffect, useMemo } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
-import Radium from 'radium'
-import MittContext, { emitter } from '../../util/mitt'
+import MittContext, { getEmitter } from '../../util/mitt'
 import SocketIOContext, { getSocket } from '../../util/socket'
 import CentrifugeIOContext, { getCentrifuge } from '../../util/centrifuge'
 
@@ -40,6 +41,16 @@ const PieBaseRootContent = ({
         initializePie()
     }, [])
 
+    const emitter = useMemo(() => getEmitter(), [])
+    const socket = useMemo(
+        () => (apiServer ? getSocket(apiServer) : null),
+        [apiServer]
+    )
+    const centrifuge = useMemo(
+        () => (apiServer ? getCentrifuge(apiServer, centrifugeServer) : null),
+        [apiServer, centrifugeServer]
+    )
+
     if (renderingLogEnabled) {
         console.log('[PieRoot] Rendering with location:', location)
         console.log('[PieRoot] API_SERVER:', apiServer)
@@ -49,29 +60,23 @@ const PieBaseRootContent = ({
 
     return (
         <MittContext.Provider value={emitter}>
-            <SocketIOContext.Provider value={getSocket(apiServer)}>
-                <CentrifugeIOContext.Provider
-                    value={getCentrifuge(apiServer, centrifugeServer)}
-                >
+            <SocketIOContext.Provider value={socket}>
+                <CentrifugeIOContext.Provider value={centrifuge}>
                     <FallbackContext.Provider value={fallback ?? <></>}>
                         <SocketIOInitProvider>
                             <CentrifugeIOInitProvider>
-                                <Radium.StyleRoot
-                                    style={{ display: 'contents' }}
+                                <form
+                                    id="piedata_global_form"
+                                    action={
+                                        apiServer +
+                                        'api/process' +
+                                        location.pathname
+                                    }
+                                    method="post"
+                                    encType="multipart/form-data"
                                 >
-                                    <form
-                                        id="piedata_global_form"
-                                        action={
-                                            apiServer +
-                                            'api/process' +
-                                            location.pathname
-                                        }
-                                        method="post"
-                                        encType="multipart/form-data"
-                                    >
-                                        {children}
-                                    </form>
-                                </Radium.StyleRoot>
+                                    {children}
+                                </form>
                             </CentrifugeIOInitProvider>
                         </SocketIOInitProvider>
                     </FallbackContext.Provider>

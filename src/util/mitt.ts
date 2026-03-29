@@ -1,11 +1,21 @@
-import mitt from 'mitt'
+'use client'
+
+import mitt, { Emitter } from 'mitt'
 import { createContext } from 'react'
 
-export const emitter = mitt()
 export type MittEvents = {
     [key: string]: any
 }
 
-const MittContext = createContext(emitter)
+let _emitter: Emitter<MittEvents> | null = null
+
+export function getEmitter(): Emitter<MittEvents> {
+    if (!_emitter) {
+        _emitter = mitt<MittEvents>()
+    }
+    return _emitter
+}
+
+const MittContext = createContext<Emitter<MittEvents> | null>(null)
 
 export default MittContext

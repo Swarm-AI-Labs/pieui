@@ -1,3 +1,5 @@
+'use client'
+
 import { useEffect, useMemo } from 'react'
 import {
     QueryClient,
@@ -5,10 +7,9 @@ import {
     useQuery,
 } from '@tanstack/react-query'
 
-import Radium from 'radium'
 import { PieRootProps } from './types'
 
-import MittContext, { emitter } from '../../util/mitt'
+import MittContext, { getEmitter } from '../../util/mitt'
 import SocketIOContext, { getSocket } from '../../util/socket'
 import CentrifugeIOContext, { getCentrifuge } from '../../util/centrifuge'
 
@@ -20,15 +21,15 @@ import { AxiosError } from 'axios'
 import UI from '../UI'
 import { createAxiosDateTransformer } from 'axios-date-transformer'
 import {
-    initializePieComponents,
-    isPieComponentsInitialized,
-} from '../../util/initializeComponents.ts'
-import {
     getApiServer,
     isRenderingLogEnabled,
     getCentrifugeServer,
     PieConfigContext,
 } from '../../util/pieConfig'
+import {
+    initializePieComponents,
+    isPieComponentsInitialized,
+} from '../../util/initializeComponents.ts'
 import NavigateContext from '../../util/navigate.ts'
 
 const PieRootContent = ({
@@ -55,6 +56,16 @@ const PieRootContent = ({
                 baseURL: apiServer || '',
             }),
         [apiServer]
+    )
+
+    const emitter = useMemo(() => getEmitter(), [])
+    const socket = useMemo(
+        () => (apiServer ? getSocket(apiServer) : null),
+        [apiServer]
+    )
+    const centrifuge = useMemo(
+        () => (apiServer ? getCentrifuge(apiServer, centrifugeServer) : null),
+        [apiServer, centrifugeServer]
     )
 
     // Все хуки вызываем до любых return/throw, иначе ломается порядок хуков
@@ -155,29 +166,23 @@ const PieRootContent = ({
 
     return (
         <MittContext.Provider value={emitter}>
-            <SocketIOContext.Provider value={getSocket(apiServer)}>
-                <CentrifugeIOContext.Provider
-                    value={getCentrifuge(apiServer, centrifugeServer)}
-                >
+            <SocketIOContext.Provider value={socket}>
+                <CentrifugeIOContext.Provider value={centrifuge}>
                     <FallbackContext.Provider value={fallback ?? <></>}>
                         <SocketIOInitProvider>
                             <CentrifugeIOInitProvider>
-                                <Radium.StyleRoot
-                                    style={{ display: 'contents' }}
+                                <form
+                                    id="piedata_global_form"
+                                    action={
+                                        apiServer +
+                                        'api/process' +
+                                        location.pathname
+                                    }
+                                    method="post"
+                                    encType="multipart/form-data"
                                 >
-                                    <form
-                                        id="piedata_global_form"
-                                        action={
-                                            apiServer +
-                                            'api/process' +
-                                            location.pathname
-                                        }
-                                        method="post"
-                                        encType="multipart/form-data"
-                                    >
-                                        <UI uiConfig={uiConfiguration} />
-                                    </form>
-                                </Radium.StyleRoot>
+                                    <UI uiConfig={uiConfiguration} />
+                                </form>
                             </CentrifugeIOInitProvider>
                         </SocketIOInitProvider>
                     </FallbackContext.Provider>

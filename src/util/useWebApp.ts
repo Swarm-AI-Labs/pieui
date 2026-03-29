@@ -1,3 +1,5 @@
+'use client'
+
 import { useEffect, useState } from 'react'
 import { getPageProcessor } from './pieConfig'
 import { InitData, InitDataUnsafe, WebApp } from '../types'

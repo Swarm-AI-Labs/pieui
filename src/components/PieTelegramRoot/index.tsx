@@ -1,3 +1,5 @@
+'use client'
+
 import React, { useEffect, useMemo } from 'react'
 import {
     QueryClient,
@@ -5,10 +7,9 @@ import {
     useQuery,
 } from '@tanstack/react-query'
 
-import Radium from 'radium'
 import { PieRootProps } from '../PieRoot/types'
 
-import MittContext, { emitter } from '../../util/mitt'
+import MittContext, { getEmitter } from '../../util/mitt'
 import SocketIOContext, { getSocket } from '../../util/socket'
 import CentrifugeIOContext, { getCentrifuge } from '../../util/centrifuge'
 
@@ -55,23 +56,18 @@ const PieTelegramRootContent: React.FC<PieRootProps> = ({
             createAxiosDateTransformer({
                 baseURL: apiServer,
             }),
-        []
+        [apiServer]
     )
 
-    if (renderingLogEnabled) {
-        console.log('[PieRoot] Rendering with location:', location)
-        console.log('[PieRoot] API_SERVER:', apiServer)
-        console.log('[PieRoot] CENTRIFUGE_SERVER:', centrifugeServer)
-        console.log('[PieRoot] Fallback provided:', !!fallback)
-    }
-
-    if (!apiServer) {
-        throw Error('Set PIE_API_SERVER and PIE_CENTRIFUGE_SERVER')
-    }
-
-    // if (!isPieComponentsInitialized()) {
-    //     throw Error("Pie components are not initialized. Use initializePieComponents() at the top of page file")
-    // }
+    const emitter = useMemo(() => getEmitter(), [])
+    const socket = useMemo(
+        () => (apiServer ? getSocket(apiServer) : null),
+        [apiServer]
+    )
+    const centrifuge = useMemo(
+        () => (apiServer ? getCentrifuge(apiServer, centrifugeServer) : null),
+        [apiServer, centrifugeServer]
+    )
 
     const webApp = useWebApp()
 
@@ -134,6 +130,10 @@ const PieTelegramRootContent: React.FC<PieRootProps> = ({
         retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 30000),
     })
 
+    if (!apiServer) {
+        throw Error('Set PIE_API_SERVER and PIE_CENTRIFUGE_SERVER')
+    }
+
     if (error && renderingLogEnabled) {
         console.error('[PieRoot] Error fetching UI configuration:', error)
         console.error('[PieRoot] Error details:', {
@@ -165,27 +165,23 @@ const PieTelegramRootContent: React.FC<PieRootProps> = ({
 
     return (
         <MittContext.Provider value={emitter}>
-            <SocketIOContext.Provider value={getSocket(apiServer)}>
-                <CentrifugeIOContext.Provider
-                    value={getCentrifuge(apiServer, centrifugeServer)}
-                >
+            <SocketIOContext.Provider value={socket}>
+                <CentrifugeIOContext.Provider value={centrifuge}>
                     <FallbackContext.Provider value={fallback ?? <></>}>
                         <SocketIOInitProvider>
                             <CentrifugeIOInitProvider>
-                                <Radium.StyleRoot>
-                                    <form
-                                        id="piedata_global_form"
-                                        action={
-                                            apiServer +
-                                            'api/process' +
-                                            location.pathname
-                                        }
-                                        method="post"
-                                        encType="multipart/form-data"
-                                    >
-                                        <UI uiConfig={uiConfiguration} />
-                                    </form>
-                                </Radium.StyleRoot>
+                                <form
+                                    id="piedata_global_form"
+                                    action={
+                                        apiServer +
+                                        'api/process' +
+                                        location.pathname
+                                    }
+                                    method="post"
+                                    encType="multipart/form-data"
+                                >
+                                    <UI uiConfig={uiConfiguration} />
+                                </form>
                             </CentrifugeIOInitProvider>
                         </SocketIOInitProvider>
                     </FallbackContext.Provider>

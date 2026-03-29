@@ -1,3 +1,5 @@
+'use client'
+
 import { createContext } from 'react'
 
 export type NavigateFunction = (_: string) => void

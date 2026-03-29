@@ -1,7 +1,5 @@
 import { RedirectButtonCardProps } from '../types'
 import PieCard from '../../../PieCard'
-import { sx2radium } from '../../../../util/sx2radium'
-import Radium from 'radium'
 import parse from 'html-react-parser'
 import { MouseEventHandler, useContext } from 'react'
 import NavigateContext from '../../../../util/navigate.ts'
@@ -29,7 +27,7 @@ const RedirectButtonCard = ({ data }: RedirectButtonCardProps) => {
                 className="box-border flex min-h-12 w-full min-w-min cursor-pointer items-center justify-center gap-4 rounded-l border border-black bg-white text-center text-black hover:bg-neutral-300"
                 value={name}
                 onClick={routeChange}
-                style={sx2radium(sx)}
+                style={sx}
                 type="button"
             >
                 {iconUrl && iconPosition === 'start' && (
@@ -44,4 +42,4 @@ const RedirectButtonCard = ({ data }: RedirectButtonCardProps) => {
     )
 }
 
-export default Radium(RedirectButtonCard)
+export default RedirectButtonCard
