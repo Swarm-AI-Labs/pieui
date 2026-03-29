@@ -80,10 +80,127 @@ export interface PieEvent {
 
 export type PieEventEmitter = (event: PieEvent) => void
 
+// MAX Bridge types
+
+export type MaxWebAppUser = {
+    id: number
+    first_name: string
+    last_name?: string
+    username?: string
+    language_code?: string
+    photo_url?: string
+}
+
+export type MaxWebAppChat = {
+    id: number
+    type: string
+}
+
+export type MaxWebAppStartParam = string
+
+export type MaxWebAppData = {
+    query_id?: string
+    auth_date: number
+    hash: string
+    start_param?: MaxWebAppStartParam
+    user?: MaxWebAppUser
+    chat?: MaxWebAppChat
+}
+
+export type MaxBackButton = {
+    isVisible: boolean
+    onClick: (callback: () => void) => void
+    offClick: (callback: () => void) => void
+    show: () => void
+    hide: () => void
+}
+
+export type MaxScreenCapture = {
+    isScreenCaptureEnabled: boolean
+    enableScreenCapture: () => void
+    disableScreenCapture: () => void
+}
+
+export type MaxHapticImpactStyle = 'soft' | 'light' | 'medium' | 'heavy' | 'rigid'
+export type MaxHapticNotificationType = 'error' | 'success' | 'warning'
+
+export type MaxHapticFeedback = {
+    impactOccurred: (style: MaxHapticImpactStyle, disableVibrationFallback?: boolean) => void
+    notificationOccurred: (type: MaxHapticNotificationType, disableVibrationFallback?: boolean) => void
+    selectionChanged: (disableVibrationFallback?: boolean) => void
+}
+
+export type MaxDeviceStorage = {
+    setItem: (key: string, value: string) => void
+    getItem: (key: string) => void
+    removeItem: (key: string) => void
+    clear: () => void
+}
+
+export type MaxSecureStorage = {
+    setItem: (key: string, value: string) => void
+    getItem: (key: string) => void
+    removeItem: (key: string) => void
+}
+
+export type MaxBiometricManager = {
+    isInited: boolean
+    init: () => void
+    isBiometricAvailable: boolean
+    biometricType: string[]
+    deviceId: string | null
+    isAccessRequested: boolean
+    isAccessGranted: boolean
+    isBiometricTokenSaved: boolean
+    requestAccess: () => void
+    authenticate: () => void
+    updateBiometricToken: (token: string) => void
+    openSettings: () => void
+}
+
+export type MaxShareTextContent = {
+    text?: string
+    link?: string
+}
+
+export type MaxShareMediaContent = {
+    mid: string
+    chatType: 'DIALOG' | 'CHAT'
+}
+
+export type MaxWebApp = {
+    initData: string
+    initDataUnsafe: MaxWebAppData
+    platform: 'ios' | 'android' | 'desktop' | 'web'
+    version: string
+    onEvent: (eventName: string, callback: (...args: any[]) => void) => void
+    offEvent: (eventName: string, callback: (...args: any[]) => void) => void
+    ready: () => void
+    close: () => void
+    requestContact: () => void
+    BackButton: MaxBackButton
+    ScreenCapture: MaxScreenCapture
+    HapticFeedback: MaxHapticFeedback
+    DeviceStorage: MaxDeviceStorage
+    SecureStorage: MaxSecureStorage
+    BiometricManager: MaxBiometricManager
+    enableClosingConfirmation: () => void
+    disableClosingConfirmation: () => void
+    openLink: (url: string) => void
+    openMaxLink: (url: string) => void
+    shareContent: (text: string, link: string) => void
+    shareMaxContent: (content: MaxShareTextContent | MaxShareMediaContent) => void
+    downloadFile: (url: string, fileName: string) => void
+    requestScreenMaxBrightness: () => void
+    restoreScreenBrightness: () => void
+    openCodeReader: (fileSelect?: boolean) => void
+}
+
 declare global {
     interface Window {
         sid: string
         Telegram: Telegram
+        WebApp?: MaxWebApp
     }
 }
 
