@@ -274,9 +274,7 @@ const OpenAIVoiceAgentCard = ({
                         }
                     }
                 }}
-                style={(
-                    isConnected ? sxMap['enabled'] : sxMap['disabled']
-                )}
+                style={isConnected ? sxMap['enabled'] : sxMap['disabled']}
                 type="button"
             >
                 {iconUrl && iconPosition === 'start' && (

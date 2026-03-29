@@ -31,7 +31,8 @@
         }
     },
     "scripts": {
-        "build": "rm -rf ./dist && rm -rf pieui-*.tgz && bun run build:clean && NODE_ENV=production bun run build:esm && NODE_ENV=production bun run build:cjs && NODE_ENV=production bun run build:components:esm && NODE_ENV=production bun run build:components:cjs && NODE_ENV=production bun run build:types && NODE_ENV=production bun run build:cli && bun src/cli.ts postbuild --src-dir src --out-dir dist && bun pm pack",
+        "build": "rm -rf ./dist && rm -rf pieui-*.tgz && bun run build:clean && NODE_ENV=production bun run build:esm && NODE_ENV=production bun run build:cjs && NODE_ENV=production bun run build:components:esm && NODE_ENV=production bun run build:components:cjs && bun run build:banner && NODE_ENV=production bun run build:types && NODE_ENV=production bun run build:cli && bun src/cli.ts postbuild --src-dir src --out-dir dist && bun pm pack",
+        "build:banner": "for f in dist/index.esm.js dist/index.js dist/components/index.esm.js dist/components/index.js; do [ -f \"$f\" ] && sed -i '' '1s/^/\"use client\";\\n/' $f; done",
         "build:clean": "rm -rf dist",
         "build:esm": "bun build src/index.ts --outfile dist/index.esm.js --format esm --target browser --jsx=automatic --jsx-import-source=react --external react --external react-dom --external highlight.js --external rehype-highlight --external glob --external typescript --external typescript-json-schema --external @tanstack/react-query --external fsl-authorization --minify",
         "build:cjs": "bun build src/index.ts --outfile dist/index.js --format cjs --target node --jsx=automatic --jsx-import-source=react --external react --external react-dom --external highlight.js --external rehype-highlight --external glob --external typescript --external @tanstack/react-query --external typescript-json-schema --external fsl-authorization --minify",
@@ -45,6 +46,7 @@
         "build:types": "tsc --emitDeclarationOnly",
         "build:cli": "bun build src/cli.ts --outfile dist/cli.js --format cjs --target node --external vm2",
         "dev": "bun run src/index.ts",
+        "test": "bun test",
         "typecheck": "tsc --noEmit",
         "lint": "prettier --write ./",
         "prepublishOnly": "bun run build",
@@ -75,6 +77,8 @@
         "fsl-authorization": ">=1"
     },
     "devDependencies": {
+        "@testing-library/jest-dom": "^6.9.1",
+        "@testing-library/react": "^16.3.2",
         "@types/bun": "latest",
         "@types/glob": "^9.0.0",
         "ajv": "^8.18.0",
@@ -83,6 +87,7 @@
         "eslint-plugin-no-browser-globals": "^1.0.1",
         "fsl-authorization": "^1.1.1-beta.61",
         "glob": "^13.0.0",
+        "happy-dom": "^20.8.9",
         "lint-staged": "^16.2.7",
         "postcss": "8",
         "tailwindcss": "3",

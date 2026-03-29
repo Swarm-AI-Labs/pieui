@@ -6,7 +6,6 @@ import PieCard from '../../../PieCard'
 import MittContext from '../../../../util/mitt'
 import FallbackContext from '../../../../util/fallback'
 
-
 const AjaxGroupCard = ({ data, content }: AjaxGroupCardProps) => {
     const {
         useLoader,

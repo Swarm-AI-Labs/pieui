@@ -3,7 +3,6 @@ import PieCard from '../../../PieCard'
 import { useAjaxSubmit } from '../../../../util/ajaxCommonUtils'
 import parse from 'html-react-parser'
 
-
 const AjaxButtonCard = ({
     data,
     setUiAjaxConfiguration,
