@@ -87,7 +87,7 @@ const PieTelegramRootContent: React.FC<PieRootProps> = ({
                 return
             }
             const params = new URLSearchParams(location.search)
-            params.set('root', 'telegram')
+            params.set('__pieroot', 'telegram')
             if (webApp?.initData) {
                 params.set('initData', webApp.initData)
             }

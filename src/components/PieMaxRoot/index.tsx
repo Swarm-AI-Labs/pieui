@@ -87,7 +87,7 @@ const PieMaxRootContent: React.FC<PieRootProps> = ({
                 return
             }
             const params = new URLSearchParams(location.search)
-            params.set('root', 'max')
+            params.set('__pieroot', 'max')
             if (webApp?.initData) {
                 params.set('initData', webApp.initData)
             }

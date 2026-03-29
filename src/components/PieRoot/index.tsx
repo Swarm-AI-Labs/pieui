@@ -85,7 +85,7 @@ const PieRootContent = ({
                 return
             }
             const params = new URLSearchParams(location.search)
-            params.set('root', 'web')
+            params.set('__pieroot', 'web')
             const apiEndpoint =
                 '/api/content' + location.pathname + '?' + params.toString()
             if (renderingLogEnabled) {
