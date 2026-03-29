@@ -82,10 +82,8 @@ const PieTelegramRootContent: React.FC<PieRootProps> = ({
             webApp?.initData,
             isPieComponentsInitialized(),
         ],
+        enabled: isPieComponentsInitialized() && !!webApp?.initData,
         queryFn: async () => {
-            if (!isPieComponentsInitialized()) {
-                return
-            }
             const params = new URLSearchParams(location.search)
             params.set('__pieroot', 'telegram')
             if (webApp?.initData) {

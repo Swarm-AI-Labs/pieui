@@ -83,9 +83,6 @@ const PieMaxRootContent: React.FC<PieRootProps> = ({
             isPieComponentsInitialized(),
         ],
         queryFn: async () => {
-            if (!isPieComponentsInitialized()) {
-                return
-            }
             const params = new URLSearchParams(location.search)
             params.set('__pieroot', 'max')
             if (webApp?.initData) {
@@ -117,6 +114,7 @@ const PieMaxRootContent: React.FC<PieRootProps> = ({
             }
             return response.data
         },
+        enabled: isPieComponentsInitialized() && !!webApp?.initData,
         staleTime: Infinity,
         gcTime: Infinity,
         refetchOnWindowFocus: false,

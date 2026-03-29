@@ -80,10 +80,8 @@ const PieRootContent = ({
             isPieComponentsInitialized(),
             apiServer,
         ],
+        enabled: isPieComponentsInitialized() && !!apiServer,
         queryFn: async () => {
-            if (!apiServer || !isPieComponentsInitialized()) {
-                return
-            }
             const params = new URLSearchParams(location.search)
             params.set('__pieroot', 'web')
             const apiEndpoint =
