@@ -66,7 +66,8 @@ describe('No module-level browser globals in server-safe files', () => {
             for (const line of lines) {
                 const trimmed = line.trim()
                 // Skip comments
-                if (trimmed.startsWith('//') || trimmed.startsWith('*')) continue
+                if (trimmed.startsWith('//') || trimmed.startsWith('*'))
+                    continue
                 // Module-level: lines that aren't inside a function
                 if (
                     trimmed.startsWith('window.') ||

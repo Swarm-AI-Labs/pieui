@@ -23,14 +23,26 @@ describe('Centrifuge caching', () => {
     })
 
     test('getCentrifuge returns same instance for same params', () => {
-        const a = getCentrifuge('http://api-cache-1.test', 'ws://cf-cache-1.test')
-        const b = getCentrifuge('http://api-cache-1.test', 'ws://cf-cache-1.test')
+        const a = getCentrifuge(
+            'http://api-cache-1.test',
+            'ws://cf-cache-1.test'
+        )
+        const b = getCentrifuge(
+            'http://api-cache-1.test',
+            'ws://cf-cache-1.test'
+        )
         expect(a).toBe(b)
     })
 
     test('getCentrifuge returns different instances for different params', () => {
-        const a = getCentrifuge('http://api-cache-2.test', 'ws://cf-cache-2.test')
-        const b = getCentrifuge('http://api-cache-3.test', 'ws://cf-cache-3.test')
+        const a = getCentrifuge(
+            'http://api-cache-2.test',
+            'ws://cf-cache-2.test'
+        )
+        const b = getCentrifuge(
+            'http://api-cache-3.test',
+            'ws://cf-cache-3.test'
+        )
         expect(a).not.toBe(b)
     })
 })
