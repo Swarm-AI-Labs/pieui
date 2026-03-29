@@ -1,8 +1,8 @@
-import type { NextConfig } from "next";
+import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
-  reactCompiler: false,
-  transpilePackages: ["@piedata/pieui"],
-};
+    reactCompiler: false,
+    transpilePackages: ['@piedata/pieui'],
+}
 
-export default nextConfig;
+export default nextConfig
