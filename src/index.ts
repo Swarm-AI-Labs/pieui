@@ -5,6 +5,8 @@ export { default as PieRoot } from './components/PieRoot'
 export { default as PieTelegramRoot } from './components/PieTelegramRoot'
 export { default as PieBaseRoot } from './components/PieBaseRoot'
 export { default as PieMaxRoot } from './components/PieMaxRoot'
+export { default as PieElectronRoot } from './components/PieElectronRoot'
+export { default as PieExpoRoot } from './components/PieExpoRoot'
 export { default as PieCard } from './components/PieCard'
 export { registerPieComponent } from './util/registry'
 export {
