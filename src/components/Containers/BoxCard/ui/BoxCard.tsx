@@ -4,6 +4,7 @@ import { SetUiAjaxConfigurationType, UIConfigType } from '../../../../types'
 import PieCard from '../../../PieCard'
 import { MouseEventHandler, useContext } from 'react'
 import NavigateContext from '../../../../util/navigate.ts'
+import UIRendererContext from '../../../../util/uiRenderer'
 
 const BoxCard = ({
     data,
@@ -17,6 +18,7 @@ const BoxCard = ({
     const { name, url, sx } = data
 
     const navigate = useContext(NavigateContext)
+    const Renderer = useContext(UIRendererContext) ?? UI
 
     const routeChange: MouseEventHandler<HTMLDivElement> = (event) => {
         if (url) {
@@ -33,7 +35,7 @@ const BoxCard = ({
     return (
         <PieCard card={name} data={data}>
             <div style={sx} id={name} onClick={routeChange}>
-                <UI
+                <Renderer
                     setUiAjaxConfiguration={setUiAjaxConfiguration}
                     uiConfig={content}
                 />

@@ -16,6 +16,8 @@ type ComponentType =
     | 'simple-container'
     | 'complex-container'
 
+type ListFilter = 'all' | ComponentType
+
 type ParsedArgs = {
     command: string
     outDir: string
@@ -24,6 +26,7 @@ type ParsedArgs = {
     componentName?: string
     componentType?: ComponentType
     removeComponentName?: string
+    listFilter?: ListFilter
 }
 
 type ComponentManifestEntry = {
@@ -55,9 +58,23 @@ const parseArgs = (argv: string[]): ParsedArgs => {
     let componentName: string | undefined
 
     let removeComponentName: string | undefined
+    let listFilter: ListFilter | undefined
 
     if (command === 'remove' && argv[1]) {
         removeComponentName = argv[1]
+    }
+
+    if (command === 'list') {
+        const validFilters: ListFilter[] = [
+            'all',
+            'simple',
+            'complex',
+            'simple-container',
+            'complex-container',
+        ]
+        const filterArg = argv[1] as ListFilter | undefined
+        listFilter =
+            filterArg && validFilters.includes(filterArg) ? filterArg : 'all'
     }
 
     if (command === 'add' && argv[1]) {
@@ -98,6 +115,7 @@ const parseArgs = (argv: string[]): ParsedArgs => {
         componentName,
         componentType,
         removeComponentName,
+        listFilter,
     }
 }
 
@@ -116,6 +134,9 @@ const printUsage = () => {
     )
     console.log(
         '  postbuild                               Scan for components and generate manifest'
+    )
+    console.log(
+        '  list [filter]                            List registered components in a table'
     )
     console.log('')
     console.log('Component types for add command:')
@@ -147,6 +168,28 @@ const printUsage = () => {
         '  --append                      Include built-in pieui components in the manifest'
     )
     console.log('')
+    console.log('Options for list:')
+    console.log(
+        '  --src-dir <dir>, -s <dir>    Source directory (default: src)'
+    )
+    console.log('')
+    console.log('Filters for list:')
+    console.log(
+        '  all                 All components (default)'
+    )
+    console.log(
+        '  simple              Simple components (only data prop)'
+    )
+    console.log(
+        '  complex             Complex components (data + children props)'
+    )
+    console.log(
+        '  simple-container    Container with single content'
+    )
+    console.log(
+        '  complex-container   Container with array content'
+    )
+    console.log('')
     console.log('Examples:')
     console.log('  pieui init')
     console.log('  pieui init --out-dir packages/app')
@@ -160,6 +203,9 @@ const printUsage = () => {
         '  pieui add complex-container MyContainerCard   # Creates complex container'
     )
     console.log('  pieui postbuild --append --out-dir dist')
+    console.log('  pieui list                                    # List all components')
+    console.log('  pieui list simple                             # List only simple components')
+    console.log('  pieui list complex-container --src-dir app    # List complex containers in app/')
 }
 
 const findComponentRegistrations = (srcDir: string): ComponentInfo[] => {
@@ -856,8 +902,8 @@ const ${componentName}: React.FC<${componentName}Props> = ({ data, children }) =
 export default ${componentName}
 `
     } else if (componentType === 'simple-container') {
-        componentContent = `import React from 'react'
-import { PieCard, UI } from '@piedata/pieui'
+        componentContent = `import React, { useContext } from 'react'
+import { PieCard, UI, UIRendererContext } from '@piedata/pieui'
 import { ${componentName}Props } from '../types'
 
 const ${componentName}: React.FC<${componentName}Props> = ({
@@ -866,6 +912,7 @@ const ${componentName}: React.FC<${componentName}Props> = ({
     setUiAjaxConfiguration,
 }) => {
     const { name } = data
+    const Renderer = useContext(UIRendererContext) ?? UI
 
     return (
         <PieCard card='${componentName}' data={data}>
@@ -873,7 +920,7 @@ const ${componentName}: React.FC<${componentName}Props> = ({
                 <h2>${componentName}</h2>
                 {/* Add your component logic here */}
                 {content && (
-                    <UI
+                    <Renderer
                         uiConfig={content}
                         setUiAjaxConfiguration={setUiAjaxConfiguration}
                     />
@@ -887,8 +934,8 @@ export default ${componentName}
 `
     } else {
         // complex-container
-        componentContent = `import React from 'react'
-import { PieCard, UI } from '@piedata/pieui'
+        componentContent = `import React, { useContext } from 'react'
+import { PieCard, UI, UIRendererContext } from '@piedata/pieui'
 import { ${componentName}Props } from '../types'
 
 const ${componentName}: React.FC<${componentName}Props> = ({
@@ -897,6 +944,7 @@ const ${componentName}: React.FC<${componentName}Props> = ({
     setUiAjaxConfiguration,
 }) => {
     const { name } = data
+    const Renderer = useContext(UIRendererContext) ?? UI
 
     return (
         <PieCard card='${componentName}' data={data}>
@@ -904,7 +952,7 @@ const ${componentName}: React.FC<${componentName}Props> = ({
                 <h2>${componentName}</h2>
                 {/* Add your component logic here */}
                 {content && Array.isArray(content) && content.map((child, index) => (
-                    <UI
+                    <Renderer
                         key={\`child-\${index}\`}
                         uiConfig={child}
                         setUiAjaxConfiguration={setUiAjaxConfiguration}
@@ -1156,6 +1204,274 @@ const removeCommand = (componentName: string) => {
     console.log(`[pieui] Component ${componentName} removed successfully!`)
 }
 
+const detectComponentType = (
+    propsType: any,
+    checker: any
+): ComponentType => {
+    const contentProperty = propsType.getProperty('content')
+    const childrenProperty = propsType.getProperty('children')
+
+    if (contentProperty) {
+        const contentType = checker.getTypeOfSymbolAtLocation(
+            contentProperty,
+            contentProperty.valueDeclaration || contentProperty.declarations?.[0]
+        )
+        const typeStr = checker.typeToString(contentType)
+
+        // Array<UIConfigType> or UIConfigType[]
+        if (
+            typeStr.includes('[]') ||
+            typeStr.includes('Array') ||
+            contentType.symbol?.getName() === 'Array'
+        ) {
+            return 'complex-container'
+        }
+
+        // Check if it's actually an array type
+        if (checker.isArrayType?.(contentType)) {
+            return 'complex-container'
+        }
+
+        return 'simple-container'
+    }
+
+    if (childrenProperty) {
+        return 'complex'
+    }
+
+    return 'simple'
+}
+
+const listCommand = (srcDir: string, filter: ListFilter) => {
+    console.log(`[pieui] Scanning components in: ${srcDir}`)
+
+    const files = glob.sync(`${srcDir}/**/*.{ts,tsx}`, {
+        ignore: [
+            '**/*.d.ts',
+            '**/dist/**',
+            '**/node_modules/**',
+            '**/cli.ts',
+            '**/*.test.*',
+            '**/*.spec.*',
+            '**/tests/**',
+            '**/__tests__/**',
+        ],
+    })
+
+    const compilerOptions = {
+        allowJs: true,
+        jsx: ts.JsxEmit.ReactJSX,
+        target: ts.ScriptTarget.ES2020,
+        module: ts.ModuleKind.NodeNext,
+        moduleResolution: ts.ModuleResolutionKind.NodeNext,
+        esModuleInterop: true,
+        allowSyntheticDefaultImports: true,
+        skipLibCheck: true,
+    }
+
+    const program = ts.createProgram(files, compilerOptions)
+    const checker = program.getTypeChecker()
+
+    type ComponentListEntry = {
+        name: string
+        type: ComponentType
+        file: string
+        dataType: string
+        lazy: boolean
+    }
+
+    const components: ComponentListEntry[] = []
+
+    for (const sourceFile of program.getSourceFiles()) {
+        if (sourceFile.isDeclarationFile) continue
+        if (
+            !files.some(
+                (f) => path.resolve(f) === path.resolve(sourceFile.fileName)
+            )
+        )
+            continue
+
+        function visit(node: any) {
+            if (ts.isCallExpression(node)) {
+                const expr = node.expression
+                const isRegisterCall =
+                    (ts.isIdentifier(expr) &&
+                        expr.text === REGISTER_FUNCTION) ||
+                    (ts.isPropertyAccessExpression(expr) &&
+                        expr.name.text === REGISTER_FUNCTION)
+
+                if (isRegisterCall && node.arguments.length > 0) {
+                    const arg = node.arguments[0]
+                    if (ts.isObjectLiteralExpression(arg)) {
+                        let componentName: string | null = null
+                        let componentRef: any | null = null
+                        let hasLoader = false
+
+                        for (const prop of arg.properties) {
+                            if (ts.isPropertyAssignment(prop)) {
+                                const propName =
+                                    ts.isIdentifier(prop.name) || ts.isStringLiteral(prop.name)
+                                        ? prop.name.text
+                                        : null
+
+                                if (
+                                    propName === 'name' &&
+                                    ts.isStringLiteral(prop.initializer)
+                                ) {
+                                    componentName = prop.initializer.text
+                                }
+                                if (propName === 'component') {
+                                    componentRef = prop.initializer
+                                }
+                                if (propName === 'loader') {
+                                    hasLoader = true
+                                }
+                            } else if (ts.isShorthandPropertyAssignment(prop)) {
+                                if (prop.name.text === 'component') {
+                                    componentRef = prop.name
+                                }
+                                if (prop.name.text === 'loader') {
+                                    hasLoader = true
+                                }
+                            }
+                        }
+
+                        if (componentName) {
+                            let compType: ComponentType = 'simple'
+                            let dataTypeName = '-'
+                            let componentFile = sourceFile.fileName
+
+                            if (componentRef) {
+                                // Resolve the actual file where the component is defined
+                                const componentSymbol = checker.getSymbolAtLocation(componentRef)
+                                if (componentSymbol) {
+                                    let resolved = componentSymbol
+                                    // Follow aliases (imports) to the original declaration
+                                    if (resolved.flags & ts.SymbolFlags.Alias) {
+                                        resolved = checker.getAliasedSymbol(resolved)
+                                    }
+                                    const declarations = resolved.getDeclarations()
+                                    if (declarations && declarations.length > 0) {
+                                        componentFile = declarations[0].getSourceFile().fileName
+                                    }
+                                }
+
+                                const componentType =
+                                    checker.getTypeAtLocation(componentRef)
+                                const signatures = checker.getSignaturesOfType(
+                                    componentType,
+                                    ts.SignatureKind.Call
+                                )
+
+                                if (signatures.length > 0) {
+                                    const propsParam =
+                                        signatures[0].getParameters()[0]
+                                    if (propsParam) {
+                                        const propsType =
+                                            checker.getTypeOfSymbolAtLocation(
+                                                propsParam,
+                                                componentRef
+                                            )
+                                        compType = detectComponentType(
+                                            propsType,
+                                            checker
+                                        )
+
+                                        const dataProperty =
+                                            propsType.getProperty('data')
+                                        if (dataProperty) {
+                                            const dataType =
+                                                checker.getTypeOfSymbolAtLocation(
+                                                    dataProperty,
+                                                    componentRef
+                                                )
+                                            const dataSymbol =
+                                                dataType.getSymbol()
+                                            if (dataSymbol) {
+                                                dataTypeName =
+                                                    dataSymbol.getName()
+                                            } else {
+                                                dataTypeName =
+                                                    checker.typeToString(
+                                                        dataType
+                                                    )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                            components.push({
+                                name: componentName,
+                                type: compType,
+                                file: path.relative(
+                                    process.cwd(),
+                                    componentFile
+                                ),
+                                dataType: dataTypeName,
+                                lazy: hasLoader && !componentRef,
+                            })
+                        }
+                    }
+                }
+            }
+
+            ts.forEachChild(node, visit)
+        }
+
+        visit(sourceFile)
+    }
+
+    // Filter
+    const filtered =
+        filter === 'all'
+            ? components
+            : components.filter((c) => c.type === filter)
+
+    if (filtered.length === 0) {
+        console.log(
+            filter === 'all'
+                ? '[pieui] No components found.'
+                : `[pieui] No ${filter} components found.`
+        )
+        return
+    }
+
+    // Sort by name
+    filtered.sort((a, b) => a.name.localeCompare(b.name))
+
+    // Build table
+    const headers = ['Name', 'Type', 'Data Type', 'Lazy', 'File']
+    const rows = filtered.map((c) => [
+        c.name,
+        c.type,
+        c.dataType,
+        c.lazy ? 'yes' : 'no',
+        c.file,
+    ])
+
+    // Calculate column widths
+    const colWidths = headers.map((h, i) =>
+        Math.max(h.length, ...rows.map((r) => r[i].length))
+    )
+
+    const separator = colWidths.map((w) => '─'.repeat(w + 2)).join('┼')
+    const formatRow = (cells: string[]) =>
+        cells.map((c, i) => ` ${c.padEnd(colWidths[i])} `).join('│')
+
+    console.log('')
+    console.log(formatRow(headers))
+    console.log(separator)
+    for (const row of rows) {
+        console.log(formatRow(row))
+    }
+    console.log('')
+    console.log(
+        `[pieui] Total: ${filtered.length} component${filtered.length === 1 ? '' : 's'}` +
+            (filter !== 'all' ? ` (filtered by: ${filter})` : '')
+    )
+}
+
 const main = async () => {
     const {
         command,
@@ -1165,6 +1481,7 @@ const main = async () => {
         componentName,
         componentType,
         removeComponentName,
+        listFilter,
     } = parseArgs(process.argv.slice(2))
 
     console.log(`[pieui] CLI started with command: "${command}"`)
@@ -1194,6 +1511,10 @@ const main = async () => {
                 process.exit(1)
             }
             removeCommand(removeComponentName)
+            return
+
+        case 'list':
+            listCommand(srcDir, listFilter || 'all')
             return
 
         case 'postbuild':

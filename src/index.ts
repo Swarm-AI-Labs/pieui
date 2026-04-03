@@ -2,6 +2,10 @@
 
 export { default as UI } from './components/UI'
 export { default as UILoading } from './components/UILoading'
+export {
+    default as UIRendererContext,
+    type UIRendererProps,
+} from './util/uiRenderer'
 export { default as PieRoot } from './components/PieRoot'
 export { default as PieTelegramRoot } from './components/PieTelegramRoot'
 export { default as PieBaseRoot } from './components/PieBaseRoot'

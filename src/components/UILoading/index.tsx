@@ -5,6 +5,7 @@ import { getRegistryEntry } from '../../util/registry'
 import { Suspense, useContext, ReactNode } from 'react'
 import FallbackContext from '../../util/fallback'
 import { isRenderingLogEnabled } from '../../util/pieConfig'
+import UIRendererContext from '../../util/uiRenderer'
 
 function UILoading({
     uiConfig,
@@ -63,11 +64,13 @@ function UILoading({
     const Component = entry.component
 
     const node = (
-        <Component
-            data={uiConfig.data}
-            content={uiConfig.content}
-            setUiAjaxConfiguration={setUiAjaxConfiguration}
-        />
+        <UIRendererContext.Provider value={UILoading}>
+            <Component
+                data={uiConfig.data}
+                content={uiConfig.content}
+                setUiAjaxConfiguration={setUiAjaxConfiguration}
+            />
+        </UIRendererContext.Provider>
     )
 
     if (entry.isLazy) {

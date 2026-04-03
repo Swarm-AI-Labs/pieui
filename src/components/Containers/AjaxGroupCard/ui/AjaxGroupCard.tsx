@@ -5,6 +5,7 @@ import { UIConfigType, UIEventType } from '../../../../types'
 import PieCard from '../../../PieCard'
 import MittContext from '../../../../util/mitt'
 import FallbackContext from '../../../../util/fallback'
+import UIRendererContext from '../../../../util/uiRenderer'
 
 const AjaxGroupCard = ({ data, content }: AjaxGroupCardProps) => {
     const {
@@ -17,6 +18,7 @@ const AjaxGroupCard = ({ data, content }: AjaxGroupCardProps) => {
         centrifugeChannel,
     } = data
     const Fallback: ReactNode = useContext(FallbackContext)
+    const Renderer = useContext(UIRendererContext) ?? UI
     const [isLoading, setIsLoading] = useState<boolean>(false)
     const [uiAjaxConfiguration, setUiAjaxConfiguration] =
         useState<UIConfigType | null>(null)
@@ -80,7 +82,7 @@ const AjaxGroupCard = ({ data, content }: AjaxGroupCardProps) => {
             useMittSupport={useMittSupport}
             centrifugeChannel={centrifugeChannel}
         >
-            <UI
+            <Renderer
                 uiConfig={uiAjaxConfiguration ?? lastValidUiConfigRef.current}
                 setUiAjaxConfiguration={
                     returnType === 'events'

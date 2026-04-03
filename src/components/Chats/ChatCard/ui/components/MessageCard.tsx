@@ -1,7 +1,8 @@
 import parse from 'html-react-parser'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useContext } from 'react'
 import MarkdownRender from './Markdown'
 import UI from '../../../../UI'
+import UIRendererContext from '../../../../../util/uiRenderer'
 import MessageAvatar from './MessageAvatar'
 import ChatOption from './ChatOption'
 import { Message } from '../../types'
@@ -16,6 +17,7 @@ const MessageCard = ({
     handleOptionClick: (option: string) => void
     setUiAjaxConfiguration?: SetUiAjaxConfigurationType
 }) => {
+    const Renderer = useContext(UIRendererContext) ?? UI
     const [copied, setCopied] = useState(false)
 
     useEffect(() => {
@@ -56,7 +58,7 @@ const MessageCard = ({
                                 message.content
                             )
                         ) : (
-                            <UI
+                            <Renderer
                                 uiConfig={message.content}
                                 setUiAjaxConfiguration={setUiAjaxConfiguration}
                             />
