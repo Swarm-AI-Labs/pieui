@@ -23,6 +23,7 @@ type ParsedArgs = {
     append: boolean
     componentName?: string
     componentType?: ComponentType
+    removeComponentName?: string
 }
 
 type ComponentManifestEntry = {
@@ -52,6 +53,12 @@ const parseArgs = (argv: string[]): ParsedArgs => {
     let srcDir = 'src'
     let componentType: ComponentType | undefined
     let componentName: string | undefined
+
+    let removeComponentName: string | undefined
+
+    if (command === 'remove' && argv[1]) {
+        removeComponentName = argv[1]
+    }
 
     if (command === 'add' && argv[1]) {
         // Check if first argument is a component type
@@ -90,6 +97,7 @@ const parseArgs = (argv: string[]): ParsedArgs => {
         append: appendFlag,
         componentName,
         componentType,
+        removeComponentName,
     }
 }
 
@@ -102,6 +110,9 @@ const printUsage = () => {
     )
     console.log(
         '  add [type] <ComponentName>              Create a new component in piecomponents directory'
+    )
+    console.log(
+        '  remove <ComponentName>                  Remove a component from piecomponents directory'
     )
     console.log(
         '  postbuild                               Scan for components and generate manifest'
@@ -1082,9 +1093,79 @@ export default ${componentName}
     }
 }
 
+const removeCommand = (componentName: string) => {
+    if (!componentName) {
+        console.error('[pieui] Error: Component name is required')
+        console.log('Usage: pieui remove <ComponentName>')
+        process.exit(1)
+    }
+
+    const pieComponentsDir = path.join(process.cwd(), 'piecomponents')
+    if (!fs.existsSync(pieComponentsDir)) {
+        console.error(
+            '[pieui] Error: piecomponents directory not found. Nothing to remove.'
+        )
+        process.exit(1)
+    }
+
+    const componentDir = path.join(pieComponentsDir, componentName)
+
+    // Remove component directory
+    if (fs.existsSync(componentDir)) {
+        fs.rmSync(componentDir, { recursive: true, force: true })
+        console.log(`[pieui] Removed directory: piecomponents/${componentName}`)
+    } else {
+        console.log(
+            `[pieui] Warning: Component directory piecomponents/${componentName} not found`
+        )
+    }
+
+    // Clean up registry.ts
+    const registryPath = path.join(pieComponentsDir, 'registry.ts')
+    if (fs.existsSync(registryPath)) {
+        let registryContent = fs.readFileSync(registryPath, 'utf8')
+        const originalContent = registryContent
+
+        // Remove import line
+        const importRegex = new RegExp(
+            `^import\\s+${componentName}\\s+from\\s+[\"'].*[\"'];?\\s*\\n`,
+            'gm'
+        )
+        registryContent = registryContent.replace(importRegex, '')
+
+        // Remove registerPieComponent block
+        const registerRegex = new RegExp(
+            `\\s*registerPieComponent\\(\\s*\\{[^}]*name:\\s*['"\`]${componentName}['"\`][^)]*\\)\\s*;?`,
+            'gs'
+        )
+        registryContent = registryContent.replace(registerRegex, '')
+
+        // Clean up double blank lines
+        registryContent = registryContent.replace(/\n{3,}/g, '\n\n')
+
+        if (registryContent !== originalContent) {
+            fs.writeFileSync(registryPath, registryContent, 'utf8')
+            console.log(`[pieui] Cleaned up registry.ts`)
+        } else {
+            console.log(
+                `[pieui] Warning: ${componentName} not found in registry.ts`
+            )
+        }
+    }
+
+    console.log(`[pieui] Component ${componentName} removed successfully!`)
+}
+
 const main = async () => {
-    const { command, outDir, srcDir, append, componentName, componentType } =
-        parseArgs(process.argv.slice(2))
+    const {
+        command,
+        outDir,
+        srcDir,
+        append,
+        componentName,
+        componentType,
+        removeComponentName,
+    } = parseArgs(process.argv.slice(2))
 
     console.log(`[pieui] CLI started with command: "${command}"`)
 
@@ -1102,6 +1183,17 @@ const main = async () => {
                 process.exit(1)
             }
             addCommand(componentName, componentType)
+            return
+
+        case 'remove':
+            if (!removeComponentName) {
+                console.error(
+                    '[pieui] Error: Component name is required for remove command'
+                )
+                printUsage()
+                process.exit(1)
+            }
+            removeCommand(removeComponentName)
             return
 
         case 'postbuild':
