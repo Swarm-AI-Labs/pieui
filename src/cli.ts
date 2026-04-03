@@ -174,21 +174,13 @@ const printUsage = () => {
     )
     console.log('')
     console.log('Filters for list:')
-    console.log(
-        '  all                 All components (default)'
-    )
-    console.log(
-        '  simple              Simple components (only data prop)'
-    )
+    console.log('  all                 All components (default)')
+    console.log('  simple              Simple components (only data prop)')
     console.log(
         '  complex             Complex components (data + children props)'
     )
-    console.log(
-        '  simple-container    Container with single content'
-    )
-    console.log(
-        '  complex-container   Container with array content'
-    )
+    console.log('  simple-container    Container with single content')
+    console.log('  complex-container   Container with array content')
     console.log('')
     console.log('Examples:')
     console.log('  pieui init')
@@ -203,9 +195,15 @@ const printUsage = () => {
         '  pieui add complex-container MyContainerCard   # Creates complex container'
     )
     console.log('  pieui postbuild --append --out-dir dist')
-    console.log('  pieui list                                    # List all components')
-    console.log('  pieui list simple                             # List only simple components')
-    console.log('  pieui list complex-container --src-dir app    # List complex containers in app/')
+    console.log(
+        '  pieui list                                    # List all components'
+    )
+    console.log(
+        '  pieui list simple                             # List only simple components'
+    )
+    console.log(
+        '  pieui list complex-container --src-dir app    # List complex containers in app/'
+    )
 }
 
 const findComponentRegistrations = (srcDir: string): ComponentInfo[] => {
@@ -1204,17 +1202,15 @@ const removeCommand = (componentName: string) => {
     console.log(`[pieui] Component ${componentName} removed successfully!`)
 }
 
-const detectComponentType = (
-    propsType: any,
-    checker: any
-): ComponentType => {
+const detectComponentType = (propsType: any, checker: any): ComponentType => {
     const contentProperty = propsType.getProperty('content')
     const childrenProperty = propsType.getProperty('children')
 
     if (contentProperty) {
         const contentType = checker.getTypeOfSymbolAtLocation(
             contentProperty,
-            contentProperty.valueDeclaration || contentProperty.declarations?.[0]
+            contentProperty.valueDeclaration ||
+                contentProperty.declarations?.[0]
         )
         const typeStr = checker.typeToString(contentType)
 
@@ -1310,7 +1306,8 @@ const listCommand = (srcDir: string, filter: ListFilter) => {
                         for (const prop of arg.properties) {
                             if (ts.isPropertyAssignment(prop)) {
                                 const propName =
-                                    ts.isIdentifier(prop.name) || ts.isStringLiteral(prop.name)
+                                    ts.isIdentifier(prop.name) ||
+                                    ts.isStringLiteral(prop.name)
                                         ? prop.name.text
                                         : null
 
@@ -1343,16 +1340,24 @@ const listCommand = (srcDir: string, filter: ListFilter) => {
 
                             if (componentRef) {
                                 // Resolve the actual file where the component is defined
-                                const componentSymbol = checker.getSymbolAtLocation(componentRef)
+                                const componentSymbol =
+                                    checker.getSymbolAtLocation(componentRef)
                                 if (componentSymbol) {
                                     let resolved = componentSymbol
                                     // Follow aliases (imports) to the original declaration
                                     if (resolved.flags & ts.SymbolFlags.Alias) {
-                                        resolved = checker.getAliasedSymbol(resolved)
+                                        resolved =
+                                            checker.getAliasedSymbol(resolved)
                                     }
-                                    const declarations = resolved.getDeclarations()
-                                    if (declarations && declarations.length > 0) {
-                                        componentFile = declarations[0].getSourceFile().fileName
+                                    const declarations =
+                                        resolved.getDeclarations()
+                                    if (
+                                        declarations &&
+                                        declarations.length > 0
+                                    ) {
+                                        componentFile =
+                                            declarations[0].getSourceFile()
+                                                .fileName
                                     }
                                 }
 
