@@ -40,6 +40,7 @@ const PieTelegramRootContent: React.FC<PieRootProps> = ({
     piecache,
     onError,
     initializePie,
+    queryOptions,
 }) => {
     const apiServer = getApiServer()
     const centrifugeServer = getCentrifugeServer()
@@ -124,6 +125,7 @@ const PieTelegramRootContent: React.FC<PieRootProps> = ({
         refetchOnReconnect: false,
         retry: true,
         retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 30000),
+        ...queryOptions,
     })
 
     const resolvedFallback = resolvePieCacheFallback(

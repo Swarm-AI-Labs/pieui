@@ -30,6 +30,8 @@ export type {
     SetUiAjaxConfigurationType,
 } from './types'
 
+export type { PieQueryOptions } from './components/PieRoot/types'
+
 export { useAjaxSubmit } from './util/ajaxCommonUtils'
 export {
     default as useOpenAIWebRTC,

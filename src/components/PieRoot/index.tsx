@@ -39,6 +39,7 @@ const PieRootContent = ({
     piecache,
     onError,
     initializePie,
+    queryOptions,
 }: PieRootProps) => {
     const apiServer = getApiServer()
     const centrifugeServer = getCentrifugeServer()
@@ -118,6 +119,7 @@ const PieRootContent = ({
         refetchOnReconnect: false,
         retry: true,
         retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 30000),
+        ...queryOptions,
     })
 
     const resolvedFallback = resolvePieCacheFallback(
