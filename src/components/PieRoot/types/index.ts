@@ -1,5 +1,5 @@
 import { ReactNode } from 'react'
-import { PieConfig } from '../../../types'
+import { PieConfig, UIConfigType } from '../../../types'
 
 export interface PieRootProps {
     location: {
@@ -7,6 +7,7 @@ export interface PieRootProps {
         search: string
     }
     fallback?: ReactNode
+    piecache?: Record<string, UIConfigType>
     onError?: () => void
     onNavigate?: (url: string) => void
     config: PieConfig

@@ -32,10 +32,12 @@ import {
 } from '../../util/initializeComponents.ts'
 import { useMaxWebApp } from '../../util/useMaxWebApp.ts'
 import NavigateContext from '../../util/navigate.ts'
+import { resolvePieCacheFallback } from '../../util/piecache'
 
 const PieMaxRootContent: React.FC<PieRootProps> = ({
     location,
     fallback,
+    piecache,
     onError,
     initializePie,
 }) => {
@@ -124,6 +126,12 @@ const PieMaxRootContent: React.FC<PieRootProps> = ({
         retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 30000),
     })
 
+    const resolvedFallback = resolvePieCacheFallback(
+        location.pathname,
+        piecache,
+        fallback
+    )
+
     if (!apiServer) {
         throw Error('Set PIE_API_SERVER and PIE_CENTRIFUGE_SERVER')
     }
@@ -136,7 +144,7 @@ const PieMaxRootContent: React.FC<PieRootProps> = ({
             data: error.response?.data,
         })
         onError?.()
-        return fallback
+        return resolvedFallback
     }
 
     if (isLoading || !uiConfiguration) {
@@ -146,7 +154,7 @@ const PieMaxRootContent: React.FC<PieRootProps> = ({
                 hasUiConfiguration: !!uiConfiguration,
             })
         }
-        return fallback
+        return resolvedFallback
     }
 
     if (renderingLogEnabled) {

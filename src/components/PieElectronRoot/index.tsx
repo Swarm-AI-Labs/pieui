@@ -31,10 +31,12 @@ import {
     isPieComponentsInitialized,
 } from '../../util/initializeComponents.ts'
 import NavigateContext from '../../util/navigate.ts'
+import { resolvePieCacheFallback } from '../../util/piecache'
 
 const PieElectronRootContent: React.FC<PieRootProps> = ({
     location,
     fallback,
+    piecache,
     onError,
     initializePie,
 }) => {
@@ -117,8 +119,14 @@ const PieElectronRootContent: React.FC<PieRootProps> = ({
         retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 30000),
     })
 
+    const resolvedFallback = resolvePieCacheFallback(
+        location.pathname,
+        piecache,
+        fallback
+    )
+
     if (!apiServer) {
-        return fallback ?? null
+        return resolvedFallback ?? null
     }
 
     if (renderingLogEnabled) {
@@ -126,6 +134,7 @@ const PieElectronRootContent: React.FC<PieRootProps> = ({
         console.log('[PieElectronRoot] API_SERVER:', apiServer)
         console.log('[PieElectronRoot] CENTRIFUGE_SERVER:', centrifugeServer)
         console.log('[PieElectronRoot] Fallback provided:', !!fallback)
+        console.log('[PieElectronRoot] Piecache provided:', !!piecache)
     }
 
     if (error) {
@@ -141,7 +150,7 @@ const PieElectronRootContent: React.FC<PieRootProps> = ({
             })
         }
         onError?.()
-        return fallback
+        return resolvedFallback
     }
 
     if (isLoading || !uiConfiguration) {
@@ -151,7 +160,7 @@ const PieElectronRootContent: React.FC<PieRootProps> = ({
                 hasUiConfiguration: !!uiConfiguration,
             })
         }
-        return fallback
+        return resolvedFallback
     }
 
     if (renderingLogEnabled) {

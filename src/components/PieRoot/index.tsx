@@ -31,10 +31,12 @@ import {
     isPieComponentsInitialized,
 } from '../../util/initializeComponents.ts'
 import NavigateContext from '../../util/navigate.ts'
+import { resolvePieCacheFallback } from '../../util/piecache'
 
 const PieRootContent = ({
     location,
     fallback,
+    piecache,
     onError,
     initializePie,
 }: PieRootProps) => {
@@ -118,8 +120,14 @@ const PieRootContent = ({
         retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 30000),
     })
 
+    const resolvedFallback = resolvePieCacheFallback(
+        location.pathname,
+        piecache,
+        fallback
+    )
+
     if (!apiServer) {
-        return fallback ?? null
+        return resolvedFallback ?? null
     }
 
     if (renderingLogEnabled) {
@@ -127,6 +135,7 @@ const PieRootContent = ({
         console.log('[PieRoot] API_SERVER:', apiServer)
         console.log('[PieRoot] CENTRIFUGE_SERVER:', centrifugeServer)
         console.log('[PieRoot] Fallback provided:', !!fallback)
+        console.log('[PieRoot] Piecache provided:', !!piecache)
     }
 
     if (error) {
@@ -139,7 +148,7 @@ const PieRootContent = ({
             })
         }
         onError?.()
-        return fallback
+        return resolvedFallback
     }
 
     if (isLoading || !uiConfiguration) {
@@ -149,7 +158,7 @@ const PieRootContent = ({
                 hasUiConfiguration: !!uiConfiguration,
             })
         }
-        return fallback
+        return resolvedFallback
     }
 
     if (renderingLogEnabled) {
