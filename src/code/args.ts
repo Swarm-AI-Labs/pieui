@@ -1,0 +1,167 @@
+import type { ComponentType, ListFilter, ParsedArgs } from './types'
+
+export const parseArgs = (argv: string[]): ParsedArgs => {
+    const [command = ''] = argv
+    const outDirFlag = argv.find((arg) => arg.startsWith('--out-dir='))
+    const srcDirFlag = argv.find((arg) => arg.startsWith('--src-dir='))
+    const outDirIndex = argv.findIndex(
+        (arg) => arg === '--out-dir' || arg === '-o'
+    )
+    const srcDirIndex = argv.findIndex(
+        (arg) => arg === '--src-dir' || arg === '-s'
+    )
+    const appendFlag = argv.includes('--append')
+
+    let outDir = command === 'postbuild' ? 'public' : '.'
+    let srcDir = 'src'
+    let componentType: ComponentType | undefined
+    let componentName: string | undefined
+
+    let removeComponentName: string | undefined
+    let listFilter: ListFilter | undefined
+
+    if (command === 'remove' && argv[1]) {
+        removeComponentName = argv[1]
+    }
+
+    if (command === 'list') {
+        const validFilters: ListFilter[] = [
+            'all',
+            'simple',
+            'complex',
+            'simple-container',
+            'complex-container',
+        ]
+        const filterArg = argv[1] as ListFilter | undefined
+        listFilter =
+            filterArg && validFilters.includes(filterArg) ? filterArg : 'all'
+    }
+
+    if (command === 'add' && argv[1]) {
+        // Check if first argument is a component type
+        const validTypes: ComponentType[] = [
+            'simple',
+            'complex',
+            'simple-container',
+            'complex-container',
+        ]
+        if (validTypes.includes(argv[1] as ComponentType)) {
+            componentType = argv[1] as ComponentType
+            componentName = argv[2]
+        } else {
+            // Default to complex-container if no type specified
+            componentType = 'complex-container'
+            componentName = argv[1]
+        }
+    }
+
+    if (outDirFlag) {
+        outDir = outDirFlag.split('=')[1] || outDir
+    } else if (outDirIndex !== -1 && argv[outDirIndex + 1]) {
+        outDir = argv[outDirIndex + 1]
+    }
+
+    if (srcDirFlag) {
+        srcDir = srcDirFlag.split('=')[1] || srcDir
+    } else if (srcDirIndex !== -1 && argv[srcDirIndex + 1]) {
+        srcDir = argv[srcDirIndex + 1]
+    }
+
+    return {
+        command,
+        outDir,
+        srcDir,
+        append: appendFlag,
+        componentName,
+        componentType,
+        removeComponentName,
+        listFilter,
+    }
+}
+
+export const printUsage = () => {
+    console.log('Usage: pieui <command> [options]')
+    console.log('')
+    console.log('Commands:')
+    console.log(
+        '  init                                    Initialize piecomponents directory with registry.ts'
+    )
+    console.log(
+        '  add [type] <ComponentName>              Create a new component in piecomponents directory'
+    )
+    console.log(
+        '  remove <ComponentName>                  Remove a component from piecomponents directory'
+    )
+    console.log(
+        '  postbuild                               Scan for components and generate manifest'
+    )
+    console.log(
+        '  list [filter]                            List registered components in a table'
+    )
+    console.log('')
+    console.log('Component types for add command:')
+    console.log('  simple                  Simple component (only data prop)')
+    console.log(
+        '  complex                 Complex component (data + children props)'
+    )
+    console.log(
+        '  simple-container        Container with single content (data + content)'
+    )
+    console.log(
+        '  complex-container       Container with array content (data + content[])'
+    )
+    console.log('                         (default if type not specified)')
+    console.log('')
+    console.log('Options for init:')
+    console.log(
+        '  --out-dir <dir>, -o <dir>    Base directory for piecomponents (default: .)'
+    )
+    console.log('')
+    console.log('Options for postbuild:')
+    console.log(
+        '  --out-dir <dir>, -o <dir>    Output directory (default: public)'
+    )
+    console.log(
+        '  --src-dir <dir>, -s <dir>    Source directory (default: src)'
+    )
+    console.log(
+        '  --append                      Include built-in pieui components in the manifest'
+    )
+    console.log('')
+    console.log('Options for list:')
+    console.log(
+        '  --src-dir <dir>, -s <dir>    Source directory (default: src)'
+    )
+    console.log('')
+    console.log('Filters for list:')
+    console.log('  all                 All components (default)')
+    console.log('  simple              Simple components (only data prop)')
+    console.log(
+        '  complex             Complex components (data + children props)'
+    )
+    console.log('  simple-container    Container with single content')
+    console.log('  complex-container   Container with array content')
+    console.log('')
+    console.log('Examples:')
+    console.log('  pieui init')
+    console.log('  pieui init --out-dir packages/app')
+    console.log(
+        '  pieui add MyCustomCard                        # Creates complex-container by default'
+    )
+    console.log(
+        '  pieui add simple MySimpleCard                 # Creates simple component'
+    )
+    console.log(
+        '  pieui add complex-container MyContainerCard   # Creates complex container'
+    )
+    console.log('  pieui postbuild --append --out-dir dist')
+    console.log(
+        '  pieui list                                    # List all components'
+    )
+    console.log(
+        '  pieui list simple                             # List only simple components'
+    )
+    console.log(
+        '  pieui list complex-container --src-dir app    # List complex containers in app/'
+    )
+}

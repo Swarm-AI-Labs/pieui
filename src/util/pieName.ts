@@ -1,4 +1,4 @@
-import {PIEBREAK} from "./pieConfig.ts";
+import { PIEBREAK } from './pieConfig.ts'
 
-
-export const pieName = (name: string, child: string) => `${name}${PIEBREAK}${child}`
+export const pieName = (name: string, child: string) =>
+    `${name}${PIEBREAK}${child}`
