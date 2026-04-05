@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useMemo } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import {
     QueryClient,
     QueryClientProvider,
@@ -44,13 +44,18 @@ const PieElectronRootContent: React.FC<PieRootProps> = ({
     const apiServer = getApiServer()
     const centrifugeServer = getCentrifugeServer()
     const renderingLogEnabled = isRenderingLogEnabled()
+    const [componentsReady, setComponentsReady] = useState(
+        isPieComponentsInitialized()
+    )
 
     useEffect(() => {
-        if (isPieComponentsInitialized()) {
-            return
+        if (!isPieComponentsInitialized()) {
+            initializePieComponents()
+            initializePie()
         }
-        initializePieComponents()
-        initializePie()
+        if (!componentsReady) {
+            setComponentsReady(true)
+        }
     }, [])
 
     const axiosInstance = useMemo(
@@ -79,10 +84,10 @@ const PieElectronRootContent: React.FC<PieRootProps> = ({
         queryKey: [
             'uiConfig',
             location.pathname + location.search,
-            isPieComponentsInitialized(),
+            componentsReady,
             apiServer,
         ],
-        enabled: isPieComponentsInitialized() && !!apiServer,
+        enabled: componentsReady && !!apiServer,
         queryFn: async () => {
             const params = new URLSearchParams(location.search)
             params.set('__pieroot', 'electron')

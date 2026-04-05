@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
 import MittContext, { getEmitter } from '../../util/mitt'
@@ -87,7 +87,7 @@ const PieBaseRootContent = ({
 }
 
 const PieBaseRoot = (props: PieBaseRootProps) => {
-    const queryClient = useMemo(() => new QueryClient(), [])
+    const [queryClient] = useState(() => new QueryClient())
 
     return (
         <NavigateContext.Provider value={props.onNavigate}>

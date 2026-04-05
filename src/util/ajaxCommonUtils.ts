@@ -183,16 +183,22 @@ export const useAjaxSubmit = (
     pathname?: string
 ) => {
     const { apiServer, enableRenderingLog } = usePieConfig()
+    // kwargs/depsNames чаще всего приходят как инлайн-литералы из серверного
+    // UIConfig — ссылка меняется на каждом рендере, поэтому ключом мемоизации
+    // должно быть значение, а не ссылка.
+    const kwargsKey = JSON.stringify(kwargs)
+    const depsKey = JSON.stringify(depsNames)
     return useMemo(
         () =>
             getAjaxSubmit(setUiAjaxConfiguration, kwargs, depsNames, pathname, {
                 apiServer,
                 renderingLogEnabled: enableRenderingLog,
             }),
+        // eslint-disable-next-line react-hooks/exhaustive-deps
         [
             setUiAjaxConfiguration,
-            kwargs,
-            depsNames,
+            kwargsKey,
+            depsKey,
             pathname,
             apiServer,
             enableRenderingLog,

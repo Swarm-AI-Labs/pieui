@@ -2,7 +2,7 @@
 
 import { UIConfigType, SetUiAjaxConfigurationType } from '../../types'
 import { getRegistryEntry } from '../../util/registry'
-import { Suspense, useContext, ReactNode } from 'react'
+import { Suspense, useContext, ReactNode, memo } from 'react'
 import FallbackContext from '../../util/fallback'
 import { isRenderingLogEnabled } from '../../util/pieConfig'
 
@@ -79,4 +79,4 @@ function UI({
     return node
 }
 
-export default UI
+export default memo(UI)

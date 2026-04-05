@@ -1,4 +1,11 @@
-import { ReactNode, useContext, useEffect, useRef, useState } from 'react'
+import {
+    ReactNode,
+    useCallback,
+    useContext,
+    useEffect,
+    useRef,
+    useState,
+} from 'react'
 import UI from '../../../UI'
 import { AjaxGroupCardProps } from '../types'
 import { UIConfigType, UIEventType } from '../../../../types'
@@ -25,41 +32,43 @@ const AjaxGroupCard = ({ data, content }: AjaxGroupCardProps) => {
     const lastValidUiConfigRef = useRef<UIConfigType>(content)
     const mitt = useContext(MittContext)
 
-    const setUiAjaxConfigurationForContentWrapper = (
-        content: UIConfigType | null
-    ) => {
-        if (content === null) {
-            setIsLoading(true)
-        } else {
-            setIsLoading(false)
-            if (!noReturn) {
-                lastValidUiConfigRef.current = content
-            }
-        }
-        if (!noReturn) {
-            setUiAjaxConfiguration(content)
-        }
-    }
-
-    const onChangeContent = (event: any) => {
-        lastValidUiConfigRef.current = event.content
-        setUiAjaxConfiguration(event.content)
-    }
-
-    const setUiAjaxConfigurationForEventsWrapper = (
-        events: Array<UIEventType> | null
-    ) => {
-        if (events === null) {
-            setIsLoading(true)
-        } else {
-            setIsLoading(false)
-            if (!noReturn) {
-                for (const ev of events) {
-                    mitt?.emit(ev.name, ev.data)
+    const setUiAjaxConfigurationForContentWrapper = useCallback(
+        (content: UIConfigType | null) => {
+            if (content === null) {
+                setIsLoading(true)
+            } else {
+                setIsLoading(false)
+                if (!noReturn) {
+                    lastValidUiConfigRef.current = content
                 }
             }
-        }
-    }
+            if (!noReturn) {
+                setUiAjaxConfiguration(content)
+            }
+        },
+        [noReturn]
+    )
+
+    const onChangeContent = useCallback((event: any) => {
+        lastValidUiConfigRef.current = event.content
+        setUiAjaxConfiguration(event.content)
+    }, [])
+
+    const setUiAjaxConfigurationForEventsWrapper = useCallback(
+        (events: Array<UIEventType> | null) => {
+            if (events === null) {
+                setIsLoading(true)
+            } else {
+                setIsLoading(false)
+                if (!noReturn) {
+                    for (const ev of events) {
+                        mitt?.emit(ev.name, ev.data)
+                    }
+                }
+            }
+        },
+        [noReturn, mitt]
+    )
 
     useEffect(() => {
         setUiAjaxConfiguration(content)

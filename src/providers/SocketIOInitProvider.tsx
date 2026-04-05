@@ -5,6 +5,7 @@ import SocketIOContext from '../util/socket'
 import { useIsSupported } from '../util/useIsSupported'
 import { Socket } from 'socket.io-client'
 import { getApiServer } from '../util/pieConfig'
+import { markSidAvailable } from '../util/waitForSidAvailable'
 
 const SocketIOInitProvider = ({ children }: { children: ReactNode }) => {
     const socket: Socket | null = useContext(SocketIOContext)
@@ -14,6 +15,7 @@ const SocketIOInitProvider = ({ children }: { children: ReactNode }) => {
     const onPieInitEvent = (event: any) => {
         if (typeof window !== 'undefined') {
             window.sid = event.sid
+            markSidAvailable()
             console.log(`SocketIO initialized: ${window.sid}`)
         }
     }

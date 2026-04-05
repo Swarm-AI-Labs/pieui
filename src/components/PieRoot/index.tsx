@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
     QueryClient,
     QueryClientProvider,
@@ -20,12 +20,7 @@ import { UIConfigType } from '../../types'
 import { AxiosError } from 'axios'
 import UI from '../UI'
 import { createAxiosDateTransformer } from 'axios-date-transformer'
-import {
-    getApiServer,
-    isRenderingLogEnabled,
-    getCentrifugeServer,
-    PieConfigContext,
-} from '../../util/pieConfig'
+import { PieConfigContext, useApiServer, useCentrifugeServer, useIsRenderingLogEnabled } from '../../util/pieConfig'
 import {
     initializePieComponents,
     isPieComponentsInitialized,
@@ -41,16 +36,19 @@ const PieRootContent = ({
     initializePie,
     queryOptions,
 }: PieRootProps) => {
-    const apiServer = getApiServer()
-    const centrifugeServer = getCentrifugeServer()
-    const renderingLogEnabled = isRenderingLogEnabled()
+    const apiServer = useApiServer()
+    const centrifugeServer = useCentrifugeServer()
+    const renderingLogEnabled = useIsRenderingLogEnabled()
+    const [componentsReady, setComponentsReady] = useState(isPieComponentsInitialized())
 
     useEffect(() => {
-        if (isPieComponentsInitialized()) {
-            return
+        if (!isPieComponentsInitialized()) {
+            initializePieComponents()
+            initializePie()
         }
-        initializePieComponents()
-        initializePie()
+        if (!componentsReady) {
+            setComponentsReady(true)
+        }
     }, [])
 
     const axiosInstance = useMemo(
@@ -80,10 +78,10 @@ const PieRootContent = ({
         queryKey: [
             'uiConfig',
             location.pathname + location.search,
-            isPieComponentsInitialized(),
+            componentsReady,
             apiServer,
         ],
-        enabled: isPieComponentsInitialized() && !!apiServer,
+        enabled: componentsReady && !!apiServer,
         queryFn: async () => {
             const params = new URLSearchParams(location.search)
             params.set('__pieroot', 'web')
