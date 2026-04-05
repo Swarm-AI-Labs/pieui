@@ -15,7 +15,10 @@ import {
     isPieComponentsInitialized,
 } from '../../util/initializeComponents.ts'
 import {
-    PieConfigContext, useApiServer, useCentrifugeServer, useIsRenderingLogEnabled,
+    PieConfigContext,
+    useApiServer,
+    useCentrifugeServer,
+    useIsRenderingLogEnabled,
 } from '../../util/pieConfig'
 import NavigateContext from '../../util/navigate.ts'
 import { PieBaseRootProps } from './types'
