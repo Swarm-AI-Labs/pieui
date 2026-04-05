@@ -4,7 +4,7 @@ import { UIConfigType, SetUiAjaxConfigurationType } from '../../types'
 import { getRegistryEntry } from '../../util/registry'
 import { Suspense, useContext, ReactNode } from 'react'
 import FallbackContext from '../../util/fallback'
-import { isRenderingLogEnabled } from '../../util/pieConfig'
+import { useIsRenderingLogEnabled } from '../../util/pieConfig'
 import UIRendererContext from '../../util/uiRenderer'
 
 function UILoading({
@@ -15,7 +15,7 @@ function UILoading({
     setUiAjaxConfiguration?: SetUiAjaxConfigurationType
 }) {
     const Fallback: ReactNode = useContext(FallbackContext)
-    const renderingLogEnabled = isRenderingLogEnabled()
+    const renderingLogEnabled = useIsRenderingLogEnabled()
 
     if (renderingLogEnabled) {
         console.log('[UILoading] Rendering fallback for:', uiConfig.card)

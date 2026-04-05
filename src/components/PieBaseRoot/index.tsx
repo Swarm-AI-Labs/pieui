@@ -15,10 +15,7 @@ import {
     isPieComponentsInitialized,
 } from '../../util/initializeComponents.ts'
 import {
-    getApiServer,
-    isRenderingLogEnabled,
-    getCentrifugeServer,
-    PieConfigContext,
+    PieConfigContext, useApiServer, useCentrifugeServer, useIsRenderingLogEnabled,
 } from '../../util/pieConfig'
 import NavigateContext from '../../util/navigate.ts'
 import { PieBaseRootProps } from './types'
@@ -29,9 +26,9 @@ const PieBaseRootContent = ({
     initializePie,
     children,
 }: PieBaseRootProps) => {
-    const apiServer = getApiServer()
-    const centrifugeServer = getCentrifugeServer()
-    const renderingLogEnabled = isRenderingLogEnabled()
+    const apiServer = useApiServer()
+    const centrifugeServer = useCentrifugeServer()
+    const renderingLogEnabled = useIsRenderingLogEnabled()
 
     useEffect(() => {
         if (isPieComponentsInitialized()) {

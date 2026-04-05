@@ -21,10 +21,7 @@ import { AxiosError } from 'axios'
 import UI from '../UI'
 import { createAxiosDateTransformer } from 'axios-date-transformer'
 import {
-    getApiServer,
-    isRenderingLogEnabled,
-    getCentrifugeServer,
-    PieConfigContext,
+    PieConfigContext, useApiServer, useCentrifugeServer, useIsRenderingLogEnabled,
 } from '../../util/pieConfig'
 import {
     initializePieComponents,
@@ -41,9 +38,9 @@ const PieElectronRootContent: React.FC<PieRootProps> = ({
     initializePie,
     queryOptions,
 }) => {
-    const apiServer = getApiServer()
-    const centrifugeServer = getCentrifugeServer()
-    const renderingLogEnabled = isRenderingLogEnabled()
+    const apiServer = useApiServer()
+    const centrifugeServer = useCentrifugeServer()
+    const renderingLogEnabled = useIsRenderingLogEnabled()
     const [componentsReady, setComponentsReady] = useState(
         isPieComponentsInitialized()
     )
