@@ -14,17 +14,11 @@ const defaultCompilerOptions = () => ({
     skipLibCheck: true,
 })
 
-export const findComponentRegistrations = (
-    srcDir: string
-): ComponentInfo[] => {
+export const findComponentRegistrations = (srcDir: string): ComponentInfo[] => {
     console.log(`[pieui] Searching for components in: ${srcDir}`)
 
     const files = glob.sync(`${srcDir}/**/*.{ts,tsx}`, {
-        ignore: [
-            '**/*.d.ts',
-            '**/dist/**',
-            '**/node_modules/**',
-        ],
+        ignore: ['**/*.d.ts', '**/dist/**', '**/node_modules/**'],
     })
 
     console.log(`[pieui] Found ${files.length} files to scan`)
