@@ -1,18 +1,24 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { getPageProcessor } from './pieConfig'
+import { usePageProcessor } from './pieConfig'
 import { InitData, InitDataUnsafe, WebApp } from '../types'
 
-export const useWebApp = (): WebApp | null => {
+export const useWebApp = ({ onError }: {onError?: () => void} = {}): WebApp | null => {
     const [webApp, setWebApp] = useState<WebApp | null>(null)
-    const pageProcessor = getPageProcessor()
+    const pageProcessor = usePageProcessor()
 
     useEffect(() => {
         if (typeof window === 'undefined') return
 
-        const wApp = window.Telegram.WebApp
-        wApp.ready()
+        const wApp = window.Telegram?.WebApp
+        if (!wApp) return
+
+        try {
+            wApp.ready?.()
+        } catch (e) {
+            onError?.()
+        }
 
         if (
             pageProcessor === 'telegram_expanded' &&

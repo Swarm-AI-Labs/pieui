@@ -77,7 +77,9 @@ const PieTelegramRootContent: React.FC<PieRootProps> = ({
         [apiServer, centrifugeServer]
     )
 
-    const webApp = useWebApp()
+    const webApp = useWebApp({
+        onError
+    })
 
     const {
         data: uiConfiguration,
