@@ -4,7 +4,9 @@ import { useEffect, useState } from 'react'
 import { usePageProcessor } from './pieConfig'
 import { InitData, InitDataUnsafe, WebApp } from '../types'
 
-export const useWebApp = ({ onError }: {onError?: () => void} = {}): WebApp | null => {
+export const useWebApp = ({
+    onError,
+}: { onError?: () => void } = {}): WebApp | null => {
     const [webApp, setWebApp] = useState<WebApp | null>(null)
     const pageProcessor = usePageProcessor()
 

@@ -78,7 +78,7 @@ const PieTelegramRootContent: React.FC<PieRootProps> = ({
     )
 
     const webApp = useWebApp({
-        onError
+        onError,
     })
 
     const {
