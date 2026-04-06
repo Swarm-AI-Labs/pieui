@@ -81,17 +81,35 @@ export type SettingsButtonType = {
 }
 
 export type HapticFeedbackType = {
-    impactOccurred: (style: 'light' | 'medium' | 'heavy' | 'rigid' | 'soft') => void
+    impactOccurred: (
+        style: 'light' | 'medium' | 'heavy' | 'rigid' | 'soft'
+    ) => void
     notificationOccurred: (type: 'error' | 'success' | 'warning') => void
     selectionChanged: () => void
 }
 
 export type CloudStorageType = {
-    setItem: (key: string, value: string, callback?: (error: Error | null, success?: boolean) => void) => void
-    getItem: (key: string, callback: (error: Error | null, value?: string) => void) => void
-    getItems: (keys: string[], callback: (error: Error | null, values?: Record<string, string>) => void) => void
-    removeItem: (key: string, callback?: (error: Error | null, success?: boolean) => void) => void
-    removeItems: (keys: string[], callback?: (error: Error | null, success?: boolean) => void) => void
+    setItem: (
+        key: string,
+        value: string,
+        callback?: (error: Error | null, success?: boolean) => void
+    ) => void
+    getItem: (
+        key: string,
+        callback: (error: Error | null, value?: string) => void
+    ) => void
+    getItems: (
+        keys: string[],
+        callback: (error: Error | null, values?: Record<string, string>) => void
+    ) => void
+    removeItem: (
+        key: string,
+        callback?: (error: Error | null, success?: boolean) => void
+    ) => void
+    removeItems: (
+        keys: string[],
+        callback?: (error: Error | null, success?: boolean) => void
+    ) => void
     getKeys: (callback: (error: Error | null, keys?: string[]) => void) => void
 }
 
@@ -104,9 +122,18 @@ export type BiometricManagerType = {
     isBiometricTokenSaved: boolean
     deviceId: string
     init: (callback?: () => void) => void
-    requestAccess: (params: { reason?: string }, callback?: (granted: boolean) => void) => void
-    authenticate: (params: { reason?: string }, callback?: (success: boolean, token?: string) => void) => void
-    updateBiometricToken: (token: string, callback?: (updated: boolean) => void) => void
+    requestAccess: (
+        params: { reason?: string },
+        callback?: (granted: boolean) => void
+    ) => void
+    authenticate: (
+        params: { reason?: string },
+        callback?: (success: boolean, token?: string) => void
+    ) => void
+    updateBiometricToken: (
+        token: string,
+        callback?: (updated: boolean) => void
+    ) => void
     openSettings: () => void
 }
 
@@ -125,7 +152,10 @@ export type DeviceOrientationType = {
     alpha: number
     beta: number
     gamma: number
-    start: (params?: { refresh_rate?: number; need_absolute?: boolean }, callback?: () => void) => void
+    start: (
+        params?: { refresh_rate?: number; need_absolute?: boolean },
+        callback?: () => void
+    ) => void
     stop: (callback?: () => void) => void
 }
 
@@ -144,21 +174,55 @@ export type LocationManagerType = {
     isAccessRequested: boolean
     isAccessGranted: boolean
     init: (callback?: () => void) => void
-    getLocation: (callback: (location: { latitude: number; longitude: number; altitude?: number; course?: number; speed?: number; horizontal_accuracy?: number; vertical_accuracy?: number; course_accuracy?: number; speed_accuracy?: number } | null) => void) => void
+    getLocation: (
+        callback: (
+            location: {
+                latitude: number
+                longitude: number
+                altitude?: number
+                course?: number
+                speed?: number
+                horizontal_accuracy?: number
+                vertical_accuracy?: number
+                course_accuracy?: number
+                speed_accuracy?: number
+            } | null
+        ) => void
+    ) => void
     openSettings: () => void
 }
 
 export type DeviceStorageType = {
-    setItem: (key: string, value: string, callback?: (error: Error | null, success?: boolean) => void) => void
-    getItem: (key: string, callback: (error: Error | null, value?: string) => void) => void
-    removeItem: (key: string, callback?: (error: Error | null, success?: boolean) => void) => void
+    setItem: (
+        key: string,
+        value: string,
+        callback?: (error: Error | null, success?: boolean) => void
+    ) => void
+    getItem: (
+        key: string,
+        callback: (error: Error | null, value?: string) => void
+    ) => void
+    removeItem: (
+        key: string,
+        callback?: (error: Error | null, success?: boolean) => void
+    ) => void
     clear: (callback?: (error: Error | null, success?: boolean) => void) => void
 }
 
 export type SecureStorageType = {
-    setItem: (key: string, value: string, callback?: (error: Error | null, success?: boolean) => void) => void
-    getItem: (key: string, callback: (error: Error | null, value?: string) => void) => void
-    removeItem: (key: string, callback?: (error: Error | null, success?: boolean) => void) => void
+    setItem: (
+        key: string,
+        value: string,
+        callback?: (error: Error | null, success?: boolean) => void
+    ) => void
+    getItem: (
+        key: string,
+        callback: (error: Error | null, value?: string) => void
+    ) => void
+    removeItem: (
+        key: string,
+        callback?: (error: Error | null, success?: boolean) => void
+    ) => void
 }
 
 export type PopupParams = {
@@ -284,15 +348,25 @@ export type WebApp = {
     /** Bot API 8.0+. A method that prompts the user to add the Mini App to the home screen. */
     addToHomeScreen: () => void
     /** Bot API 8.0+. A method that checks if adding to the home screen is supported and if the Mini App has already been added. */
-    checkHomeScreenStatus: (callback?: (status: 'unsupported' | 'unknown' | 'added' | 'missed') => void) => void
+    checkHomeScreenStatus: (
+        callback?: (
+            status: 'unsupported' | 'unknown' | 'added' | 'missed'
+        ) => void
+    ) => void
     /** A method that sets the app event handler. */
     onEvent: (eventType: string, eventHandler: (...args: any[]) => void) => void
     /** A method that deletes a previously set event handler. */
-    offEvent: (eventType: string, eventHandler: (...args: any[]) => void) => void
+    offEvent: (
+        eventType: string,
+        eventHandler: (...args: any[]) => void
+    ) => void
     /** A method used to send data to the bot. When this method is called, a service message is sent to the bot containing the data of the length up to 4096 bytes, and the Mini App is closed. */
     sendData: (data: string) => void
     /** Bot API 6.7+. A method that inserts the bot's username and the specified inline query in the current chat's input field. */
-    switchInlineQuery: (query: string, choose_chat_types?: Array<'users' | 'bots' | 'groups' | 'channels'>) => void
+    switchInlineQuery: (
+        query: string,
+        choose_chat_types?: Array<'users' | 'bots' | 'groups' | 'channels'>
+    ) => void
     /** A method that opens a link in an external browser. The Mini App will not be closed. Bot API 6.4+: supports options with try_instant_view. */
     openLink: (url: string, options?: { try_instant_view?: boolean }) => void
     /** A method that opens a telegram link inside the Telegram app. The Mini App will not be closed after this method is called. */
@@ -302,23 +376,42 @@ export type WebApp = {
     /** Bot API 7.8+. A method that opens the native story editor with the media specified in the media_url parameter as an HTTPS URL. */
     shareToStory: (media_url: string, params?: StoryShareParams) => void
     /** Bot API 8.0+. A method that opens a dialog allowing the user to share a message provided by the bot. */
-    shareMessage: (msg_id: string, callback?: (success: boolean) => void) => void
+    shareMessage: (
+        msg_id: string,
+        callback?: (success: boolean) => void
+    ) => void
     /** Bot API 8.0+. A method that opens a dialog allowing the user to set the specified custom emoji as their status. */
-    setEmojiStatus: (custom_emoji_id: string, params?: EmojiStatusParams, callback?: (success: boolean) => void) => void
+    setEmojiStatus: (
+        custom_emoji_id: string,
+        params?: EmojiStatusParams,
+        callback?: (success: boolean) => void
+    ) => void
     /** Bot API 8.0+. A method that shows a native popup requesting permission for the bot to manage user's emoji status. */
     requestEmojiStatusAccess: (callback?: (granted: boolean) => void) => void
     /** Bot API 8.0+. A method that displays a native popup prompting the user to download a file. */
-    downloadFile: (params: DownloadFileParams, callback?: (accepted: boolean) => void) => void
+    downloadFile: (
+        params: DownloadFileParams,
+        callback?: (accepted: boolean) => void
+    ) => void
     /** Bot API 9.1+. A method that hides the on-screen keyboard, if it is currently visible. */
     hideKeyboard: () => void
     /** Bot API 6.2+. A method that shows a native popup described by the params argument of the type PopupParams. */
-    showPopup: (params: PopupParams, callback?: (buttonId: string) => void) => void
+    showPopup: (
+        params: PopupParams,
+        callback?: (buttonId: string) => void
+    ) => void
     /** Bot API 6.2+. A method that shows message in a simple alert with a 'Close' button. */
     showAlert: (message: string, callback?: () => void) => void
     /** Bot API 6.2+. A method that shows message in a simple confirmation window with 'OK' and 'Cancel' buttons. */
-    showConfirm: (message: string, callback?: (confirmed: boolean) => void) => void
+    showConfirm: (
+        message: string,
+        callback?: (confirmed: boolean) => void
+    ) => void
     /** Bot API 6.4+. A method that shows a native popup for scanning a QR code. */
-    showScanQrPopup: (params: ScanQrPopupParams, callback?: (text: string) => boolean | void) => void
+    showScanQrPopup: (
+        params: ScanQrPopupParams,
+        callback?: (text: string) => boolean | void
+    ) => void
     /** Bot API 6.4+. A method that closes the native popup for scanning a QR code opened with the showScanQrPopup method. */
     closeScanQrPopup: () => void
     /** Bot API 6.4+. A method that requests text from the clipboard. */
