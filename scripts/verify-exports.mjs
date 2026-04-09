@@ -17,7 +17,6 @@ const EXPECTED_MAIN_EXPORTS = [
     'registerPieComponent',
     'useAjaxSubmit',
     'useOpenAIWebRTC',
-    'sx2radium',
     'cn',
     'PIEBREAK',
     'submitGlobalForm',

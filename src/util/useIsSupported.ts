@@ -2,31 +2,45 @@
 
 import { useEffect, useState } from 'react'
 
-// Модульный кэш: один inflight-запрос на ключ, результаты живут всю сессию.
-const supportCache = new Map<string, Promise<boolean>>()
+// Модульный кэш: результаты живут всю сессию, повторный fetch не делается.
+const resultCache = new Map<string, boolean>()
+const inflightCache = new Map<string, Promise<boolean>>()
 
 export function useIsSupported(
     apiServer: string,
     name: string
 ): boolean | null {
-    const [isSupported, setIsSupported] = useState<boolean | null>(null)
+    const key = `${apiServer}::${name}`
+    const cached = apiServer ? resultCache.get(key) : undefined
+    const [isSupported, setIsSupported] = useState<boolean | null>(
+        cached ?? null
+    )
 
     useEffect(() => {
         if (!apiServer) return
 
-        const key = `${apiServer}::${name}`
-        let promise = supportCache.get(key)
+        // Уже есть готовый результат — сразу ставим, fetch не нужен.
+        if (resultCache.has(key)) {
+            setIsSupported(resultCache.get(key)!)
+            return
+        }
+
+        let promise = inflightCache.get(key)
         if (!promise) {
             promise = fetch(apiServer + `api/support/${name}`, {
                 method: 'GET',
             })
                 .then((res) => res.json() as Promise<boolean>)
+                .then((result) => {
+                    resultCache.set(key, result)
+                    inflightCache.delete(key)
+                    return result
+                })
                 .catch((err) => {
-                    // При ошибке очищаем кэш, чтобы следующий маунт попробовал снова.
-                    supportCache.delete(key)
+                    inflightCache.delete(key)
                     throw err
                 })
-            supportCache.set(key, promise)
+            inflightCache.set(key, promise)
         }
 
         let cancelled = false
@@ -35,13 +49,13 @@ export function useIsSupported(
                 if (!cancelled) setIsSupported(res)
             })
             .catch(() => {
-                /* ignore, уже обработано выше */
+                /* ignore */
             })
 
         return () => {
             cancelled = true
         }
-    }, [apiServer, name])
+    }, [apiServer, name, key])
 
     return isSupported
 }

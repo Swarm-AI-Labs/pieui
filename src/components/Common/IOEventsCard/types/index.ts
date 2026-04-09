@@ -15,8 +15,9 @@ export interface IOEventData extends Omit<
     'transition' | 'style' | 'className' | 'onClick' | 'onClose' | 'onOpen'
 > {
     message: string
-    transition: 'bounce' | 'slide' | 'zoom' | 'flip'
-    sx: CSSProperties
+    alertType?: 'info' | 'error' | 'success' | 'warn'
+    transition?: 'bounce' | 'slide' | 'zoom' | 'flip'
+    sx?: CSSProperties
 }
 
 export interface NotificationEvent extends NotificationOptions {
