@@ -15,8 +15,6 @@ const EXPECTED_MAIN_EXPORTS = [
     'PieMaxRoot',
     'PieCard',
     'registerPieComponent',
-    'initializePieComponents',
-    'isPieComponentsInitialized',
     'useAjaxSubmit',
     'useOpenAIWebRTC',
     'sx2radium',
@@ -28,13 +26,11 @@ const EXPECTED_MAIN_EXPORTS = [
 const EXPECTED_COMPONENTS_EXPORTS = [
     'PieCard',
     'UI',
-    'ChatCard',
-    'AjaxButtonCard',
-    'RedirectButtonCard',
     'SequenceCard',
+    'BoxCard',
     'UnionCard',
+    'AjaxGroupCard',
     'HTMLEmbedCard',
-    'OpenAIVoiceAgentCard',
     'HiddenCard',
     'AutoRedirectCard',
     'IOEventsCard',
@@ -142,6 +138,42 @@ checkBundle(
     EXPECTED_COMPONENTS_EXPORTS
 )
 checkTypeDefinitions()
+
+// Check that registry contains all registered components at build time
+const EXPECTED_REGISTERED = [
+    'SequenceCard',
+    'BoxCard',
+    'UnionCard',
+    'AjaxGroupCard',
+    'HTMLEmbedCard',
+    'HiddenCard',
+    'AutoRedirectCard',
+    'IOEventsCard',
+]
+
+async function checkRegistry() {
+    console.log('\n--- Registry (built-in component registration) ---')
+    try {
+        const mod = await import('../dist/index.js')
+        const reg = mod.registry || mod.default?.registry
+        if (!reg) {
+            fail('registry is not exported')
+            return
+        }
+        const registered = Array.from(reg.keys())
+        console.log(`  Registered: ${registered.join(', ')}`)
+        const missing = EXPECTED_REGISTERED.filter((name) => !reg.has(name))
+        if (missing.length > 0) {
+            fail(`Missing registered components: ${missing.join(', ')}`)
+        } else {
+            pass(`All ${EXPECTED_REGISTERED.length} components registered in registry`)
+        }
+    } catch (e) {
+        fail(`Could not import dist/index.js: ${e.message}`)
+    }
+}
+
+await checkRegistry()
 
 console.log('')
 if (failed) {
