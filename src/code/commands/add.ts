@@ -7,7 +7,6 @@ import {
     componentIndexTemplate,
     componentTemplateFor,
     componentTypesTemplate,
-    registerCallTemplate,
 } from '../templates'
 
 const updateRegistryFile = (
@@ -17,12 +16,9 @@ const updateRegistryFile = (
 ) => {
     let registryContent = fs.readFileSync(registryPath, 'utf8')
 
-    // Check if component is already registered
-    const componentRegex = new RegExp(
-        `registerPieComponent\\s*\\(\\s*\\{[^}]*name:\\s*['"\`]${componentName}['"\`]`,
-        's'
-    )
-    if (componentRegex.test(registryContent)) {
+    // Check if component is already imported
+    const importRegex = new RegExp(`["']@/piecomponents/${componentName}["']`)
+    if (importRegex.test(registryContent)) {
         console.error(
             `[pieui] Error: Component ${componentName} is already registered in registry.ts`
         )
@@ -31,112 +27,9 @@ const updateRegistryFile = (
         process.exit(1)
     }
 
-    // Check if import already exists
-    const importRegex = new RegExp(`import\\s+${componentName}\\s+from`)
-    if (importRegex.test(registryContent)) {
-        console.error(
-            `[pieui] Error: Import for ${componentName} already exists in registry.ts`
-        )
-        console.error('[pieui] Aborting to prevent duplicate import')
-        fs.rmSync(componentDir, { recursive: true, force: true })
-        process.exit(1)
-    }
-
-    // Add import
-    const importLine = `import ${componentName} from "./${componentName}/ui/${componentName}";`
-
-    const lastImportMatch = registryContent.match(
-        /import .* from "\.\/.*\/ui\/.*";/g
-    )
-    if (lastImportMatch) {
-        const lastImport = lastImportMatch[lastImportMatch.length - 1]
-        const insertPos =
-            registryContent.lastIndexOf(lastImport) + lastImport.length
-        registryContent =
-            registryContent.slice(0, insertPos) +
-            '\n' +
-            importLine +
-            registryContent.slice(insertPos)
-    } else {
-        const pieuiImportMatch = registryContent.match(
-            /import .* from ["']@piedata\/pieui["'];/
-        )
-        if (pieuiImportMatch) {
-            const pieuiImportEnd =
-                registryContent.indexOf(pieuiImportMatch[0]) +
-                pieuiImportMatch[0].length
-            registryContent =
-                registryContent.slice(0, pieuiImportEnd) +
-                '\n\n// Import your custom components here\n// Example:\n// import MyCustomCard from "./MyCustomCard/ui/MyCustomCard";\n' +
-                importLine +
-                registryContent.slice(pieuiImportEnd)
-        }
-    }
-
-    // Add registration inside the initializePieUI function
-    const registerLine = registerCallTemplate(componentName)
-
-    const functionMatch = registryContent.match(
-        /export const initializePieUI = \(\) => \{([\s\S]*?)\n\}/m
-    )
-    if (functionMatch) {
-        const functionContent = functionMatch[1]
-
-        if (functionContent.includes('registerPieComponent({')) {
-            const lastRegisterMatch = functionContent.match(
-                /registerPieComponent\([^)]+\);/g
-            )
-            if (lastRegisterMatch) {
-                const lastRegister =
-                    lastRegisterMatch[lastRegisterMatch.length - 1]
-                const lastRegisterPos =
-                    registryContent.lastIndexOf(lastRegister) +
-                    lastRegister.length
-                registryContent =
-                    registryContent.slice(0, lastRegisterPos) +
-                    '\n\n' +
-                    registerLine +
-                    registryContent.slice(lastRegisterPos)
-            }
-        } else {
-            const functionStart = registryContent.indexOf(
-                'export const initializePieUI = () => {'
-            )
-            const openBracePos = registryContent.indexOf('{', functionStart) + 1
-
-            const commentStart = registryContent.indexOf(
-                '// Register your custom components here',
-                openBracePos
-            )
-            if (
-                commentStart !== -1 &&
-                commentStart < registryContent.indexOf('}', openBracePos)
-            ) {
-                const lines = registryContent
-                    .substring(commentStart)
-                    .split('\n')
-                let commentEnd = commentStart
-                for (const line of lines) {
-                    if (line.trim() && !line.trim().startsWith('//')) {
-                        break
-                    }
-                    commentEnd += line.length + 1
-                }
-
-                registryContent =
-                    registryContent.slice(0, commentStart) +
-                    registerLine +
-                    '\n' +
-                    registryContent.slice(commentEnd)
-            } else {
-                registryContent =
-                    registryContent.slice(0, openBracePos) +
-                    '\n' +
-                    registerLine +
-                    registryContent.slice(openBracePos)
-            }
-        }
-    }
+    // Add side-effect import at the end of the file
+    const importLine = `import "@/piecomponents/${componentName}";`
+    registryContent = registryContent.trimEnd() + '\n' + importLine + '\n'
 
     fs.writeFileSync(registryPath, registryContent, 'utf8')
 }

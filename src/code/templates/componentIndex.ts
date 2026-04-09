@@ -1,3 +1,9 @@
 export const componentIndexTemplate = (componentName: string): string =>
-    `export { default } from './ui/${componentName}'
+    `import { registerPieComponent } from "@piedata/pieui";
+import ${componentName} from "./ui/${componentName}";
+
+export default registerPieComponent({
+  name: "${componentName}",
+  component: ${componentName},
+});
 `

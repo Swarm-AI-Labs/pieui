@@ -20,22 +20,11 @@ export const initCommand = (outDir: string) => {
 
     // Create registry.ts
     const registryPath = path.join(pieComponentsDir, 'registry.ts')
-    const registryContent = `"use client"
+    const registryContent = `"use client";
 
-import { registerPieComponent } from "@piedata/pieui";
-
-// Import your custom components here
+// Side-effect imports — each index.ts calls registerPieComponent at module level
 // Example:
-// import MyCustomCard from "./MyCustomCard/ui/MyCustomCard";
-
-export const initializePieUI = () => {
-    // Register your custom components here
-    // Example:
-    // registerPieComponent({
-    //     name: 'MyCustomCard',
-    //     component: MyCustomCard,
-    // });
-}
+// import "@/piecomponents/MyCustomCard";
 `
 
     if (!fs.existsSync(registryPath)) {
@@ -115,8 +104,7 @@ export const initializePieUI = () => {
     console.log('[pieui] Initialization complete!')
     console.log('[pieui] Next steps:')
     console.log(
-        '  1. Import { initializePieUI } from "./piecomponents/registry" in your app'
+        '  1. Import "./piecomponents/registry" in your app entry point'
     )
-    console.log('  2. Call initializePieUI() before using PieRoot')
-    console.log('  3. Use "pieui add <ComponentName>" to create new components')
+    console.log('  2. Use "pieui add <ComponentName>" to create new components')
 }

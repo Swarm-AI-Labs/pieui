@@ -35,19 +35,12 @@ export const removeCommand = (componentName: string) => {
         let registryContent = fs.readFileSync(registryPath, 'utf8')
         const originalContent = registryContent
 
-        // Remove import line
+        // Remove side-effect import line
         const importRegex = new RegExp(
-            `^import\\s+${componentName}\\s+from\\s+[\"'].*[\"'];?\\s*\\n`,
+            `^import\\s+["']@/piecomponents/${componentName}["'];?\\s*\\n`,
             'gm'
         )
         registryContent = registryContent.replace(importRegex, '')
-
-        // Remove registerPieComponent block
-        const registerRegex = new RegExp(
-            `\\s*registerPieComponent\\(\\s*\\{[^}]*name:\\s*['"\`]${componentName}['"\`][^)]*\\)\\s*;?`,
-            'gs'
-        )
-        registryContent = registryContent.replace(registerRegex, '')
 
         // Clean up double blank lines
         registryContent = registryContent.replace(/\n{3,}/g, '\n\n')

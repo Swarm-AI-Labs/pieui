@@ -1,19 +1,35 @@
 # bunfig.toml
 [build]
 external = [
+  # React
   "react",
   "react-dom",
   "react/jsx-runtime",
   "react/jsx-dev-runtime",
 
+  # Dependencies — all externalized, consumer provides them
+  "@openai/agents",
+  "@tanstack/react-query",
+  "@telegram-apps/sdk",
+  "annyang",
+  "axios",
+  "axios-date-transformer",
+  "centrifuge",
+  "clsx",
+  "html-react-parser",
+  "mitt",
+  "react-toastify",
+  "socket.io-client",
+  "tailwind-merge",
+  "zod",
+  "zod-from-json-schema",
+
+  # Dev-only (used by CLI/build tooling)
+  "glob",
   "highlight.js",
   "rehype-highlight",
-  "glob",
   "typescript",
   "typescript-json-schema",
-  "@tanstack/react-query",
-  "fsl-authorization",
-  "vm2"
 ]
 
 [test]
