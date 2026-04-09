@@ -166,7 +166,9 @@ async function checkRegistry() {
         if (missing.length > 0) {
             fail(`Missing registered components: ${missing.join(', ')}`)
         } else {
-            pass(`All ${EXPECTED_REGISTERED.length} components registered in registry`)
+            pass(
+                `All ${EXPECTED_REGISTERED.length} components registered in registry`
+            )
         }
     } catch (e) {
         fail(`Could not import dist/index.js: ${e.message}`)
