@@ -16,7 +16,9 @@ const onAlertEvent = (event: IOEventData) => {
     const options: ToastOptions = {
         ...event,
         type: event.alertType as ToastOptions['type'],
-        transition: event.transition ? TRANSITIONS[event.transition] : undefined,
+        transition: event.transition
+            ? TRANSITIONS[event.transition]
+            : undefined,
         position: event.position ?? 'bottom-right',
         autoClose: event.autoClose ?? 3000,
         style: {
@@ -96,9 +98,7 @@ const IOEventsCard = ({ data }: IOEventsCardProps) => {
             redirect: (event: { to?: string }) => {
                 if (event.to) {
                     const url = event.to
-                    const isExternal = /^[a-zA-Z][a-zA-Z\d+\-.]*:\/\//.test(
-                        url
-                    )
+                    const isExternal = /^[a-zA-Z][a-zA-Z\d+\-.]*:\/\//.test(url)
                     if (isExternal) {
                         window.location.href = url
                     } else {
@@ -111,9 +111,7 @@ const IOEventsCard = ({ data }: IOEventsCardProps) => {
             reload: (event: { to?: string; forceReload?: boolean }) => {
                 if (event.to) {
                     const url = event.to
-                    const isExternal = /^[a-zA-Z][a-zA-Z\d+\-.]*:\/\//.test(
-                        url
-                    )
+                    const isExternal = /^[a-zA-Z][a-zA-Z\d+\-.]*:\/\//.test(url)
                     if (isExternal) {
                         window.location.href = url
                     } else {
