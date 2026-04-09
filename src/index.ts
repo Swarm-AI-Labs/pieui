@@ -1,5 +1,7 @@
 'use client'
 
+export * from './components'
+
 export { default as UI } from './components/UI'
 export { default as UILoading } from './components/UILoading'
 export {
@@ -10,14 +12,18 @@ export { default as PieRoot } from './components/PieRoot'
 export { default as PieTelegramRoot } from './components/PieTelegramRoot'
 export { default as PieBaseRoot } from './components/PieBaseRoot'
 export { default as PieMaxRoot } from './components/PieMaxRoot'
-export { default as PieElectronRoot } from './components/PieElectronRoot'
-export { default as PieExpoRoot } from './components/PieExpoRoot'
 export { default as PieCard } from './components/PieCard'
-export { registerPieComponent } from './util/registry'
 export {
-    initializePieComponents,
-    isPieComponentsInitialized,
-} from './util/initializeComponents'
+    registerPieComponent,
+    getAllRegisteredComponents,
+    getRegistrySize,
+    registry,
+    hasComponent,
+    getRegistryEntry,
+    getComponentMeta,
+    registerMultipleComponents,
+    unregisterComponent,
+} from './util/registry'
 
 export type {
     PieComponentProps,

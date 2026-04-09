@@ -2,7 +2,7 @@ import { ComponentMetadata, ComponentRegistration } from '../types'
 import { trackLazy } from './lazy'
 import { ComponentType } from 'react'
 
-const registry = new Map<string, ComponentRegistration<any>>()
+export const registry = new Map<string, ComponentRegistration<any>>()
 
 const normalizeRegistration = <TProps>(
     registration: ComponentRegistration<TProps>

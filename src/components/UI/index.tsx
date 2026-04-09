@@ -65,7 +65,7 @@ function UI({
         return (
             <Suspense
                 key={`${entry.name}`}
-                fallback={entry.fallback ?? Fallback}
+                fallback={entry.fallback ? <entry.fallback /> : Fallback}
             >
                 {node}
             </Suspense>

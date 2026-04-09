@@ -1,4 +1,4 @@
-import { ComponentType, ReactNode } from 'react'
+import { ComponentType } from 'react'
 
 export type ShowPopupOptions = {
     title?: string
@@ -637,7 +637,7 @@ export type PieComponentProps<TData = unknown> =
 export interface ComponentRegistration<TProps> {
     name: string
     component?: ComponentType<TProps>
-    fallback?: ReactNode
+    fallback?: ComponentType<{}>
     loader?: () => Promise<{ default: ComponentType<TProps> }>
     metadata?: ComponentMetadata
     isLazy?: boolean

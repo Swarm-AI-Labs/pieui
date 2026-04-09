@@ -18,6 +18,5 @@ export interface PieRootProps {
     onError?: () => void
     onNavigate?: (url: string) => void
     config: PieConfig
-    initializePie: () => void
     queryOptions?: PieQueryOptions
 }

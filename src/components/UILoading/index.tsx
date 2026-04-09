@@ -51,7 +51,8 @@ function UILoading({
         if (renderingLogEnabled) {
             console.log('[UILoading] Rendering fallback for:', entry.name)
         }
-        return <>{entry.fallback}</>
+        const EntryFallback = entry.fallback
+        return <EntryFallback />
     }
 
     if (renderingLogEnabled) {

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import {
     QueryClient,
     QueryClientProvider,
@@ -26,10 +26,6 @@ import {
     useCentrifugeServer,
     useIsRenderingLogEnabled,
 } from '../../util/pieConfig'
-import {
-    initializePieComponents,
-    isPieComponentsInitialized,
-} from '../../util/initializeComponents.ts'
 import NavigateContext from '../../util/navigate.ts'
 import { resolvePieCacheFallback } from '../../util/piecache'
 
@@ -38,25 +34,11 @@ const PieRootContent = ({
     fallback,
     piecache,
     onError,
-    initializePie,
     queryOptions,
 }: PieRootProps) => {
     const apiServer = useApiServer()
     const centrifugeServer = useCentrifugeServer()
     const renderingLogEnabled = useIsRenderingLogEnabled()
-    const [componentsReady, setComponentsReady] = useState(
-        isPieComponentsInitialized()
-    )
-
-    useEffect(() => {
-        if (!isPieComponentsInitialized()) {
-            initializePieComponents()
-            initializePie()
-        }
-        if (!componentsReady) {
-            setComponentsReady(true)
-        }
-    }, [])
 
     const axiosInstance = useMemo(
         () =>
@@ -82,13 +64,8 @@ const PieRootContent = ({
         isLoading,
         error,
     } = useQuery<UIConfigType, AxiosError>({
-        queryKey: [
-            'uiConfig',
-            location.pathname + location.search,
-            componentsReady,
-            apiServer,
-        ],
-        enabled: componentsReady && !!apiServer,
+        queryKey: ['uiConfig', location.pathname + location.search, apiServer],
+        enabled: !!apiServer,
         queryFn: async () => {
             const params = new URLSearchParams(location.search)
             params.set('__pieroot', 'web')

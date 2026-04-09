@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useMemo } from 'react'
 import {
     QueryClient,
     QueryClientProvider,
@@ -26,10 +26,6 @@ import {
     useCentrifugeServer,
     useIsRenderingLogEnabled,
 } from '../../util/pieConfig'
-import {
-    initializePieComponents,
-    isPieComponentsInitialized,
-} from '../../util/initializeComponents.ts'
 import { useMaxWebApp } from '../../util/useMaxWebApp.ts'
 import NavigateContext from '../../util/navigate.ts'
 import { resolvePieCacheFallback } from '../../util/piecache'
@@ -39,25 +35,11 @@ const PieMaxRootContent: React.FC<PieRootProps> = ({
     fallback,
     piecache,
     onError,
-    initializePie,
     queryOptions,
 }) => {
     const apiServer = useApiServer()
     const centrifugeServer = useCentrifugeServer()
     const renderingLogEnabled = useIsRenderingLogEnabled()
-    const [componentsReady, setComponentsReady] = useState(
-        isPieComponentsInitialized()
-    )
-
-    useEffect(() => {
-        if (!isPieComponentsInitialized()) {
-            initializePieComponents()
-            initializePie()
-        }
-        if (!componentsReady) {
-            setComponentsReady(true)
-        }
-    }, [])
 
     const axiosInstance = useMemo(
         () =>
@@ -88,7 +70,6 @@ const PieMaxRootContent: React.FC<PieRootProps> = ({
             'uiConfig',
             location.pathname + location.search,
             webApp?.initData,
-            componentsReady,
         ],
         queryFn: async () => {
             const params = new URLSearchParams(location.search)
@@ -122,7 +103,7 @@ const PieMaxRootContent: React.FC<PieRootProps> = ({
             }
             return response.data
         },
-        enabled: componentsReady && !!webApp?.initData,
+        enabled: !!webApp?.initData,
         staleTime: Infinity,
         gcTime: Infinity,
         refetchOnWindowFocus: false,

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
 import MittContext, { getEmitter } from '../../util/mitt'
@@ -10,10 +10,6 @@ import CentrifugeIOContext, { getCentrifuge } from '../../util/centrifuge'
 import SocketIOInitProvider from '../../providers/SocketIOInitProvider'
 import CentrifugeIOInitProvider from '../../providers/CentrifugeIOInitProvider'
 import FallbackContext from '../../util/fallback'
-import {
-    initializePieComponents,
-    isPieComponentsInitialized,
-} from '../../util/initializeComponents.ts'
 import {
     PieConfigContext,
     useApiServer,
@@ -26,20 +22,11 @@ import { PieBaseRootProps } from './types'
 const PieBaseRootContent = ({
     location,
     fallback,
-    initializePie,
     children,
 }: PieBaseRootProps) => {
     const apiServer = useApiServer()
     const centrifugeServer = useCentrifugeServer()
     const renderingLogEnabled = useIsRenderingLogEnabled()
-
-    useEffect(() => {
-        if (isPieComponentsInitialized()) {
-            return
-        }
-        initializePieComponents()
-        initializePie()
-    }, [])
 
     const emitter = useMemo(() => getEmitter(), [])
     const socket = useMemo(

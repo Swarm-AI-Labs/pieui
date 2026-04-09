@@ -1,10 +1,12 @@
 import { AutoRedirectCardProps } from '../types'
-import { useContext, useEffect } from 'react'
+import { ReactNode, useContext, useEffect } from 'react'
 import NavigateContext from '../../../../util/navigate.ts'
+import FallbackContext from '../../../../util/fallback.tsx'
 
 const AutoRedirectCard = ({ data }: AutoRedirectCardProps) => {
     const { url } = data
     const navigate = useContext(NavigateContext)
+    const Fallback: ReactNode = useContext(FallbackContext)
 
     useEffect(() => {
         const isExternal = /^[a-zA-Z][a-zA-Z\d+\-.]*:\/\//.test(url)
@@ -15,7 +17,7 @@ const AutoRedirectCard = ({ data }: AutoRedirectCardProps) => {
         }
     }, [url, navigate])
 
-    return <></>
+    return <>{Fallback}</>
 }
 
 export default AutoRedirectCard
