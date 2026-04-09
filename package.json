@@ -44,7 +44,7 @@
         "build:components:cjs:debug": "bun build src/components/index.ts --outfile dist/components/index.js --format cjs --target node --jsx=automatic --jsx-import-source=react --packages=external",
         "build:debug": "rm -rf ./dist && rm -rf pieui-*.tgz && bun run build:clean && NODE_ENV=production bun run build:esm:debug && NODE_ENV=production bun run build:cjs:debug && NODE_ENV=production bun run build:components:esm:debug && NODE_ENV=production bun run build:components:cjs:debug && NODE_ENV=production bun run build:types && NODE_ENV=production bun run build:cli && bun src/cli.ts postbuild --src-dir src --out-dir dist && bun pm pack",
         "build:types": "tsc --emitDeclarationOnly",
-        "build:cli": "bun build src/cli.ts --outfile dist/cli.js --format cjs --target node",
+        "build:cli": "bun build src/cli.ts --outfile dist/cli.js --format cjs --target node --external vm2",
         "dev": "bun run src/index.ts",
         "test": "bun test",
         "typecheck": "tsc --noEmit",
@@ -108,6 +108,7 @@
         "react-toastify": "^11.0.5",
         "socket.io-client": "^4.8.3",
         "tailwind-merge": "^3.4.0",
+        "vm2": "^3.10.3",
         "zod": "^4.3.6",
         "zod-from-json-schema": "^0.5.2"
     }
