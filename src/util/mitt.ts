@@ -58,10 +58,7 @@ export function usePieEmit(name: string) {
     const emitter = useContext(MittContext)
     return useCallback(
         (methodName: string, payload?: any) => {
-            ;(emitter ?? getEmitter()).emit(
-                `pie${methodName}_${name}`,
-                payload
-            )
+            ;(emitter ?? getEmitter()).emit(`pie${methodName}_${name}`, payload)
         },
         [name, emitter]
     )

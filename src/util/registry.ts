@@ -2,7 +2,6 @@ import { ComponentMetadata, ComponentRegistration } from '../types'
 import { trackLazy } from './lazy'
 import { ComponentType } from 'react'
 
-
 /**
  * Central in-memory registry of PieUI components keyed by their name. Every
  * call to {@link registerPieComponent} writes into this `Map`, and the
