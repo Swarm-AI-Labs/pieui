@@ -6,10 +6,7 @@ import { simpleComponentTemplate } from './simpleComponent'
 import { complexComponentTemplate } from './complexComponent'
 import { simpleContainerComponentTemplate } from './simpleContainerComponent'
 import { complexContainerComponentTemplate } from './complexContainerComponent'
-import {
-    nextConfigTemplate,
-    REQUIRED_NEXT_CONFIG_ENV_KEYS,
-} from './nextConfig'
+import { nextConfigTemplate, REQUIRED_NEXT_CONFIG_ENV_KEYS } from './nextConfig'
 
 export {
     componentIndexTemplate,

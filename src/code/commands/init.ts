@@ -1,9 +1,6 @@
 import fs from 'fs'
 import path from 'path'
-import {
-    nextConfigTemplate,
-    REQUIRED_NEXT_CONFIG_ENV_KEYS,
-} from '../templates'
+import { nextConfigTemplate, REQUIRED_NEXT_CONFIG_ENV_KEYS } from '../templates'
 
 export const initCommand = (outDir: string) => {
     const resolvedOutDir = path.resolve(process.cwd(), outDir)
@@ -155,9 +152,7 @@ const ensureNextConfig = (resolvedOutDir: string) => {
                 `[pieui] Updated ${path.basename(existing)} with missing PieUI settings`
             )
         } else {
-            console.log(
-                '[pieui] Next.js config already has all PieUI settings'
-            )
+            console.log('[pieui] Next.js config already has all PieUI settings')
         }
     } catch (error) {
         console.error('[pieui] Error updating Next.js config:', error)
@@ -197,9 +192,7 @@ const ensureEnvKeys = (content: string): string => {
     const envBlock = `  env: {\n${missingKeys.map(envEntryFor).join('\n')}\n  },`
     const inserted = insertIntoConfigObject(content, envBlock)
     if (inserted) {
-        console.log(
-            `[pieui] Adding env block with: ${missingKeys.join(', ')}`
-        )
+        console.log(`[pieui] Adding env block with: ${missingKeys.join(', ')}`)
         return inserted
     }
     console.log(
