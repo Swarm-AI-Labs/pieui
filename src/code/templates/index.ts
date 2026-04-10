@@ -6,8 +6,18 @@ import { simpleComponentTemplate } from './simpleComponent'
 import { complexComponentTemplate } from './complexComponent'
 import { simpleContainerComponentTemplate } from './simpleContainerComponent'
 import { complexContainerComponentTemplate } from './complexContainerComponent'
+import {
+    nextConfigTemplate,
+    REQUIRED_NEXT_CONFIG_ENV_KEYS,
+} from './nextConfig'
 
-export { componentIndexTemplate, componentTypesTemplate, registerCallTemplate }
+export {
+    componentIndexTemplate,
+    componentTypesTemplate,
+    registerCallTemplate,
+    nextConfigTemplate,
+    REQUIRED_NEXT_CONFIG_ENV_KEYS,
+}
 
 const BASE_INTERFACE_BY_TYPE: Record<ComponentType, string> = {
     simple: 'PieSimpleComponentProps',
