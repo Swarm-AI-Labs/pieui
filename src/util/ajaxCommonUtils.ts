@@ -54,25 +54,8 @@ export const getAjaxSubmit = (
 ) => {
     const renderingLogEnabled = options?.renderingLogEnabled ?? false
 
-    if (!options?.apiServer) {
-        if (renderingLogEnabled) {
-            console.warn('Registration FAILED: apiServer is missing!')
-        }
-        return () => {}
-    }
-    const apiServer = options?.apiServer
-
     if (renderingLogEnabled) {
         console.log('Registering AJAX: ', pathname, kwargs, depsNames)
-    }
-
-    if (!pathname || !setUiAjaxConfiguration) {
-        if (renderingLogEnabled) {
-            console.warn(
-                'Registration FAILED: pathname or setUiAjaxConfiguration is missing!'
-            )
-        }
-        return () => {}
     }
 
     return async (extraKwargs: Record<string, any> = {}) => {
@@ -80,6 +63,23 @@ export const getAjaxSubmit = (
             if (renderingLogEnabled) {
                 console.warn(
                     'getAjaxSubmit called on server, skipping DOM-dependent logic'
+                )
+            }
+            return
+        }
+
+        const apiServer = options?.apiServer
+        if (!apiServer) {
+            if (renderingLogEnabled) {
+                console.warn('AJAX skipped: apiServer is missing')
+            }
+            return
+        }
+
+        if (!pathname || !setUiAjaxConfiguration) {
+            if (renderingLogEnabled) {
+                console.warn(
+                    'AJAX skipped: pathname or setUiAjaxConfiguration is missing'
                 )
             }
             return
