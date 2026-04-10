@@ -183,6 +183,19 @@ const PieTelegramRootContent: React.FC<PieRootProps> = ({
     )
 }
 
+/**
+ * PieUI root for Telegram Mini Apps.
+ *
+ * Behaves like {@link PieRoot} but waits for `window.Telegram.WebApp` via
+ * {@link useWebApp}, forwards the Telegram `initData` payload to the
+ * backend as a query parameter, and identifies itself to the server with
+ * `__pieroot=telegram`. Handles `ready()`/optional `expand()` based on the
+ * configured `pageProcessor`, so iOS/Android clients render full-screen
+ * when `pageProcessor === 'telegram_expanded'`.
+ *
+ * Throws when `apiServer` is missing. Errors raised inside `wApp.ready()`
+ * are forwarded to `onError`.
+ */
 const PieTelegramRoot: React.FC<PieRootProps> = (props) => {
     const queryClient = useMemo(() => new QueryClient(), [])
 

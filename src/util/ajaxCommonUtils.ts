@@ -6,12 +6,45 @@ import waitForSidAvailable from './waitForSidAvailable'
 import { usePieConfig } from './pieConfig.ts'
 import { useMemo } from 'react'
 
-/** Options to avoid calling hooks inside useMemo. Pass from component via usePieConfig(). */
+/**
+ * Options for {@link getAjaxSubmit}. Passed explicitly so that the helper can
+ * stay a plain function — callers forward the values they already obtained
+ * from {@link usePieConfig} instead of the helper calling hooks on its own.
+ */
 export type GetAjaxSubmitOptions = {
+    /** Base URL of the PieUI API server (must end with `/`). */
     apiServer?: string | null
+    /** When `true`, the helper will log registration and error details. */
     renderingLogEnabled?: boolean
 }
 
+/**
+ * Builds an async "submit" function that issues an AJAX request to
+ * `api/ajax_content{pathname}` and streams (or JSON-decodes) the response
+ * into a `setUiAjaxConfiguration` callback supplied by an Ajax container.
+ *
+ * The returned function collects form data from:
+ * 1. the static `kwargs` object,
+ * 2. any `extraKwargs` passed at call time,
+ * 3. named inputs from the DOM listed in `depsNames` (including `sid`,
+ *    which is resolved via {@link waitForSidAvailable}), and
+ * 4. file inputs (multiple files supported).
+ *
+ * If the server streams NDJSON, each line is parsed as a `UIEventType` and
+ * applied incrementally; otherwise the full JSON body replaces the current
+ * Ajax configuration.
+ *
+ * On missing `apiServer`, `pathname` or `setUiAjaxConfiguration` the helper
+ * returns a no-op function so call sites do not need to null-check.
+ *
+ * @param setUiAjaxConfiguration Setter provided by the enclosing Ajax card.
+ * @param kwargs                 Static key/value pairs appended to the request.
+ * @param depsNames              Names of DOM inputs whose current values should
+ *                               also be sent.
+ * @param pathname               Path segment appended to `api/ajax_content`.
+ * @param options                See {@link GetAjaxSubmitOptions}.
+ * @returns An `async (extraKwargs?) => Promise<any>` submit function.
+ */
 export const getAjaxSubmit = (
     setUiAjaxConfiguration?: SetUiAjaxConfigurationType,
     kwargs: Record<string, any> = {},
@@ -176,6 +209,20 @@ export const getAjaxSubmit = (
     }
 }
 
+/**
+ * React hook wrapper around {@link getAjaxSubmit}. Reads `apiServer` and
+ * `enableRenderingLog` from {@link usePieConfig} and memoizes the submit
+ * function so that stable inline literals from server-driven UIConfig don't
+ * cause a new function identity on every render — memoization is keyed on
+ * the stringified `kwargs`/`depsNames` rather than their reference.
+ *
+ * @param setUiAjaxConfiguration Setter provided by the enclosing Ajax card.
+ * @param kwargs                 Static key/value pairs appended to the request.
+ * @param depsNames              Names of DOM inputs whose current values should
+ *                               be sent alongside the request.
+ * @param pathname               Path segment appended to `api/ajax_content`.
+ * @returns A memoized submit function; see {@link getAjaxSubmit}.
+ */
 export const useAjaxSubmit = (
     setUiAjaxConfiguration?: SetUiAjaxConfigurationType,
     kwargs: Record<string, any> = {},

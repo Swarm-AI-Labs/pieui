@@ -181,6 +181,23 @@ const PieRootContent = ({
     )
 }
 
+/**
+ * Main PieUI root for regular web applications.
+ *
+ * Fetches a `UIConfigType` from `api/content{pathname}{search}` via
+ * react-query, renders it through the internal `UI` component, and wraps
+ * everything in the standard PieUI providers (QueryClient, Mitt, Socket.IO,
+ * Centrifuge, Fallback, Navigate, PieConfig).
+ *
+ * While the request is pending — or when `apiServer` has not been
+ * configured — the component renders the `piecache` shell (if any) or the
+ * caller-supplied `fallback`. On error it invokes `onError` and shows the
+ * same fallback UI.
+ *
+ * The UI configuration request is memoized forever by default
+ * (`staleTime: Infinity`); supply `queryOptions` to override the
+ * react-query behaviour.
+ */
 const PieRoot = (props: PieRootProps) => {
     const queryClient = useMemo(() => new QueryClient(), [])
 

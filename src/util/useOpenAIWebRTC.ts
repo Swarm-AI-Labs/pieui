@@ -2,6 +2,12 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 
+/**
+ * A single OpenAI Realtime event exchanged over the WebRTC data channel.
+ * `type` is always present; `event_id` and `timestamp` are auto-populated
+ * by the hook when missing. Any additional fields defined by the OpenAI
+ * Realtime API are passed through unchanged.
+ */
 export type OpenAIEvent = {
     type: string
     event_id?: string
@@ -9,6 +15,22 @@ export type OpenAIEvent = {
     [key: string]: any
 }
 
+/**
+ * Return type of {@link useOpenAIWebRTC}. Exposes the live session state
+ * and imperative controls for opening/closing a realtime voice session.
+ *
+ * @property isSessionActive Whether the peer connection is currently
+ *                           `connected` — updates in real time.
+ * @property startSession    Opens a new peer connection to the OpenAI
+ *                           Realtime API and attaches the configured audio
+ *                           element. Resolves once the data channel is
+ *                           open and safe to send on.
+ * @property stopSession     Stops microphone tracks, closes the peer
+ *                           connection, and releases all resources.
+ * @property sendTextMessage Queues a `conversation.item.create` + `response.create`
+ *                           pair on the data channel, waiting for the
+ *                           channel to open if necessary.
+ */
 export type UseOpenAIWebRTCReturn = {
     isSessionActive: boolean
     startSession: (
@@ -31,6 +53,28 @@ function createSilentAudioTrack(): MediaStreamTrack {
     return track
 }
 
+/**
+ * React hook that manages a realtime voice session with the OpenAI Realtime
+ * API over WebRTC.
+ *
+ * Usage flow:
+ * 1. Render an `<audio autoPlay />` element and pass its ref in as
+ *    `audioElement` — remote audio will be routed there.
+ * 2. Fetch an ephemeral key from your backend.
+ * 3. Call `startSession(ephemeralKey, useMicrophone?)`. When `useMicrophone`
+ *    is `false` the hook creates a silent local track so the peer connection
+ *    is still valid (useful for text-only demos).
+ * 4. Use `sendTextMessage(text)` to inject user turns and receive replies
+ *    via the `onEvent` callback.
+ * 5. Call `stopSession()` when done.
+ *
+ * All handlers are stable and safe to pass to dependent effects/memos.
+ *
+ * @param audioElement Target `<audio>` element used to play back the model's
+ *                     response audio. `null` disables playback routing.
+ * @param onEvent      Optional listener invoked for every incoming and
+ *                     outgoing realtime event (with `timestamp` populated).
+ */
 export default function useOpenAIWebRTC(
     audioElement: HTMLAudioElement | null = null,
     onEvent?: (event: OpenAIEvent) => void

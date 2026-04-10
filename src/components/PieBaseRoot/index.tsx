@@ -73,6 +73,17 @@ const PieBaseRootContent = ({
     )
 }
 
+/**
+ * Base PieUI root that sets up every context required by PieUI components
+ * (QueryClient, Mitt emitter, Socket.IO, Centrifuge, Fallback, Navigate,
+ * PieConfig) around its `children`.
+ *
+ * Unlike {@link PieRoot}, `PieBaseRoot` does not fetch a UI configuration
+ * from the server — callers render whatever they want inside and can use
+ * the PieUI utilities (`usePieEmit`, `PieCard`, Ajax helpers, …) within
+ * that tree. Use this when you want full control over what is rendered or
+ * when combining a PieUI widget with a non-PieUI application shell.
+ */
 const PieBaseRoot = (props: PieBaseRootProps) => {
     const [queryClient] = useState(() => new QueryClient())
 

@@ -1,3 +1,26 @@
+/**
+ * Options accepted by {@link WebRTCClient}.
+ *
+ * @property endpoint            HTTP endpoint that exchanges SDP with the
+ *                               backend; must accept a POST of
+ *                               `{ sdp, type, webrtc_id }` and return the
+ *                               answer description.
+ * @property onConnected         Fires after `setRemoteDescription` succeeds.
+ * @property onDisconnected      Fires when `disconnect()` is invoked,
+ *                               regardless of whether a connection existed.
+ * @property onMessage           Invoked for every JSON-parsed message
+ *                               received on the `text` data channel.
+ * @property onAudioStream       Receives the remote `MediaStream` once
+ *                               negotiated so the caller can attach it to
+ *                               an audio element.
+ * @property onAudioLevel        Throttled average microphone level in
+ *                               `[0, 1]`. Updates roughly every 100ms.
+ * @property audioInputDeviceId  Optional `deviceId` constraint for
+ *                               `getUserMedia`.
+ * @property audioOutputDeviceId Output device id forwarded to the audio
+ *                               stream consumer via
+ *                               `options.audioOutputDeviceId`.
+ */
 interface WebRTCClientOptions {
     endpoint: string
     onConnected?: () => void
@@ -12,6 +35,15 @@ interface WebRTCClientOptions {
 const isBrowser =
     typeof window !== 'undefined' && typeof navigator !== 'undefined'
 
+/**
+ * Browser-side WebRTC helper that opens an audio peer connection to a PieUI
+ * backend endpoint, exchanges SDP, and exposes lightweight hooks for
+ * messaging and microphone level analysis.
+ *
+ * The class is safe to instantiate in SSR environments — `connect()` and
+ * device setters guard on `typeof window !== 'undefined'` and no-op on the
+ * server. Calling any method twice cleanly re-establishes the connection.
+ */
 export class WebRTCClient {
     private peerConnection: RTCPeerConnection | null = null
     private mediaStream: MediaStream | null = null
@@ -30,7 +62,13 @@ export class WebRTCClient {
         this.currentOutputDeviceId = options.audioOutputDeviceId
     }
 
-    // Method to change audio input device
+    /**
+     * Changes the active microphone device.
+     *
+     * If a peer connection is already open the client tears it down and
+     * re-connects with the new device, because WebRTC tracks cannot be
+     * swapped mid-session without renegotiation.
+     */
     setAudioInputDevice(deviceId: string) {
         this.currentInputDeviceId = deviceId
 
@@ -41,7 +79,12 @@ export class WebRTCClient {
         }
     }
 
-    // Method to change audio output device
+    /**
+     * Changes the preferred audio output device. Because the actual sink is
+     * attached to the `<audio>` element in the consumer code, the new
+     * `deviceId` is forwarded through `options.audioOutputDeviceId` so the
+     * `onAudioStream` callback can apply `HTMLAudioElement.setSinkId()`.
+     */
     setAudioOutputDevice(deviceId: string) {
         this.currentOutputDeviceId = deviceId
         if (!isBrowser) return
@@ -54,6 +97,16 @@ export class WebRTCClient {
         }
     }
 
+    /**
+     * Opens a new peer connection: acquires the microphone, wires up audio
+     * analysis, creates a `text` data channel, exchanges SDP with the
+     * configured endpoint, and invokes `onConnected` on success.
+     *
+     * Throws user-friendly `Error`s for the two most common microphone
+     * failures (`NotAllowedError` → permission denied, `NotFoundError` →
+     * no device detected). Any other failure triggers `disconnect()` and
+     * the underlying error is re-thrown so the caller can react.
+     */
     async connect() {
         if (!isBrowser) {
             console.warn('WebRTCClient: connect() called on server, skipping')
@@ -233,6 +286,12 @@ export class WebRTCClient {
         this.dataArray = null
     }
 
+    /**
+     * Tears the session down: stops the microphone tracks, closes the peer
+     * connection and data channel, releases the `AudioContext` used for
+     * level analysis, and invokes `onDisconnected`. Safe to call multiple
+     * times and on the server (no-op).
+     */
     disconnect() {
         if (!isBrowser) return
 

@@ -7,6 +7,24 @@ import SocketIOContext from '../../util/socket'
 import MittContext from '../../util/mitt'
 import { PieCardProps } from './types'
 
+/**
+ * Wraps a rendered card so it can participate in PieUI realtime messaging.
+ *
+ * `PieCard` does not render any UI of its own — it simply returns its
+ * children — but on mount it subscribes the supplied `methods` map to
+ * whichever transports have been enabled:
+ *
+ * - **Socket.IO**: listens for `pie{methodName}_{data.name}` events.
+ * - **Centrifuge**: subscribes to channels of the form
+ *   `pie{methodName}_{data.name}_{centrifugeChannel}`.
+ * - **Mitt**: listens for `pie{methodName}_{data.name}` events on the
+ *   in-process emitter (used by `usePieEmit`).
+ *
+ * The `methods` map is accessed via a ref so callers may hand in freshly
+ * recreated closures on every render without triggering re-subscriptions.
+ * Cleanup runs automatically on unmount or when `data.name`/the support
+ * flags change.
+ */
 const PieCard = ({
     card,
     data,
@@ -19,10 +37,7 @@ const PieCard = ({
 }: PieCardProps) => {
     const renderingLogEnabled = isRenderingLogEnabled()
     const methodsRef = useRef(methods)
-
-    useEffect(() => {
-        methodsRef.current = methods
-    }, [methods])
+    methodsRef.current = methods
 
     // const name = data.name;
     if (renderingLogEnabled) {
@@ -66,27 +81,28 @@ const PieCard = ({
 
         const methodNames = Object.keys(methodsRef.current ?? {})
 
-        methodNames.forEach((methodName) => {
+        const handlers = methodNames.map((methodName) => {
             const eventName = `pie${methodName}_${data.name}`
             if (renderingLogEnabled) {
                 console.log(
                     `[PieCard] Socket.IO registering event: ${eventName}`
                 )
             }
-            socket.on(eventName, (payload) => {
+            const handler = (payload: any) => {
                 methodsRef.current?.[methodName]?.(payload)
-            })
+            }
+            socket.on(eventName, handler)
+            return [eventName, handler] as const
         })
 
         return () => {
-            methodNames.forEach((methodName) => {
-                const eventName = `pie${methodName}_${data.name}`
+            handlers.forEach(([eventName, handler]) => {
                 if (renderingLogEnabled) {
                     console.log(
                         `[PieCard] Socket.IO unregistering event: ${eventName}`
                     )
                 }
-                socket.off(eventName)
+                socket.off(eventName, handler)
             })
         }
     }, [socket, data.name, useSocketioSupport])

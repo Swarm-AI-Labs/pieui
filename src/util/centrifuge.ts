@@ -5,6 +5,23 @@ import { Centrifuge } from 'centrifuge'
 
 const centrifugeCache = new Map<string, Centrifuge>()
 
+/**
+ * Returns a cached {@link Centrifuge} client for the given API/Centrifuge
+ * server pair, creating one on first access. Tokens are fetched on demand
+ * from `{apiServer}api/centrifuge/gen_token`; a 403 response throws a
+ * `Centrifuge.UnauthorizedError` so the client treats it as an auth failure
+ * and does not retry indefinitely.
+ *
+ * The cache is keyed by `"${apiServer}::${centrifugeServer}"`, so repeated
+ * calls with the same arguments always return the same instance — which is
+ * important because `Centrifuge` holds a live WebSocket connection.
+ *
+ * @param apiServer        Base URL of the PieUI API server (must end with `/`).
+ * @param centrifugeServer WebSocket URL of the Centrifuge server. When
+ *                         omitted, the function returns `null` and the
+ *                         feature is disabled.
+ * @returns A shared Centrifuge instance, or `null` if no server was provided.
+ */
 export const getCentrifuge = (
     apiServer: string,
     centrifugeServer?: string
@@ -34,5 +51,10 @@ export const getCentrifuge = (
     return instance
 }
 
+/**
+ * React context that exposes the current {@link Centrifuge} client to the
+ * component tree. Populated by PieRoot variants; consumers read it to create
+ * subscriptions scoped to a specific `PieCard`.
+ */
 const CentrifugeIOContext = createContext<Centrifuge | null>(null)
 export default CentrifugeIOContext

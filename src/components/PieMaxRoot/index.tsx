@@ -181,6 +181,18 @@ const PieMaxRootContent: React.FC<PieRootProps> = ({
     )
 }
 
+/**
+ * PieUI root for MAX (VK Messenger) mini-apps.
+ *
+ * Behaves like {@link PieRoot} but waits for `window.WebApp` to be ready
+ * via {@link useMaxWebApp}, forwards `initData` to the backend as a query
+ * parameter, and identifies itself to the server with `__pieroot=max` so
+ * the UI configuration can be tailored to the MAX host.
+ *
+ * Throws when `apiServer` is missing because MAX mini-apps cannot fall
+ * back to SSR-style static rendering. Use `fallback`/`piecache` to show a
+ * loading shell while MAX finishes initialising.
+ */
 const PieMaxRoot: React.FC<PieRootProps> = (props) => {
     const queryClient = useMemo(() => new QueryClient(), [])
 
