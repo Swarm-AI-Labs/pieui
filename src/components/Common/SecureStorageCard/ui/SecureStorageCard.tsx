@@ -38,8 +38,7 @@ const SecureStorageCard = ({ data }: SecureStorageCardProps) => {
                     setCurrentValue(value)
                 },
                 remove: () => {
-                    const secureStorage =
-                        window.Telegram?.WebApp?.SecureStorage
+                    const secureStorage = window.Telegram?.WebApp?.SecureStorage
                     if (secureStorage) secureStorage.removeItem(key)
                     setCurrentValue('')
                 },

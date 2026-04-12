@@ -38,8 +38,7 @@ const CloudStorageCard = ({ data }: CloudStorageCardProps) => {
                     setCurrentValue(value)
                 },
                 remove: () => {
-                    const cloudStorage =
-                        window.Telegram?.WebApp?.CloudStorage
+                    const cloudStorage = window.Telegram?.WebApp?.CloudStorage
                     if (cloudStorage) cloudStorage.removeItem(key)
                     setCurrentValue('')
                 },

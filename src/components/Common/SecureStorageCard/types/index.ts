@@ -11,5 +11,4 @@ export interface SecureStorageCardData {
     centrifugeChannel?: string
 }
 
-export interface SecureStorageCardProps
-    extends PieSimpleComponentProps<SecureStorageCardData> {}
+export interface SecureStorageCardProps extends PieSimpleComponentProps<SecureStorageCardData> {}

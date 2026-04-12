@@ -11,5 +11,4 @@ export interface CloudStorageCardData {
     centrifugeChannel?: string
 }
 
-export interface CloudStorageCardProps
-    extends PieSimpleComponentProps<CloudStorageCardData> {}
+export interface CloudStorageCardProps extends PieSimpleComponentProps<CloudStorageCardData> {}

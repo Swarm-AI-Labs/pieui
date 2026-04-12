@@ -11,5 +11,4 @@ export interface SessionStorageCardData {
     centrifugeChannel?: string
 }
 
-export interface SessionStorageCardProps
-    extends PieSimpleComponentProps<SessionStorageCardData> {}
+export interface SessionStorageCardProps extends PieSimpleComponentProps<SessionStorageCardData> {}

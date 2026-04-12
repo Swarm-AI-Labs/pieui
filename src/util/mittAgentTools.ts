@@ -126,9 +126,8 @@ export function getMittAgentTools(
                     additionalProperties: true,
                 },
                 execute: async (input) => {
-                    const payload = (
-                        input as { payload?: unknown } | undefined
-                    )?.payload
+                    const payload = (input as { payload?: unknown } | undefined)
+                        ?.payload
                     emitter.emit(eventKey, payload)
                     return `Emitted "${eventKey}"`
                 },
