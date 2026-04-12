@@ -41,6 +41,13 @@ export type { PieQueryOptions } from './components/PieRoot/types'
 export { useAjaxSubmit } from './util/ajaxCommonUtils'
 export { usePieEmit } from './util/mitt'
 export {
+    getMittAgentTools,
+    usePieMittAgentTools,
+    type MittAgentTool,
+    type MittAgentToolDescriptor,
+    type MittAgentToolsOptions,
+} from './util/mittAgentTools'
+export {
     default as useOpenAIWebRTC,
     type OpenAIEvent,
     type UseOpenAIWebRTCReturn,
