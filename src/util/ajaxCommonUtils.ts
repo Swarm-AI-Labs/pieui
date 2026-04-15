@@ -164,8 +164,7 @@ export const getAjaxSubmit = (
 
             const controller = timeout != null ? new AbortController() : null
             const timer =
-                controller &&
-                setTimeout(() => controller.abort(), timeout)
+                controller && setTimeout(() => controller.abort(), timeout)
 
             try {
                 const response = await fetch(apiEndpoint, {
@@ -176,7 +175,11 @@ export const getAjaxSubmit = (
 
                 if (timer) clearTimeout(timer)
 
-                if (!response.ok && retryOn.includes(response.status) && attempt < maxRetries) {
+                if (
+                    !response.ok &&
+                    retryOn.includes(response.status) &&
+                    attempt < maxRetries
+                ) {
                     lastError = new Error(`HTTP ${response.status}`)
                     continue
                 }
