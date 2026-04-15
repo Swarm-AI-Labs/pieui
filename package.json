@@ -1,6 +1,6 @@
 {
     "name": "@piedata/pieui",
-    "version": "2.0.6",
+    "version": "2.0.7",
     "description": "A React component library featuring PieCard component",
     "repository": {
         "type": "git",
