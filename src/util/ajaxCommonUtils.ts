@@ -7,6 +7,18 @@ import { usePieConfig } from './pieConfig.ts'
 import { useMemo } from 'react'
 
 /**
+ * Retry policy configuration for AJAX requests.
+ */
+export type RetryPolicy = {
+    /** Maximum number of retry attempts (default: 0 — no retries). */
+    maxRetries?: number
+    /** Base delay in ms between retries (default: 1000). Doubled on each attempt. */
+    baseDelay?: number
+    /** HTTP status codes that should trigger a retry (default: [502, 503, 504]). Timeouts and network errors always retry regardless of this list. */
+    retryOn?: number[]
+}
+
+/**
  * Options for {@link getAjaxSubmit}. Passed explicitly so that the helper can
  * stay a plain function — callers forward the values they already obtained
  * from {@link usePieConfig} instead of the helper calling hooks on its own.
@@ -16,6 +28,10 @@ export type GetAjaxSubmitOptions = {
     apiServer?: string | null
     /** When `true`, the helper will log registration and error details. */
     renderingLogEnabled?: boolean
+    /** Request timeout in milliseconds. No timeout if omitted. */
+    timeout?: number
+    /** Retry policy for failed requests. No retries if omitted. */
+    retryPolicy?: RetryPolicy
 }
 
 /**
@@ -53,6 +69,11 @@ export const getAjaxSubmit = (
     options?: GetAjaxSubmitOptions
 ) => {
     const renderingLogEnabled = options?.renderingLogEnabled ?? false
+    const timeout = options?.timeout
+    const retryPolicy = options?.retryPolicy
+    const maxRetries = retryPolicy?.maxRetries ?? 0
+    const baseDelay = retryPolicy?.baseDelay ?? 1000
+    const retryOn = retryPolicy?.retryOn ?? [502, 503, 504]
 
     if (renderingLogEnabled) {
         console.log('Registering AJAX: ', pathname, kwargs, depsNames)
@@ -128,11 +149,38 @@ export const getAjaxSubmit = (
         const apiEndpoint = apiServer + 'api/ajax_content' + pathname
 
         setUiAjaxConfiguration(null)
-        return await fetch(apiEndpoint, {
-            method: 'POST',
-            body: data,
-        })
-            .then(async (response) => {
+
+        let lastError: unknown
+        for (let attempt = 0; attempt <= maxRetries; attempt++) {
+            if (attempt > 0) {
+                const delay = baseDelay * 2 ** (attempt - 1)
+                if (renderingLogEnabled) {
+                    console.log(
+                        `AJAX retry ${attempt}/${maxRetries} after ${delay}ms`
+                    )
+                }
+                await new Promise((r) => setTimeout(r, delay))
+            }
+
+            const controller = timeout != null ? new AbortController() : null
+            const timer =
+                controller &&
+                setTimeout(() => controller.abort(), timeout)
+
+            try {
+                const response = await fetch(apiEndpoint, {
+                    method: 'POST',
+                    body: data,
+                    signal: controller?.signal,
+                })
+
+                if (timer) clearTimeout(timer)
+
+                if (!response.ok && retryOn.includes(response.status) && attempt < maxRetries) {
+                    lastError = new Error(`HTTP ${response.status}`)
+                    continue
+                }
+
                 const contentType = response.headers.get('content-type') || ''
                 const isJson = contentType.includes('application/json')
                 const isStream = !!response.body?.getReader && !isJson
@@ -198,14 +246,24 @@ export const getAjaxSubmit = (
                     setUiAjaxConfiguration(data)
                     return data
                 }
-            })
-            .catch((err) => {
+            } catch (err) {
+                if (timer) clearTimeout(timer)
+                lastError = err
+                if (attempt < maxRetries) continue
                 if (renderingLogEnabled) {
                     console.error('AJAX request failed:', err)
                 }
                 setUiAjaxConfiguration(null)
                 return err
-            })
+            }
+        }
+
+        // All retries exhausted with a retryable HTTP status
+        if (renderingLogEnabled) {
+            console.error('AJAX request failed after retries:', lastError)
+        }
+        setUiAjaxConfiguration(null)
+        return lastError
     }
 }
 
@@ -221,13 +279,15 @@ export const getAjaxSubmit = (
  * @param depsNames              Names of DOM inputs whose current values should
  *                               be sent alongside the request.
  * @param pathname               Path segment appended to `api/ajax_content`.
+ * @param options                Optional `timeout` (ms) and `retryPolicy`.
  * @returns A memoized submit function; see {@link getAjaxSubmit}.
  */
 export const useAjaxSubmit = (
     setUiAjaxConfiguration?: SetUiAjaxConfigurationType,
     kwargs: Record<string, any> = {},
     depsNames: Array<string> = [],
-    pathname?: string
+    pathname?: string,
+    options?: { timeout?: number; retryPolicy?: RetryPolicy }
 ) => {
     const { apiServer, enableRenderingLog } = usePieConfig()
     // kwargs/depsNames чаще всего приходят как инлайн-литералы из серверного
@@ -235,11 +295,14 @@ export const useAjaxSubmit = (
     // должно быть значение, а не ссылка.
     const kwargsKey = JSON.stringify(kwargs)
     const depsKey = JSON.stringify(depsNames)
+    const optionsKey = JSON.stringify(options)
     return useMemo(
         () =>
             getAjaxSubmit(setUiAjaxConfiguration, kwargs, depsNames, pathname, {
                 apiServer,
                 renderingLogEnabled: enableRenderingLog,
+                timeout: options?.timeout,
+                retryPolicy: options?.retryPolicy,
             }),
         // eslint-disable-next-line react-hooks/exhaustive-deps
         [
@@ -249,6 +312,7 @@ export const useAjaxSubmit = (
             pathname,
             apiServer,
             enableRenderingLog,
+            optionsKey,
         ]
     )
 }
