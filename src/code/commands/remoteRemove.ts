@@ -59,4 +59,3 @@ export const remoteRemoveCommand = async (componentName: string) => {
         `[pieui] Remote remove completed: ${remoteName}${text ? `\n[pieui] ${text}` : ''}`
     )
 }
-
