@@ -18,6 +18,7 @@ export type ParsedArgs = {
     append: boolean
     componentName?: string
     componentType?: ComponentType
+    eventName?: string
     removeComponentName?: string
     listFilter?: ListFilter
 }

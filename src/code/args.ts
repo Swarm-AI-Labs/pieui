@@ -16,6 +16,7 @@ export const parseArgs = (argv: string[]): ParsedArgs => {
     let srcDir = 'src'
     let componentType: ComponentType | undefined
     let componentName: string | undefined
+    let eventName: string | undefined
 
     let removeComponentName: string | undefined
     let listFilter: ListFilter | undefined
@@ -55,6 +56,15 @@ export const parseArgs = (argv: string[]): ParsedArgs => {
         }
     }
 
+    if (command === 'list-events' && argv[1]) {
+        componentName = argv[1]
+    }
+
+    if (command === 'add-event' && argv[1] && argv[2]) {
+        componentName = argv[1]
+        eventName = argv[2]
+    }
+
     if (outDirFlag) {
         outDir = outDirFlag.split('=')[1] || outDir
     } else if (outDirIndex !== -1 && argv[outDirIndex + 1]) {
@@ -74,6 +84,7 @@ export const parseArgs = (argv: string[]): ParsedArgs => {
         append: appendFlag,
         componentName,
         componentType,
+        eventName,
         removeComponentName,
         listFilter,
     }
@@ -88,6 +99,12 @@ export const printUsage = () => {
     )
     console.log(
         '  add [type] <ComponentName>              Create a new component in piecomponents directory'
+    )
+    console.log(
+        '  list-events <ComponentName>             List registered methods keys for <PieCard card="ComponentName" ... methods={...} />'
+    )
+    console.log(
+        '  add-event <ComponentName> <event>       Add a new methods key with a default handler to <PieCard card="ComponentName" ... methods={...} />'
     )
     console.log(
         '  remove <ComponentName>                  Remove a component from piecomponents directory'
@@ -133,6 +150,16 @@ export const printUsage = () => {
         '  --src-dir <dir>, -s <dir>    Source directory (default: src)'
     )
     console.log('')
+    console.log('Options for list-events:')
+    console.log(
+        '  --src-dir <dir>, -s <dir>    Source directory to scan (default: src)'
+    )
+    console.log('')
+    console.log('Options for add-event:')
+    console.log(
+        '  --src-dir <dir>, -s <dir>    Source directory to modify (default: src)'
+    )
+    console.log('')
     console.log('Filters for list:')
     console.log('  all                 All components (default)')
     console.log('  simple              Simple components (only data prop)')
@@ -163,5 +190,11 @@ export const printUsage = () => {
     )
     console.log(
         '  pieui list complex-container --src-dir app    # List complex containers in app/'
+    )
+    console.log(
+        '  pieui list-events ExchangeAlertsCard         # Print methods table for that PieCard usage'
+    )
+    console.log(
+        '  pieui add-event ExchangeAlertsCard alert     # Add methods.alert with default handler'
     )
 }

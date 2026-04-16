@@ -5,6 +5,8 @@ import { initCommand } from './code/commands/init'
 import { addCommand } from './code/commands/add'
 import { removeCommand } from './code/commands/remove'
 import { listCommand } from './code/commands/list'
+import { listEventsCommand } from './code/commands/listEvents'
+import { addEventCommand } from './code/commands/addEvent'
 import { postbuildCommand } from './code/commands/postbuild'
 
 const main = async () => {
@@ -17,6 +19,7 @@ const main = async () => {
         componentType,
         removeComponentName,
         listFilter,
+        eventName,
     } = parseArgs(process.argv.slice(2))
 
     console.log(`[pieui] CLI started with command: "${command}"`)
@@ -50,6 +53,28 @@ const main = async () => {
 
         case 'list':
             listCommand(srcDir, listFilter || 'all')
+            return
+
+        case 'list-events':
+            if (!componentName) {
+                console.error(
+                    '[pieui] Error: Component name is required for list-events command'
+                )
+                printUsage()
+                process.exit(1)
+            }
+            listEventsCommand(srcDir, componentName)
+            return
+
+        case 'add-event':
+            if (!componentName || !eventName) {
+                console.error(
+                    '[pieui] Error: Component name and event name are required for add-event command'
+                )
+                printUsage()
+                process.exit(1)
+            }
+            addEventCommand(srcDir, componentName, eventName)
             return
 
         case 'postbuild':
