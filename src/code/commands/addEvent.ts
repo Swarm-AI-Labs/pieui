@@ -99,7 +99,7 @@ export const addEventCommand = (
         `[pieui] Adding methods.${eventName} to PieCard(card="${componentName}")`
     )
 
-    const files = glob.sync(`${srcDir}/**/*.{ts,tsx}`, {
+    const files = glob.sync(`${srcDir}/**/*.{ts,tsx,js,jsx}`, {
         ignore: [
             '**/*.d.ts',
             '**/dist/**',

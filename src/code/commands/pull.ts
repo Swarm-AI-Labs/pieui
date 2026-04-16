@@ -5,6 +5,36 @@ import JSZip from 'jszip'
 const PULL_URL = 'https://api-pieui.swarm.ing/external/pull'
 const API_KEY_ENV = 'PIEUI_EXTERNAL_API_KEY'
 
+const toProjectSlug = (raw: string): string => {
+    const base = raw.trim().replace(/^@/, '').replaceAll('/', '-')
+    const cleaned = base
+        .toLowerCase()
+        .replace(/[^a-z0-9_-]+/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-|-$/g, '')
+    return cleaned || 'project'
+}
+
+const getProjectName = (): string => {
+    const pkgPath = path.join(process.cwd(), 'package.json')
+    try {
+        if (fs.existsSync(pkgPath)) {
+            const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8')) as {
+                name?: string
+            }
+            if (pkg.name) {
+                const name = pkg.name.includes('/')
+                    ? pkg.name.split('/').pop() || pkg.name
+                    : pkg.name
+                return toProjectSlug(name)
+            }
+        }
+    } catch {
+        // ignore
+    }
+    return toProjectSlug(path.basename(process.cwd()))
+}
+
 const ensureDir = (dir: string) => {
     fs.mkdirSync(dir, { recursive: true })
 }
@@ -22,6 +52,7 @@ const safeJoin = (baseDir: string, relPath: string) => {
 export const pullCommand = async (componentName: string) => {
     const pieComponentsDir = path.join(process.cwd(), 'piecomponents')
     const componentDir = path.join(pieComponentsDir, componentName)
+    const remoteName = `${getProjectName()}/${componentName}`
 
     if (!fs.existsSync(pieComponentsDir)) {
         console.error(
@@ -36,7 +67,7 @@ export const pullCommand = async (componentName: string) => {
         headers['x-api-key'] = apiKey
     }
 
-    const url = `${PULL_URL}?component=${encodeURIComponent(componentName)}`
+    const url = `${PULL_URL}?component=${encodeURIComponent(remoteName)}`
     console.log(`[pieui] Downloading from: ${url}`)
 
     const res = await fetch(url, { method: 'GET', headers })
@@ -73,5 +104,5 @@ export const pullCommand = async (componentName: string) => {
         fs.writeFileSync(outPath, buf)
     }
 
-    console.log(`[pieui] Pull completed: ${componentName}`)
+    console.log(`[pieui] Pull completed: ${remoteName}`)
 }

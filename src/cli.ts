@@ -10,6 +10,7 @@ import { addEventCommand } from './code/commands/addEvent'
 import { postbuildCommand } from './code/commands/postbuild'
 import { pushCommand } from './code/commands/push'
 import { pullCommand } from './code/commands/pull'
+import { remoteRemoveCommand } from './code/commands/remoteRemove'
 
 const main = async () => {
     const {
@@ -77,6 +78,17 @@ const main = async () => {
                 process.exit(1)
             }
             await pullCommand(componentName)
+            return
+
+        case 'remote-remove':
+            if (!componentName) {
+                console.error(
+                    '[pieui] Error: Component name is required for remote-remove command'
+                )
+                printUsage()
+                process.exit(1)
+            }
+            await remoteRemoveCommand(componentName)
             return
 
         case 'list-events':

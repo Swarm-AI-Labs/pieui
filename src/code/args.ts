@@ -13,7 +13,7 @@ export const parseArgs = (argv: string[]): ParsedArgs => {
     const appendFlag = argv.includes('--append')
 
     let outDir = command === 'postbuild' ? 'public' : '.'
-    let srcDir = 'src'
+    let srcDir = '.'
     let componentType: ComponentType | undefined
     let componentName: string | undefined
     let eventName: string | undefined
@@ -65,7 +65,12 @@ export const parseArgs = (argv: string[]): ParsedArgs => {
         eventName = argv[2]
     }
 
-    if ((command === 'pull' || command === 'push') && argv[1]) {
+    if (
+        (command === 'pull' ||
+            command === 'push' ||
+            command === 'remote-remove') &&
+        argv[1]
+    ) {
         componentName = argv[1]
     }
 
@@ -109,6 +114,9 @@ export const printUsage = () => {
     )
     console.log(
         '  pull <ComponentName>                    Download archive from PieUI server and extract into piecomponents/<ComponentName>'
+    )
+    console.log(
+        '  remote-remove <ComponentName>           Remove remote component from PieUI server'
     )
     console.log(
         '  list-events <ComponentName>             List registered methods keys for <PieCard card="ComponentName" ... methods={...} />'
@@ -162,12 +170,12 @@ export const printUsage = () => {
     console.log('')
     console.log('Options for list-events:')
     console.log(
-        '  --src-dir <dir>, -s <dir>    Source directory to scan (default: src)'
+        '  --src-dir <dir>, -s <dir>    Source directory to scan (default: .)'
     )
     console.log('')
     console.log('Options for add-event:')
     console.log(
-        '  --src-dir <dir>, -s <dir>    Source directory to modify (default: src)'
+        '  --src-dir <dir>, -s <dir>    Source directory to modify (default: .)'
     )
     console.log('')
     console.log('Filters for list:')
@@ -212,5 +220,8 @@ export const printUsage = () => {
     )
     console.log(
         '  pieui pull ExchangeAlertsCard                # Download & extract component folder'
+    )
+    console.log(
+        '  pieui remote-remove ExchangeAlertsCard       # Delete remote component (and remove from Feed)'
     )
 }

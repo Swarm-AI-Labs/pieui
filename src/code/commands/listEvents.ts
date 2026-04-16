@@ -87,7 +87,7 @@ const resolveIdentifierToObjectLiteral = (expr: any, checker: any): any => {
 export const listEventsCommand = (srcDir: string, componentName: string) => {
     console.log(`[pieui] Scanning PieCard methods for: ${componentName}`)
 
-    const files = glob.sync(`${srcDir}/**/*.{ts,tsx}`, {
+    const files = glob.sync(`${srcDir}/**/*.{ts,tsx,js,jsx}`, {
         ignore: [
             '**/*.d.ts',
             '**/dist/**',

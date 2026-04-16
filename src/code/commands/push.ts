@@ -5,6 +5,36 @@ import JSZip from 'jszip'
 const PUSH_URL = 'https://api-pieui.swarm.ing/external/push'
 const API_KEY_ENV = 'PIEUI_EXTERNAL_API_KEY'
 
+const toProjectSlug = (raw: string): string => {
+    const base = raw.trim().replace(/^@/, '').replaceAll('/', '-')
+    const cleaned = base
+        .toLowerCase()
+        .replace(/[^a-z0-9_-]+/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-|-$/g, '')
+    return cleaned || 'project'
+}
+
+const getProjectName = (): string => {
+    const pkgPath = path.join(process.cwd(), 'package.json')
+    try {
+        if (fs.existsSync(pkgPath)) {
+            const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8')) as {
+                name?: string
+            }
+            if (pkg.name) {
+                const name = pkg.name.includes('/')
+                    ? pkg.name.split('/').pop() || pkg.name
+                    : pkg.name
+                return toProjectSlug(name)
+            }
+        }
+    } catch {
+        // ignore
+    }
+    return toProjectSlug(path.basename(process.cwd()))
+}
+
 const walkFiles = (
     rootDir: string,
     dir: string
@@ -29,6 +59,7 @@ const walkFiles = (
 export const pushCommand = async (componentName: string) => {
     const pieComponentsDir = path.join(process.cwd(), 'piecomponents')
     const componentDir = path.join(pieComponentsDir, componentName)
+    const remoteName = `${getProjectName()}/${componentName}`
 
     if (!fs.existsSync(pieComponentsDir)) {
         console.error(
@@ -62,7 +93,7 @@ export const pushCommand = async (componentName: string) => {
     })
 
     const form = new FormData()
-    form.set('component', componentName)
+    form.set('component', remoteName)
     // JSZip types may surface Uint8Array<ArrayBufferLike> (incl. SharedArrayBuffer),
     // while File/Blob parts in lib.dom are ArrayBuffer-based. Copy to ArrayBuffer.
     const zipArrayBuffer = new ArrayBuffer(zipBytes.byteLength)
@@ -80,6 +111,7 @@ export const pushCommand = async (componentName: string) => {
     }
 
     console.log(`[pieui] Uploading to: ${PUSH_URL}`)
+    console.log(`[pieui] Remote component name: ${remoteName}`)
 
     const res = await fetch(PUSH_URL, {
         method: 'POST',
@@ -96,6 +128,6 @@ export const pushCommand = async (componentName: string) => {
 
     const text = await res.text().catch(() => '')
     console.log(
-        `[pieui] Push completed: ${componentName}${text ? `\n[pieui] ${text}` : ''}`
+        `[pieui] Push completed: ${remoteName}${text ? `\n[pieui] ${text}` : ''}`
     )
 }
