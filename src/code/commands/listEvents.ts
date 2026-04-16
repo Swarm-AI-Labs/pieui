@@ -9,9 +9,7 @@ type MethodsEntry = {
     line: number
 }
 
-const getStringLiteralFromJsxInitializer = (
-    init: any
-): string | undefined => {
+const getStringLiteralFromJsxInitializer = (init: any): string | undefined => {
     if (!init) return
     if (ts.isStringLiteral(init)) return init.text
     if (
@@ -22,10 +20,7 @@ const getStringLiteralFromJsxInitializer = (
         return init.expression.text
 }
 
-const getAttribute = (
-    attrs: any,
-    name: string
-): any => {
+const getAttribute = (attrs: any, name: string): any => {
     for (const prop of attrs.properties) {
         if (!ts.isJsxAttribute(prop)) continue
         if (ts.isIdentifier(prop.name) && prop.name.text === name) return prop
@@ -70,10 +65,7 @@ const extractMethodsFromObjectLiteral = (
     return out
 }
 
-const resolveIdentifierToObjectLiteral = (
-    expr: any,
-    checker: any
-): any => {
+const resolveIdentifierToObjectLiteral = (expr: any, checker: any): any => {
     if (!ts.isIdentifier(expr)) return
     const symbol = checker.getSymbolAtLocation(expr)
     if (!symbol) return
@@ -82,7 +74,8 @@ const resolveIdentifierToObjectLiteral = (
     if (!decl) return
 
     if (ts.isVariableDeclaration(decl) && decl.initializer) {
-        if (ts.isObjectLiteralExpression(decl.initializer)) return decl.initializer
+        if (ts.isObjectLiteralExpression(decl.initializer))
+            return decl.initializer
     }
 
     if (ts.isPropertyAssignment(decl)) {
@@ -135,7 +128,10 @@ export const listEventsCommand = (srcDir: string, componentName: string) => {
             const isPieCardTag = (tagName: any) =>
                 ts.isIdentifier(tagName) && tagName.text === 'PieCard'
 
-            if (ts.isJsxSelfClosingElement(node) && isPieCardTag(node.tagName)) {
+            if (
+                ts.isJsxSelfClosingElement(node) &&
+                isPieCardTag(node.tagName)
+            ) {
                 const attrs = node.attributes
                 const cardAttr = getAttribute(attrs, 'card')
                 const cardValue = getStringLiteralFromJsxInitializer(
@@ -149,7 +145,9 @@ export const listEventsCommand = (srcDir: string, componentName: string) => {
                 const methodsAttr = getAttribute(attrs, 'methods')
                 const init = methodsAttr?.initializer
                 const expr =
-                    init && ts.isJsxExpression(init) ? init.expression : undefined
+                    init && ts.isJsxExpression(init)
+                        ? init.expression
+                        : undefined
                 if (!expr) {
                     ts.forEachChild(node, visit)
                     return
@@ -191,7 +189,9 @@ export const listEventsCommand = (srcDir: string, componentName: string) => {
                 const methodsAttr = getAttribute(attrs, 'methods')
                 const init = methodsAttr?.initializer
                 const expr =
-                    init && ts.isJsxExpression(init) ? init.expression : undefined
+                    init && ts.isJsxExpression(init)
+                        ? init.expression
+                        : undefined
                 if (!expr) {
                     ts.forEachChild(node, visit)
                     return
@@ -257,4 +257,3 @@ export const listEventsCommand = (srcDir: string, componentName: string) => {
     console.log('')
     console.log(`[pieui] Total: ${entries.length}`)
 }
-

@@ -3,9 +3,7 @@ import path from 'path'
 import { glob } from 'glob'
 import { ts } from '../ts'
 
-const getStringLiteralFromJsxInitializer = (
-    init: any
-): string | undefined => {
+const getStringLiteralFromJsxInitializer = (init: any): string | undefined => {
     if (!init) return
     if (ts.isStringLiteral(init)) return init.text
     if (
@@ -16,19 +14,14 @@ const getStringLiteralFromJsxInitializer = (
         return init.expression.text
 }
 
-const getAttribute = (
-    attrs: any,
-    name: string
-): any => {
+const getAttribute = (attrs: any, name: string): any => {
     for (const prop of attrs.properties) {
         if (!ts.isJsxAttribute(prop)) continue
         if (ts.isIdentifier(prop.name) && prop.name.text === name) return prop
     }
 }
 
-const getObjectLiteralFromMethodsAttr = (
-    methodsAttr: any
-): any => {
+const getObjectLiteralFromMethodsAttr = (methodsAttr: any): any => {
     const init = methodsAttr?.initializer
     const expr = init && ts.isJsxExpression(init) ? init.expression : undefined
     if (!expr) return
@@ -168,7 +161,10 @@ export const addEventCommand = (
                 target = { sourceFile, methodsObj: obj }
             }
 
-            if (ts.isJsxSelfClosingElement(node) && isPieCardTag(node.tagName)) {
+            if (
+                ts.isJsxSelfClosingElement(node) &&
+                isPieCardTag(node.tagName)
+            ) {
                 handleAttrs(node.attributes)
                 ts.forEachChild(node, visit)
                 return
@@ -237,4 +233,3 @@ ${propIndent}}`
         `[pieui] Updated: ${path.relative(process.cwd(), filePath)} (added "${eventName}")`
     )
 }
-
