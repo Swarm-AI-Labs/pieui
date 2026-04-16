@@ -104,6 +104,7 @@
         "centrifuge": "^5.5.3",
         "clsx": "^2.1.1",
         "html-react-parser": "^5.2.16",
+        "jszip": "^3.10.1",
         "mitt": "^3.0.1",
         "react-toastify": "^11.0.5",
         "socket.io-client": "^4.8.3",

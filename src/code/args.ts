@@ -65,6 +65,10 @@ export const parseArgs = (argv: string[]): ParsedArgs => {
         eventName = argv[2]
     }
 
+    if ((command === 'pull' || command === 'push') && argv[1]) {
+        componentName = argv[1]
+    }
+
     if (outDirFlag) {
         outDir = outDirFlag.split('=')[1] || outDir
     } else if (outDirIndex !== -1 && argv[outDirIndex + 1]) {
@@ -99,6 +103,12 @@ export const printUsage = () => {
     )
     console.log(
         '  add [type] <ComponentName>              Create a new component in piecomponents directory'
+    )
+    console.log(
+        '  push <ComponentName>                    Archive piecomponents/<ComponentName> and upload to PieUI server'
+    )
+    console.log(
+        '  pull <ComponentName>                    Download archive from PieUI server and extract into piecomponents/<ComponentName>'
     )
     console.log(
         '  list-events <ComponentName>             List registered methods keys for <PieCard card="ComponentName" ... methods={...} />'
@@ -196,5 +206,11 @@ export const printUsage = () => {
     )
     console.log(
         '  pieui add-event ExchangeAlertsCard alert     # Add methods.alert with default handler'
+    )
+    console.log(
+        '  pieui push ExchangeAlertsCard                # Upload component folder as zip'
+    )
+    console.log(
+        '  pieui pull ExchangeAlertsCard                # Download & extract component folder'
     )
 }

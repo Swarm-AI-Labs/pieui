@@ -8,6 +8,8 @@ import { listCommand } from './code/commands/list'
 import { listEventsCommand } from './code/commands/listEvents'
 import { addEventCommand } from './code/commands/addEvent'
 import { postbuildCommand } from './code/commands/postbuild'
+import { pushCommand } from './code/commands/push'
+import { pullCommand } from './code/commands/pull'
 
 const main = async () => {
     const {
@@ -53,6 +55,28 @@ const main = async () => {
 
         case 'list':
             listCommand(srcDir, listFilter || 'all')
+            return
+
+        case 'push':
+            if (!componentName) {
+                console.error(
+                    '[pieui] Error: Component name is required for push command'
+                )
+                printUsage()
+                process.exit(1)
+            }
+            await pushCommand(componentName)
+            return
+
+        case 'pull':
+            if (!componentName) {
+                console.error(
+                    '[pieui] Error: Component name is required for pull command'
+                )
+                printUsage()
+                process.exit(1)
+            }
+            await pullCommand(componentName)
             return
 
         case 'list-events':
