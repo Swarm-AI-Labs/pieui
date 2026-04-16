@@ -75,4 +75,3 @@ export const pullCommand = async (componentName: string) => {
 
     console.log(`[pieui] Pull completed: ${componentName}`)
 }
-

@@ -5,7 +5,10 @@ import JSZip from 'jszip'
 const PUSH_URL = 'https://api-pieui.swarm.ing/external/push'
 const API_KEY_ENV = 'PIEUI_EXTERNAL_API_KEY'
 
-const walkFiles = (rootDir: string, dir: string): Array<{ abs: string; rel: string }> => {
+const walkFiles = (
+    rootDir: string,
+    dir: string
+): Array<{ abs: string; rel: string }> => {
     const entries = fs.readdirSync(dir, { withFileTypes: true })
     const out: Array<{ abs: string; rel: string }> = []
 
@@ -41,7 +44,9 @@ export const pushCommand = async (componentName: string) => {
         process.exit(1)
     }
 
-    console.log(`[pieui] Creating zip archive for: piecomponents/${componentName}`)
+    console.log(
+        `[pieui] Creating zip archive for: piecomponents/${componentName}`
+    )
 
     const zip = new JSZip()
     const files = walkFiles(componentDir, componentDir)
@@ -94,4 +99,3 @@ export const pushCommand = async (componentName: string) => {
         `[pieui] Push completed: ${componentName}${text ? `\n[pieui] ${text}` : ''}`
     )
 }
-
