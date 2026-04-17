@@ -99,6 +99,73 @@ const EXPECTED_BUILTIN_COMPONENTS = [
     'IOEventsCard',
 ]
 
+const BUILTIN_COMPONENT_MODULES = [
+    path.join(
+        repoRoot,
+        'src',
+        'components',
+        'Containers',
+        'SequenceCard',
+        'index.ts'
+    ),
+    path.join(
+        repoRoot,
+        'src',
+        'components',
+        'Containers',
+        'BoxCard',
+        'index.ts'
+    ),
+    path.join(
+        repoRoot,
+        'src',
+        'components',
+        'Containers',
+        'UnionCard',
+        'index.ts'
+    ),
+    path.join(
+        repoRoot,
+        'src',
+        'components',
+        'Containers',
+        'AjaxGroupCard',
+        'index.ts'
+    ),
+    path.join(
+        repoRoot,
+        'src',
+        'components',
+        'Common',
+        'HiddenCard',
+        'index.ts'
+    ),
+    path.join(
+        repoRoot,
+        'src',
+        'components',
+        'Common',
+        'AutoRedirectCard',
+        'index.ts'
+    ),
+    path.join(
+        repoRoot,
+        'src',
+        'components',
+        'Common',
+        'HTMLEmbedCard',
+        'index.ts'
+    ),
+    path.join(
+        repoRoot,
+        'src',
+        'components',
+        'Common',
+        'IOEventsCard',
+        'index.ts'
+    ),
+]
+
 const assertSucceeded = (result, details) => {
     assert.equal(
         result.status,
@@ -432,8 +499,10 @@ test("client boundary contract for 'use client' directives remains stable", () =
 
 // Verifies built-in card modules are registered in the runtime registry after components index side-effect import.
 test('built-in components registration contract remains stable', () => {
-    const registryModule = require(path.join(repoRoot, 'src', 'util', 'registry.ts'))
-    require(path.join(repoRoot, 'src', 'components', 'index.ts'))
+    const registryModule = require(path.join(repoRoot, 'src', 'util', 'registry'))
+    for (const modulePath of BUILTIN_COMPONENT_MODULES) {
+        require(modulePath)
+    }
 
     const { hasComponent, getAllRegisteredComponents } = registryModule
     for (const componentName of EXPECTED_BUILTIN_COMPONENTS) {
