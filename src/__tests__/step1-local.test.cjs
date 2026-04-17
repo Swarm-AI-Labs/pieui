@@ -34,12 +34,13 @@ const resolveCliCommand = () => {
     )
 }
 
-const runCli = ({ cwd, args }) => {
+const runCli = ({ cwd, args, env = {} }) => {
     const cmd = resolveCliCommand()
     const result = spawnSync(cmd[0], [...cmd.slice(1), ...args], {
         cwd,
         env: {
             ...process.env,
+            ...env,
             NODE_PATH: path.join(repoRoot, 'node_modules'),
         },
         stdio: 'pipe',
@@ -645,4 +646,64 @@ registerPieComponent({
     assert.equal(metaSchema?.type, 'object')
     assert.ok(metaSchema?.additionalProperties)
     assert.notEqual(metaSchema?.additionalProperties, false)
+})
+
+// Verifies create-pie-app shells out to Bun create, rewrites Next scripts for Bun runtime, and writes backend-link TODO.
+test('create-pie-app scaffolds blank app template with Bun-backed next scripts', () => {
+    const projectDir = makeProjectDir('pieui-cli-create-template-')
+    const fakeBunPath = path.join(projectDir, 'fake-bun.sh')
+    const logPath = path.join(projectDir, 'bun-create.log')
+
+    writeFile(
+        fakeBunPath,
+        `#!/bin/sh
+set -eu
+printf '%s\\n' "$*" > "${logPath}"
+if [ "$#" -lt 4 ]; then
+  echo "missing args" >&2
+  exit 2
+fi
+APP_DIR="$PWD/$3"
+mkdir -p "$APP_DIR/app"
+cat > "$APP_DIR/package.json" <<'EOF'
+{
+  "name": "fake-next-app",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+  }
+}
+EOF
+cat > "$APP_DIR/app/page.tsx" <<'EOF'
+export default function Page() {
+  return <main>Hello</main>
+}
+EOF
+`
+    )
+    fs.chmodSync(fakeBunPath, 0o755)
+
+    const result = runCli({
+        cwd: projectDir,
+        args: ['create-pie-app', 'my-pie-app'],
+        env: { PIEUI_CREATE_BUN_BIN: fakeBunPath },
+    })
+    assertSucceeded(result, 'create-pie-app should succeed with fake bun runtime')
+
+    const commandArgs = fs.readFileSync(logPath, 'utf8')
+    assert.match(commandArgs, /^create next-app@latest my-pie-app --yes/m)
+
+    const appPackage = JSON.parse(
+        fs.readFileSync(path.join(projectDir, 'my-pie-app', 'package.json'), 'utf8')
+    )
+    assert.equal(appPackage.scripts.dev, 'bun --bun next dev')
+    assert.equal(appPackage.scripts.build, 'bun --bun next build')
+    assert.equal(appPackage.scripts.start, 'bun --bun next start')
+
+    const pageTsx = fs.readFileSync(
+        path.join(projectDir, 'my-pie-app', 'app', 'page.tsx'),
+        'utf8'
+    )
+    assert.match(pageTsx, /TODO\(pie-backend\): Link generated Python Unicorn backend routes here/)
 })

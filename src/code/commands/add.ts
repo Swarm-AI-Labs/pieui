@@ -14,6 +14,14 @@ const updateRegistryFile = (
     componentName: string,
     componentDir: string
 ) => {
+    if (!fs.existsSync(registryPath)) {
+        console.error(
+            '[pieui] Error: registry.ts not found. Run "pieui init" first.'
+        )
+        fs.rmSync(componentDir, { recursive: true, force: true })
+        process.exit(1)
+    }
+
     let registryContent = fs.readFileSync(registryPath, 'utf8')
 
     // Check if component is already imported
@@ -71,32 +79,37 @@ export const addCommand = (
         process.exit(1)
     }
 
-    fs.mkdirSync(path.join(componentDir, 'ui'), { recursive: true })
-    fs.mkdirSync(path.join(componentDir, 'types'), { recursive: true })
+    try {
+        fs.mkdirSync(path.join(componentDir, 'ui'), { recursive: true })
+        fs.mkdirSync(path.join(componentDir, 'types'), { recursive: true })
 
-    // Create index.ts
-    fs.writeFileSync(
-        path.join(componentDir, 'index.ts'),
-        componentIndexTemplate(componentName),
-        'utf8'
-    )
+        // Create index.ts
+        fs.writeFileSync(
+            path.join(componentDir, 'index.ts'),
+            componentIndexTemplate(componentName),
+            'utf8'
+        )
 
-    // Create types/index.ts based on component type
-    fs.writeFileSync(
-        path.join(componentDir, 'types', 'index.ts'),
-        componentTypesTemplate(componentName, baseInterfaceFor(componentType)),
-        'utf8'
-    )
+        // Create types/index.ts based on component type
+        fs.writeFileSync(
+            path.join(componentDir, 'types', 'index.ts'),
+            componentTypesTemplate(componentName, baseInterfaceFor(componentType)),
+            'utf8'
+        )
 
-    fs.writeFileSync(
-        path.join(componentDir, 'ui', `${componentName}.tsx`),
-        componentTemplateFor(componentType, componentName),
-        'utf8'
-    )
+        fs.writeFileSync(
+            path.join(componentDir, 'ui', `${componentName}.tsx`),
+            componentTemplateFor(componentType, componentName),
+            'utf8'
+        )
 
-    // Update registry.ts (fall back to registry.tsx if .ts is missing)
-    const registryPath = resolveRegistryPath(pieComponentsDir)
-    updateRegistryFile(registryPath, componentName, componentDir)
+        // Update registry.ts (fall back to registry.tsx if .ts is missing)
+        const registryPath = resolveRegistryPath(pieComponentsDir)
+        updateRegistryFile(registryPath, componentName, componentDir)
+    } catch (error) {
+        fs.rmSync(componentDir, { recursive: true, force: true })
+        throw error
+    }
 
     console.log(
         `[pieui] Component ${componentName} (${componentType}) created successfully!`

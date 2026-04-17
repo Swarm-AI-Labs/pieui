@@ -10,7 +10,8 @@
     "module": "dist/index.esm.js",
     "types": "dist/index.d.ts",
     "bin": {
-        "pieui": "dist/cli.js"
+        "pieui": "dist/cli.js",
+        "create-pieui": "dist/create.js"
     },
     "files": [
         "dist"
@@ -31,7 +32,7 @@
         }
     },
     "scripts": {
-        "build": "rm -rf ./dist && rm -rf pieui-*.tgz && bun run build:clean && NODE_ENV=production bun run build:esm && NODE_ENV=production bun run build:cjs && NODE_ENV=production bun run build:components:esm && NODE_ENV=production bun run build:components:cjs && bun run build:banner && NODE_ENV=production bun run build:types && NODE_ENV=production bun run build:cli && bun src/cli.ts postbuild --src-dir src --out-dir dist && bun pm pack",
+        "build": "rm -rf ./dist && rm -rf pieui-*.tgz && bun run build:clean && NODE_ENV=production bun run build:esm && NODE_ENV=production bun run build:cjs && NODE_ENV=production bun run build:components:esm && NODE_ENV=production bun run build:components:cjs && bun run build:banner && NODE_ENV=production bun run build:types && NODE_ENV=production bun run build:cli && NODE_ENV=production bun run build:create && bun src/cli.ts postbuild --src-dir src --out-dir dist && bun pm pack",
         "build:banner": "node -e \"const fs=require('fs');['dist/index.esm.js','dist/index.js','dist/components/index.esm.js','dist/components/index.js'].forEach(f=>{if(fs.existsSync(f)){fs.writeFileSync(f,'\\\"use client\\\";\\n'+fs.readFileSync(f,'utf8'))}})\"",
         "build:clean": "rm -rf dist",
         "build:esm": "bun build src/index.ts --outfile dist/index.esm.js --format esm --target browser --jsx=automatic --jsx-import-source=react --minify --packages=external",
@@ -42,9 +43,10 @@
         "build:cjs:debug": "bun build src/index.ts --outfile dist/index.js --format cjs --target node --jsx=automatic --jsx-import-source=react --packages=external",
         "build:components:esm:debug": "bun build src/components/index.ts --outfile dist/components/index.esm.js --format esm --target browser --jsx=automatic --jsx-import-source=react --packages=external",
         "build:components:cjs:debug": "bun build src/components/index.ts --outfile dist/components/index.js --format cjs --target node --jsx=automatic --jsx-import-source=react --packages=external",
-        "build:debug": "rm -rf ./dist && rm -rf pieui-*.tgz && bun run build:clean && NODE_ENV=production bun run build:esm:debug && NODE_ENV=production bun run build:cjs:debug && NODE_ENV=production bun run build:components:esm:debug && NODE_ENV=production bun run build:components:cjs:debug && NODE_ENV=production bun run build:types && NODE_ENV=production bun run build:cli && bun src/cli.ts postbuild --src-dir src --out-dir dist && bun pm pack",
+        "build:debug": "rm -rf ./dist && rm -rf pieui-*.tgz && bun run build:clean && NODE_ENV=production bun run build:esm:debug && NODE_ENV=production bun run build:cjs:debug && NODE_ENV=production bun run build:components:esm:debug && NODE_ENV=production bun run build:components:cjs:debug && NODE_ENV=production bun run build:types && NODE_ENV=production bun run build:cli && NODE_ENV=production bun run build:create && bun src/cli.ts postbuild --src-dir src --out-dir dist && bun pm pack",
         "build:types": "tsc --emitDeclarationOnly",
         "build:cli": "bun build src/cli.ts --outfile dist/cli.js --format cjs --target node --external vm2",
+        "build:create": "bun build src/create.ts --outfile dist/create.js --format cjs --target node --external vm2",
         "dev": "bun run src/index.ts",
         "test": "bun test",
         "test:step1": "bun test src/__tests__/step1-local.test.cjs",

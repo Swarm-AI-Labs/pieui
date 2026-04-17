@@ -17,6 +17,7 @@ export type ParsedArgs = {
     srcDir: string
     append: boolean
     componentName?: string
+    createAppName?: string
     componentType?: ComponentType
     eventName?: string
     removeComponentName?: string
