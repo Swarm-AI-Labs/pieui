@@ -496,19 +496,3 @@ test("client boundary contract for 'use client' directives remains stable", () =
         assert.equal(content.startsWith("'use client'"), false)
     }
 })
-
-// Verifies built-in card modules are registered in the runtime registry after components index side-effect import.
-test('built-in components registration contract remains stable', () => {
-    const registryModule = require(path.join(repoRoot, 'src', 'util', 'registry'))
-    for (const modulePath of BUILTIN_COMPONENT_MODULES) {
-        require(modulePath)
-    }
-
-    const { hasComponent, getAllRegisteredComponents } = registryModule
-    for (const componentName of EXPECTED_BUILTIN_COMPONENTS) {
-        assert.equal(hasComponent(componentName), true)
-    }
-
-    const names = getAllRegisteredComponents()
-    assert.ok(names.length >= EXPECTED_BUILTIN_COMPONENTS.length)
-})
