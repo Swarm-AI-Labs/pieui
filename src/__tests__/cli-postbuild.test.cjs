@@ -19,6 +19,15 @@ const resolveCliCommand = (repoRoot) => {
         }
     }
 
+    const homeBun = path.join(os.homedir(), '.bun', 'bin', 'bun')
+    const homeBunCheck = spawnSync(homeBun, ['--version'], { stdio: 'ignore' })
+    if (homeBunCheck.status === 0) {
+        return {
+            cmd: [homeBun, path.join(repoRoot, 'src', 'cli.ts')],
+            cwd: repoRoot,
+        }
+    }
+
     const distCli = path.join(repoRoot, 'dist', 'cli.js')
     if (fs.existsSync(distCli)) {
         return { cmd: ['node', distCli], cwd: repoRoot }
