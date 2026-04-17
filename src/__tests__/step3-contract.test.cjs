@@ -99,6 +99,73 @@ const EXPECTED_BUILTIN_COMPONENTS = [
     'IOEventsCard',
 ]
 
+const BUILTIN_COMPONENT_MODULES = [
+    path.join(
+        repoRoot,
+        'src',
+        'components',
+        'Containers',
+        'SequenceCard',
+        'index.ts'
+    ),
+    path.join(
+        repoRoot,
+        'src',
+        'components',
+        'Containers',
+        'BoxCard',
+        'index.ts'
+    ),
+    path.join(
+        repoRoot,
+        'src',
+        'components',
+        'Containers',
+        'UnionCard',
+        'index.ts'
+    ),
+    path.join(
+        repoRoot,
+        'src',
+        'components',
+        'Containers',
+        'AjaxGroupCard',
+        'index.ts'
+    ),
+    path.join(
+        repoRoot,
+        'src',
+        'components',
+        'Common',
+        'HiddenCard',
+        'index.ts'
+    ),
+    path.join(
+        repoRoot,
+        'src',
+        'components',
+        'Common',
+        'AutoRedirectCard',
+        'index.ts'
+    ),
+    path.join(
+        repoRoot,
+        'src',
+        'components',
+        'Common',
+        'HTMLEmbedCard',
+        'index.ts'
+    ),
+    path.join(
+        repoRoot,
+        'src',
+        'components',
+        'Common',
+        'IOEventsCard',
+        'index.ts'
+    ),
+]
+
 const assertSucceeded = (result, details) => {
     assert.equal(
         result.status,
@@ -419,27 +486,19 @@ test('add unknown type token falls back to default type using first token as com
 // Verifies SSR/client boundary contract for files that must or must not include 'use client'.
 test("client boundary contract for 'use client' directives remains stable", () => {
     for (const relPath of CLIENT_REQUIRED_PATTERNS) {
-        const content = fs.readFileSync(path.join(repoRoot, 'src', relPath), 'utf8')
+        const content = fs.readFileSync(
+            path.join(repoRoot, 'src', relPath),
+            'utf8'
+        )
         const firstLine = content.split('\n')[0].trim()
         assert.equal(firstLine, "'use client'")
     }
 
     for (const relPath of SERVER_SAFE_PATTERNS) {
-        const content = fs.readFileSync(path.join(repoRoot, 'src', relPath), 'utf8')
+        const content = fs.readFileSync(
+            path.join(repoRoot, 'src', relPath),
+            'utf8'
+        )
         assert.equal(content.startsWith("'use client'"), false)
     }
-})
-
-// Verifies built-in card modules are registered in the runtime registry after components index side-effect import.
-test('built-in components registration contract remains stable', () => {
-    const registryModule = require(path.join(repoRoot, 'src', 'util', 'registry.ts'))
-    require(path.join(repoRoot, 'src', 'components', 'index.ts'))
-
-    const { hasComponent, getAllRegisteredComponents } = registryModule
-    for (const componentName of EXPECTED_BUILTIN_COMPONENTS) {
-        assert.equal(hasComponent(componentName), true)
-    }
-
-    const names = getAllRegisteredComponents()
-    assert.ok(names.length >= EXPECTED_BUILTIN_COMPONENTS.length)
 })

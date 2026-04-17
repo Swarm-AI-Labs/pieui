@@ -84,7 +84,9 @@ const resolveSharedTemplateDir = (): string => {
     const repoNames = ['ai-exchange-bot', 'ai-exchange-web', 'a-exchange-web']
     const repoCandidates = uniq([
         ...baseDirs,
-        ...baseDirs.flatMap((base) => repoNames.map((name) => path.join(base, name))),
+        ...baseDirs.flatMap((base) =>
+            repoNames.map((name) => path.join(base, name))
+        ),
     ]).filter((candidate) => isDirectory(candidate))
 
     const sharedSubpaths = [

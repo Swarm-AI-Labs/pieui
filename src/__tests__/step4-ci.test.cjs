@@ -104,8 +104,7 @@ const ensureBuildArtifacts = () => {
     }
 
     const bunBin = resolveBunBinary()
-    const bunDir =
-        bunBin.includes(path.sep) ? path.dirname(bunBin) : undefined
+    const bunDir = bunBin.includes(path.sep) ? path.dirname(bunBin) : undefined
     const buildResult = runCommand(
         bunBin,
         ['run', 'build'],
@@ -139,7 +138,6 @@ const checkBundle = (filePath, expectedExports) => {
             `${filePath} should reference export ${exportName}`
         )
     }
-
 }
 
 const checkTypeDefinitions = () => {
@@ -156,24 +154,29 @@ const checkTypeDefinitions = () => {
 }
 
 const checkRuntimeExports = () => {
-    const main = require(path.join(repoRoot, 'dist', 'index.js'))
-    const components = require(path.join(repoRoot, 'dist', 'components', 'index.js'))
+    const checkScript = `
+const path = require('node:path');
+const repoRoot = ${JSON.stringify(repoRoot)};
+const expectedMain = ${JSON.stringify(EXPECTED_MAIN_EXPORTS)};
+const expectedComponents = ${JSON.stringify(EXPECTED_COMPONENTS_EXPORTS)};
 
-    for (const exportName of EXPECTED_MAIN_EXPORTS) {
-        assert.ok(
-            Object.prototype.hasOwnProperty.call(main, exportName) ||
-                exportName in main,
-            `dist/index.js should export ${exportName}`
-        )
-    }
+const main = require(path.join(repoRoot, 'dist', 'index.js'));
+const components = require(path.join(repoRoot, 'dist', 'components', 'index.js'));
 
-    for (const exportName of EXPECTED_COMPONENTS_EXPORTS) {
-        assert.ok(
-            Object.prototype.hasOwnProperty.call(components, exportName) ||
-                exportName in components,
-            `dist/components/index.js should export ${exportName}`
-        )
-    }
+const hasExport = (obj, key) =>
+  Object.prototype.hasOwnProperty.call(obj, key) || key in obj;
+
+const missingMain = expectedMain.filter((key) => !hasExport(main, key));
+const missingComponents = expectedComponents.filter((key) => !hasExport(components, key));
+
+if (missingMain.length > 0 || missingComponents.length > 0) {
+  console.error(JSON.stringify({ missingMain, missingComponents }));
+  process.exit(1);
+}
+`
+
+    const result = runCommand('node', ['-e', checkScript], repoRoot)
+    assertSucceeded(result, 'node runtime export contract check should succeed')
 }
 
 const checkRegisteredComponentNamesInBundle = () => {
@@ -182,6 +185,15 @@ const checkRegisteredComponentNamesInBundle = () => {
     for (const cardName of EXPECTED_REGISTERED) {
         assert.match(content, new RegExp(cardName))
     }
+}
+
+let buildPreparationError = null
+try {
+    // Keep build prep outside test() for compatibility with older Bun versions
+    // that do not support test options objects and use stricter per-test timeout rules.
+    ensureBuildArtifacts()
+} catch (error) {
+    buildPreparationError = error
 }
 
 // Verifies package scripts expose deterministic entry points for each step suite and full run.
@@ -300,31 +312,26 @@ test('cleanup script removes only matching prefix directories', () => {
 })
 
 // Verifies built artifacts export required API/runtime symbols and type definitions.
-test(
-    'build artifacts expose required exports, components, types, and registry entries',
-    { timeout: 300000 },
-    () => {
-        ensureBuildArtifacts()
-
-        checkBundle(
-            path.join(repoRoot, 'dist', 'index.esm.js'),
-            EXPECTED_MAIN_EXPORTS
-        )
-        checkBundle(
-            path.join(repoRoot, 'dist', 'index.js'),
-            EXPECTED_MAIN_EXPORTS
-        )
-        checkBundle(
-            path.join(repoRoot, 'dist', 'components', 'index.esm.js'),
-            EXPECTED_COMPONENTS_EXPORTS
-        )
-        checkBundle(
-            path.join(repoRoot, 'dist', 'components', 'index.js'),
-            EXPECTED_COMPONENTS_EXPORTS
-        )
-
-        checkTypeDefinitions()
-        checkRuntimeExports()
-        checkRegisteredComponentNamesInBundle()
+test('build artifacts expose required exports, components, types, and registry entries', () => {
+    if (buildPreparationError) {
+        throw buildPreparationError
     }
-)
+
+    checkBundle(
+        path.join(repoRoot, 'dist', 'index.esm.js'),
+        EXPECTED_MAIN_EXPORTS
+    )
+    checkBundle(path.join(repoRoot, 'dist', 'index.js'), EXPECTED_MAIN_EXPORTS)
+    checkBundle(
+        path.join(repoRoot, 'dist', 'components', 'index.esm.js'),
+        EXPECTED_COMPONENTS_EXPORTS
+    )
+    checkBundle(
+        path.join(repoRoot, 'dist', 'components', 'index.js'),
+        EXPECTED_COMPONENTS_EXPORTS
+    )
+
+    checkTypeDefinitions()
+    checkRuntimeExports()
+    checkRegisteredComponentNamesInBundle()
+})
