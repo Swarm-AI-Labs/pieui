@@ -65,8 +65,81 @@ const extractMethodsFromObjectLiteral = (
     return out
 }
 
-const resolveIdentifierToObjectLiteral = (expr: any, checker: any): any => {
+const objectLiteralFromFunctionBody = (
+    fn: any,
+    checker: any,
+    visited: Set<string>
+): any => {
+    if (ts.isArrowFunction(fn)) {
+        const direct = resolveExpressionToObjectLiteral(fn.body, checker, visited)
+        if (direct) return direct
+        if (ts.isBlock(fn.body)) {
+            for (const stmt of fn.body.statements) {
+                if (ts.isReturnStatement(stmt) && stmt.expression) {
+                    const returned = resolveExpressionToObjectLiteral(
+                        stmt.expression,
+                        checker,
+                        visited
+                    )
+                    if (returned) return returned
+                }
+            }
+        }
+    }
+
+    if (ts.isFunctionExpression(fn) || ts.isFunctionDeclaration(fn)) {
+        if (fn.body) {
+            for (const stmt of fn.body.statements) {
+                if (ts.isReturnStatement(stmt) && stmt.expression) {
+                    const returned = resolveExpressionToObjectLiteral(
+                        stmt.expression,
+                        checker,
+                        visited
+                    )
+                    if (returned) return returned
+                }
+            }
+        }
+    }
+}
+
+const isUseMemoCall = (callExpr: any): boolean => {
+    if (ts.isIdentifier(callExpr.expression)) {
+        return callExpr.expression.text === 'useMemo'
+    }
+    if (ts.isPropertyAccessExpression(callExpr.expression)) {
+        return callExpr.expression.name.text === 'useMemo'
+    }
+    return false
+}
+
+const resolveExpressionToObjectLiteral = (
+    expr: any,
+    checker: any,
+    visited = new Set<string>()
+): any => {
+    if (!expr) return
+    if (ts.isObjectLiteralExpression(expr)) return expr
+
+    if (ts.isParenthesizedExpression(expr)) {
+        return resolveExpressionToObjectLiteral(expr.expression, checker, visited)
+    }
+    if (ts.isAsExpression(expr) || ts.isTypeAssertionExpression(expr)) {
+        return resolveExpressionToObjectLiteral(expr.expression, checker, visited)
+    }
+
+    if (ts.isCallExpression(expr) && isUseMemoCall(expr)) {
+        const factory = expr.arguments[0]
+        if (factory) {
+            return objectLiteralFromFunctionBody(factory, checker, visited)
+        }
+    }
+
     if (!ts.isIdentifier(expr)) return
+    const key = expr.text
+    if (visited.has(key)) return
+    visited.add(key)
+
     const symbol = checker.getSymbolAtLocation(expr)
     if (!symbol) return
 
@@ -74,13 +147,11 @@ const resolveIdentifierToObjectLiteral = (expr: any, checker: any): any => {
     if (!decl) return
 
     if (ts.isVariableDeclaration(decl) && decl.initializer) {
-        if (ts.isObjectLiteralExpression(decl.initializer))
-            return decl.initializer
+        return resolveExpressionToObjectLiteral(decl.initializer, checker, visited)
     }
 
     if (ts.isPropertyAssignment(decl)) {
-        const init = decl.initializer
-        if (ts.isObjectLiteralExpression(init)) return init
+        return resolveExpressionToObjectLiteral(decl.initializer, checker, visited)
     }
 }
 
@@ -153,9 +224,7 @@ export const listEventsCommand = (srcDir: string, componentName: string) => {
                     return
                 }
 
-                let obj: any
-                if (ts.isObjectLiteralExpression(expr)) obj = expr
-                else obj = resolveIdentifierToObjectLiteral(expr, checker)
+                const obj = resolveExpressionToObjectLiteral(expr, checker)
                 if (!obj) {
                     ts.forEachChild(node, visit)
                     return
@@ -197,9 +266,7 @@ export const listEventsCommand = (srcDir: string, componentName: string) => {
                     return
                 }
 
-                let obj: any
-                if (ts.isObjectLiteralExpression(expr)) obj = expr
-                else obj = resolveIdentifierToObjectLiteral(expr, checker)
+                const obj = resolveExpressionToObjectLiteral(expr, checker)
                 if (!obj) {
                     ts.forEachChild(node, visit)
                     return

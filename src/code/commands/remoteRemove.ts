@@ -3,6 +3,7 @@ import path from 'path'
 
 const REMOVE_URL = 'https://api-pieui.swarm.ing/external/remove'
 const API_KEY_ENV = 'PIEUI_EXTERNAL_API_KEY'
+const REMOVE_URL_ENV = 'PIEUI_EXTERNAL_REMOVE_URL'
 
 const toProjectSlug = (raw: string): string => {
     const base = raw.trim().replace(/^@/, '').replaceAll('/', '-')
@@ -42,8 +43,9 @@ export const remoteRemoveCommand = async (componentName: string) => {
     if (apiKey) {
         headers['x-api-key'] = apiKey
     }
+    const removeUrl = process.env[REMOVE_URL_ENV] || REMOVE_URL
 
-    const url = `${REMOVE_URL}?component=${encodeURIComponent(remoteName)}`
+    const url = `${removeUrl}?component=${encodeURIComponent(remoteName)}`
     console.log(`[pieui] Removing from: ${url}`)
 
     const res = await fetch(url, { method: 'DELETE', headers })

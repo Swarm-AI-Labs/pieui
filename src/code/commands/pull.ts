@@ -4,6 +4,7 @@ import JSZip from 'jszip'
 
 const PULL_URL = 'https://api-pieui.swarm.ing/external/pull'
 const API_KEY_ENV = 'PIEUI_EXTERNAL_API_KEY'
+const PULL_URL_ENV = 'PIEUI_EXTERNAL_PULL_URL'
 
 const toProjectSlug = (raw: string): string => {
     const base = raw.trim().replace(/^@/, '').replaceAll('/', '-')
@@ -66,8 +67,9 @@ export const pullCommand = async (componentName: string) => {
     if (apiKey) {
         headers['x-api-key'] = apiKey
     }
+    const pullUrl = process.env[PULL_URL_ENV] || PULL_URL
 
-    const url = `${PULL_URL}?component=${encodeURIComponent(remoteName)}`
+    const url = `${pullUrl}?component=${encodeURIComponent(remoteName)}`
     console.log(`[pieui] Downloading from: ${url}`)
 
     const res = await fetch(url, { method: 'GET', headers })
