@@ -184,6 +184,15 @@ const checkRegisteredComponentNamesInBundle = () => {
     }
 }
 
+let buildPreparationError = null
+try {
+    // Keep build prep outside test() for compatibility with older Bun versions
+    // that do not support test options objects and use stricter per-test timeout rules.
+    ensureBuildArtifacts()
+} catch (error) {
+    buildPreparationError = error
+}
+
 // Verifies package scripts expose deterministic entry points for each step suite and full run.
 test('package.json includes step test scripts and cleanup script', () => {
     const packageJsonPath = path.join(repoRoot, 'package.json')
@@ -300,31 +309,29 @@ test('cleanup script removes only matching prefix directories', () => {
 })
 
 // Verifies built artifacts export required API/runtime symbols and type definitions.
-test(
-    'build artifacts expose required exports, components, types, and registry entries',
-    { timeout: 300000 },
-    () => {
-        ensureBuildArtifacts()
-
-        checkBundle(
-            path.join(repoRoot, 'dist', 'index.esm.js'),
-            EXPECTED_MAIN_EXPORTS
-        )
-        checkBundle(
-            path.join(repoRoot, 'dist', 'index.js'),
-            EXPECTED_MAIN_EXPORTS
-        )
-        checkBundle(
-            path.join(repoRoot, 'dist', 'components', 'index.esm.js'),
-            EXPECTED_COMPONENTS_EXPORTS
-        )
-        checkBundle(
-            path.join(repoRoot, 'dist', 'components', 'index.js'),
-            EXPECTED_COMPONENTS_EXPORTS
-        )
-
-        checkTypeDefinitions()
-        checkRuntimeExports()
-        checkRegisteredComponentNamesInBundle()
+test('build artifacts expose required exports, components, types, and registry entries', () => {
+    if (buildPreparationError) {
+        throw buildPreparationError
     }
-)
+
+    checkBundle(
+        path.join(repoRoot, 'dist', 'index.esm.js'),
+        EXPECTED_MAIN_EXPORTS
+    )
+    checkBundle(
+        path.join(repoRoot, 'dist', 'index.js'),
+        EXPECTED_MAIN_EXPORTS
+    )
+    checkBundle(
+        path.join(repoRoot, 'dist', 'components', 'index.esm.js'),
+        EXPECTED_COMPONENTS_EXPORTS
+    )
+    checkBundle(
+        path.join(repoRoot, 'dist', 'components', 'index.js'),
+        EXPECTED_COMPONENTS_EXPORTS
+    )
+
+    checkTypeDefinitions()
+    checkRuntimeExports()
+    checkRegisteredComponentNamesInBundle()
+})
