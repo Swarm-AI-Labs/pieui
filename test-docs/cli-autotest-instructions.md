@@ -14,6 +14,7 @@
 - Step 4 (`step4-ci`) covers CI hardening contracts:
     - package test script entrypoints
     - CI workflow gate steps/log artifact upload/cleanup hooks
+    - built artifact export contracts (dist bundles, required symbols, types, and component registration markers)
     - local cleanup utility behavior (`dry-run` and real removal)
 - Step 5 (`step5-regres`) covers targeted bug-regression contracts:
     - `add` rollback/clean failure when `registry.ts` is missing

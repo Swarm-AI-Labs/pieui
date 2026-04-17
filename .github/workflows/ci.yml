@@ -37,9 +37,6 @@ jobs:
                   bun run test:step3 2>&1 | tee test-artifacts/step3.log
                   step3_status=${PIPESTATUS[0]}
 
-                  bun run test:step4 2>&1 | tee test-artifacts/step4.log
-                  step4_status=${PIPESTATUS[0]}
-
                   bun run test:step5 2>&1 | tee test-artifacts/step5.log
                   step5_status=${PIPESTATUS[0]}
 
@@ -47,19 +44,30 @@ jobs:
                     echo "step1=${step1_status}"
                     echo "step2=${step2_status}"
                     echo "step3=${step3_status}"
-                    echo "step4=${step4_status}"
                     echo "step5=${step5_status}"
                   } | tee test-artifacts/step-status.txt
 
-                  if [ "${step1_status}" -ne 0 ] || [ "${step2_status}" -ne 0 ] || [ "${step3_status}" -ne 0 ] || [ "${step4_status}" -ne 0 ] || [ "${step5_status}" -ne 0 ]; then
+                  if [ "${step1_status}" -ne 0 ] || [ "${step2_status}" -ne 0 ] || [ "${step3_status}" -ne 0 ] || [ "${step5_status}" -ne 0 ]; then
                     exit 1
                   fi
 
             - name: Build package
               run: bun run build
 
-            - name: Verify build exports
-              run: node scripts/verify-exports.mjs
+            - name: Run step4 build/export checks with logs
+              shell: bash
+              run: |
+                  mkdir -p test-artifacts
+                  set +e
+
+                  bun run test:step4 2>&1 | tee test-artifacts/step4.log
+                  step4_status=${PIPESTATUS[0]}
+
+                  echo "step4=${step4_status}" | tee -a test-artifacts/step-status.txt
+
+                  if [ "${step4_status}" -ne 0 ]; then
+                    exit 1
+                  fi
 
             - name: Cleanup temporary test artifacts
               if: always()

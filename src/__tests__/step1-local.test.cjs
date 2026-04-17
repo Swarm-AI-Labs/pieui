@@ -724,6 +724,10 @@ test('create-pie-app scaffolds blank app template with Bun-backed next scripts',
     const projectDir = makeProjectDir('pieui-cli-create-template-')
     const fakeBunPath = path.join(projectDir, 'fake-bun.sh')
     const logPath = path.join(projectDir, 'bun-create.log')
+    const sharedSourceDir = path.join(projectDir, 'ai-exchange-bot', '_shared')
+
+    writeFile(path.join(sharedSourceDir, 'config.ts'), 'export const marker = "shared"\n')
+    writeFile(path.join(sharedSourceDir, 'ui', 'index.ts'), 'export {}\n')
 
     writeFile(
         fakeBunPath,
@@ -758,7 +762,10 @@ EOF
     const result = runCli({
         cwd: projectDir,
         args: ['create-pie-app', 'my-pie-app'],
-        env: { PIEUI_CREATE_BUN_BIN: fakeBunPath },
+        env: {
+            PIEUI_CREATE_BUN_BIN: fakeBunPath,
+            PIEUI_SHARED_TEMPLATE_DIR: sharedSourceDir,
+        },
     })
     assertSucceeded(
         result,
@@ -786,4 +793,8 @@ EOF
         pageTsx,
         /TODO\(pie-backend\): Link generated Python Unicorn backend routes here/
     )
+
+    const copiedShared = path.join(projectDir, 'my-pie-app', '_shared')
+    assert.ok(fs.existsSync(path.join(copiedShared, 'config.ts')))
+    assert.ok(fs.existsSync(path.join(copiedShared, 'ui', 'index.ts')))
 })

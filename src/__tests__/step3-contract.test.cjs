@@ -56,6 +56,49 @@ const runCli = ({ cwd, args, env = {} }) => {
 const makeProjectDir = (prefix) =>
     fs.mkdtempSync(path.join(os.tmpdir(), prefix))
 
+const CLIENT_REQUIRED_PATTERNS = [
+    'util/mitt.ts',
+    'util/socket.ts',
+    'util/centrifuge.ts',
+    'util/pieConfig.ts',
+    'util/navigate.ts',
+    'util/fallback.tsx',
+    'util/useWebApp.ts',
+    'util/useMaxWebApp.ts',
+    'util/useIsSupported.ts',
+    'util/useOpenAIWebRTC.ts',
+    'util/ajaxCommonUtils.ts',
+    'util/globalForm.ts',
+    'components/PieCard/index.tsx',
+    'components/UI/index.tsx',
+    'components/PieRoot/index.tsx',
+    'components/PieBaseRoot/index.tsx',
+    'components/PieTelegramRoot/index.tsx',
+    'components/PieMaxRoot/index.tsx',
+    'providers/SocketIOInitProvider.tsx',
+    'providers/CentrifugeIOInitProvider.tsx',
+    'index.ts',
+]
+
+const SERVER_SAFE_PATTERNS = [
+    'types/index.ts',
+    'util/tailwindCommonUtils.ts',
+    'util/sx2radium.ts',
+    'util/registry.ts',
+    'util/lazy.ts',
+]
+
+const EXPECTED_BUILTIN_COMPONENTS = [
+    'SequenceCard',
+    'BoxCard',
+    'UnionCard',
+    'AjaxGroupCard',
+    'HiddenCard',
+    'AutoRedirectCard',
+    'HTMLEmbedCard',
+    'IOEventsCard',
+]
+
 const assertSucceeded = (result, details) => {
     assert.equal(
         result.status,
@@ -371,4 +414,32 @@ test('add unknown type token falls back to default type using first token as com
         fs.existsSync(path.join(projectDir, 'piecomponents', 'IgnoredName')),
         false
     )
+})
+
+// Verifies SSR/client boundary contract for files that must or must not include 'use client'.
+test("client boundary contract for 'use client' directives remains stable", () => {
+    for (const relPath of CLIENT_REQUIRED_PATTERNS) {
+        const content = fs.readFileSync(path.join(repoRoot, 'src', relPath), 'utf8')
+        const firstLine = content.split('\n')[0].trim()
+        assert.equal(firstLine, "'use client'")
+    }
+
+    for (const relPath of SERVER_SAFE_PATTERNS) {
+        const content = fs.readFileSync(path.join(repoRoot, 'src', relPath), 'utf8')
+        assert.equal(content.startsWith("'use client'"), false)
+    }
+})
+
+// Verifies built-in card modules are registered in the runtime registry after components index side-effect import.
+test('built-in components registration contract remains stable', () => {
+    const registryModule = require(path.join(repoRoot, 'src', 'util', 'registry.ts'))
+    require(path.join(repoRoot, 'src', 'components', 'index.ts'))
+
+    const { hasComponent, getAllRegisteredComponents } = registryModule
+    for (const componentName of EXPECTED_BUILTIN_COMPONENTS) {
+        assert.equal(hasComponent(componentName), true)
+    }
+
+    const names = getAllRegisteredComponents()
+    assert.ok(names.length >= EXPECTED_BUILTIN_COMPONENTS.length)
 })

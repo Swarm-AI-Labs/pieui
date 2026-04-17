@@ -28,8 +28,8 @@ jobs:
             - name: Build package
               run: bun run build
 
-            - name: Verify build exports
-              run: node scripts/verify-exports.mjs
+            - name: Run step4 build/export checks
+              run: bun run test:step4
 
             - name: Setup Node.js for npm publishing
               uses: actions/setup-node@v4

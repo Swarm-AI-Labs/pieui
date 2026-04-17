@@ -3,6 +3,8 @@ import path from 'path'
 import { spawnSync } from 'child_process'
 
 const DEFAULT_TEMPLATE_SPEC = 'next-app@latest'
+const SHARED_TEMPLATE_DIR_ENV = 'PIEUI_SHARED_TEMPLATE_DIR'
+const AI_EXCHANGE_BOT_DIR_ENV = 'PIEUI_AI_EXCHANGE_BOT_DIR'
 const BACKEND_LINK_COMMENT =
     '// TODO(pie-backend): Link generated Python Unicorn backend routes here once backend template sync is enabled.'
 
@@ -50,6 +52,74 @@ const appendBackendLinkComment = (pagePath: string) => {
     )
 }
 
+const uniq = (items: string[]) => [...new Set(items)]
+
+const isDirectory = (target: string) => {
+    try {
+        return fs.statSync(target).isDirectory()
+    } catch {
+        return false
+    }
+}
+
+const resolveSharedTemplateDir = (): string => {
+    const explicitSharedDir = process.env[SHARED_TEMPLATE_DIR_ENV]
+    if (explicitSharedDir) {
+        const normalized = path.resolve(explicitSharedDir)
+        if (!isDirectory(normalized)) {
+            throw new Error(
+                `${SHARED_TEMPLATE_DIR_ENV} points to a missing directory: ${normalized}`
+            )
+        }
+        return normalized
+    }
+
+    const cwd = process.cwd()
+    const baseDirs = [cwd, path.resolve(cwd, '..'), path.resolve(cwd, '../..')]
+    const explicitRepoDir = process.env[AI_EXCHANGE_BOT_DIR_ENV]
+    if (explicitRepoDir) {
+        baseDirs.unshift(path.resolve(explicitRepoDir))
+    }
+
+    const repoNames = ['ai-exchange-bot', 'ai-exchange-web', 'a-exchange-web']
+    const repoCandidates = uniq([
+        ...baseDirs,
+        ...baseDirs.flatMap((base) => repoNames.map((name) => path.join(base, name))),
+    ]).filter((candidate) => isDirectory(candidate))
+
+    const sharedSubpaths = [
+        '_shared',
+        'src/_shared',
+        'app/_shared',
+        'pages/_shared',
+        'pages/components/_shared',
+        'apps/web/_shared',
+        'apps/web/src/_shared',
+    ]
+
+    for (const repoDir of repoCandidates) {
+        for (const subpath of sharedSubpaths) {
+            const candidate = path.join(repoDir, subpath)
+            if (isDirectory(candidate)) {
+                return candidate
+            }
+        }
+    }
+
+    throw new Error(
+        [
+            'Could not locate a _shared template directory from ai-exchange-bot.',
+            `Set ${SHARED_TEMPLATE_DIR_ENV}=/absolute/path/to/_shared`,
+            `or ${AI_EXCHANGE_BOT_DIR_ENV}=/absolute/path/to/ai-exchange-bot.`,
+        ].join(' ')
+    )
+}
+
+const copySharedTemplate = (sharedTemplateDir: string, appDir: string) => {
+    const destination = path.join(appDir, '_shared')
+    fs.cpSync(sharedTemplateDir, destination, { recursive: true, force: true })
+}
+
 export const createPieAppCommand = (appName: string) => {
     const trimmedAppName = appName.trim()
     if (!trimmedAppName) {
@@ -91,10 +161,14 @@ export const createPieAppCommand = (appName: string) => {
         )
     }
 
+    const sharedTemplateDir = resolveSharedTemplateDir()
+    copySharedTemplate(sharedTemplateDir, appDir)
+
     updateNextScriptsToBun(path.join(appDir, 'package.json'))
     appendBackendLinkComment(path.join(appDir, 'app', 'page.tsx'))
 
     console.log('[pieui] Template created successfully.')
+    console.log(`[pieui] Copied _shared from: ${sharedTemplateDir}`)
     console.log(`[pieui] Next steps:`)
     console.log(`  1. cd ${trimmedAppName}`)
     console.log(`  2. bun install`)

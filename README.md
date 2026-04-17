@@ -100,8 +100,15 @@ bunx pieui create-pie-app my-pie-app
 This command:
 
 - runs `bun create next-app@latest my-pie-app --yes`
+- copies a standard `_shared` folder into the new app (sourced from `ai-exchange-bot`)
 - rewrites `dev/build/start` scripts to `bun --bun next ...`
 - appends a TODO marker in `app/page.tsx` for future backend (Python Unicorn) linking
+
+If the `_shared` source cannot be found automatically, set:
+
+```sh
+PIEUI_SHARED_TEMPLATE_DIR=/absolute/path/to/_shared bunx pieui create-pie-app my-pie-app
+```
 
 Planned create flow target:
 
