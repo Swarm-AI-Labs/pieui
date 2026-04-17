@@ -1,10 +1,10 @@
 {
-    "name": "@piedata/pieui",
+    "name": "@swarm.ing/pieui",
     "version": "2.0.10",
     "description": "A React component library featuring PieCard component",
     "repository": {
         "type": "git",
-        "url": "https://github.com/PieDataLabs/pieui.git"
+        "url": "https://github.com/Swarm-AI-Labs/pieui"
     },
     "main": "dist/index.js",
     "module": "dist/index.esm.js",
@@ -105,7 +105,6 @@
     },
     "dependencies": {
         "@openai/agents": "^0.4.5",
-        "@piedata/pieui": "^2.0.9",
         "@tanstack/react-query": "^5.90.20",
         "@telegram-apps/sdk": "^3.11.8",
         "annyang": "^2.6.1",

@@ -5,8 +5,8 @@ PieUI is a React component library for rendering server-driven UI "cards" with o
 **Install**
 
 ```sh
-bun add @piedata/pieui
-npm install @piedata/pieui
+bun add @swarm.ing/pieui
+npm install @swarm.ing/pieui
 ```
 
 React and React DOM `>=19` are peer dependencies.
@@ -14,7 +14,7 @@ React and React DOM `>=19` are peer dependencies.
 **Quick Start**
 
 ```tsx
-import { PieRoot, initializePieComponents } from '@piedata/pieui'
+import { PieRoot, initializePieComponents } from '@swarm.ing/pieui'
 
 initializePieComponents()
 
@@ -49,7 +49,7 @@ If you are embedding PieUI inside a Telegram WebApp, use `PieTelegramRoot` inste
 **Register Custom Components**
 
 ```tsx
-import { registerPieComponent } from '@piedata/pieui'
+import { registerPieComponent } from '@swarm.ing/pieui'
 import MyCard from './MyCard'
 
 registerPieComponent({

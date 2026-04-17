@@ -4,5 +4,5 @@ import HiddenCard from './ui/HiddenCard'
 export default registerPieComponent({
     name: 'HiddenCard',
     component: HiddenCard,
-    metadata: { author: 'PieData' },
+    metadata: { author: 'Swarm.ing' },
 })

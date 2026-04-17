@@ -4,5 +4,5 @@ import AutoRedirectCard from './ui/AutoRedirectCard'
 export default registerPieComponent({
     name: 'AutoRedirectCard',
     component: AutoRedirectCard,
-    metadata: { author: 'PieData' },
+    metadata: { author: 'Swarm.ing' },
 })

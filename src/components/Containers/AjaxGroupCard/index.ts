@@ -5,7 +5,7 @@ export default registerPieComponent({
     name: 'AjaxGroupCard',
     component: AjaxGroupCard,
     metadata: {
-        author: 'PieData',
+        author: 'Swarm.ing',
         description: 'Group card with AJAX support',
     },
 })

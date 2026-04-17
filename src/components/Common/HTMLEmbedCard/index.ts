@@ -4,5 +4,5 @@ import HTMLEmbedCard from './ui/HTMLEmbedCard'
 export default registerPieComponent({
     name: 'HTMLEmbedCard',
     component: HTMLEmbedCard,
-    metadata: { author: 'PieData' },
+    metadata: { author: 'Swarm.ing' },
 })

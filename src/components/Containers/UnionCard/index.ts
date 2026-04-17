@@ -5,7 +5,7 @@ export default registerPieComponent({
     name: 'UnionCard',
     component: UnionCard,
     metadata: {
-        author: 'PieData',
+        author: 'Swarm.ing',
         description: 'Renders one of many components',
     },
 })

@@ -4,5 +4,5 @@ import IOEventsCard from './ui/IOEventsCard'
 export default registerPieComponent({
     name: 'IOEventsCard',
     component: IOEventsCard,
-    metadata: { author: 'PieData' },
+    metadata: { author: 'Swarm.ing' },
 })

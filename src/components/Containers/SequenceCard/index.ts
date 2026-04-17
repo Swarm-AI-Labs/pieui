@@ -5,7 +5,7 @@ export default registerPieComponent({
     name: 'SequenceCard',
     component: SequenceCard,
     metadata: {
-        author: 'PieData',
+        author: 'Swarm.ing',
         description: 'Simple div with styles joining few components',
     },
 })
