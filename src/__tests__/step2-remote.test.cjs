@@ -31,53 +31,56 @@ const resolveCliCommand = () => {
         return ['node', distCli]
     }
 
-    throw new Error('Cannot resolve pieui CLI runtime. Install bun or build dist/cli.js.')
+    throw new Error(
+        'Cannot resolve pieui CLI runtime. Install bun or build dist/cli.js.'
+    )
 }
 
 const runCli = ({ cwd, args, env = {}, timeoutMs = 20000 }) =>
     new Promise((resolve, reject) => {
-    const cmd = resolveCliCommand()
-    const child = spawn(cmd[0], [...cmd.slice(1), ...args], {
-        cwd,
-        env: {
-            ...process.env,
-            ...env,
-            NODE_PATH: path.join(repoRoot, 'node_modules'),
-        },
-        stdio: ['ignore', 'pipe', 'pipe'],
-    })
-    let stdout = ''
-    let stderr = ''
-    let finished = false
+        const cmd = resolveCliCommand()
+        const child = spawn(cmd[0], [...cmd.slice(1), ...args], {
+            cwd,
+            env: {
+                ...process.env,
+                ...env,
+                NODE_PATH: path.join(repoRoot, 'node_modules'),
+            },
+            stdio: ['ignore', 'pipe', 'pipe'],
+        })
+        let stdout = ''
+        let stderr = ''
+        let finished = false
 
-    const timer = setTimeout(() => {
-        if (finished) return
-        child.kill('SIGKILL')
-    }, timeoutMs)
+        const timer = setTimeout(() => {
+            if (finished) return
+            child.kill('SIGKILL')
+        }, timeoutMs)
 
-    child.stdout.on('data', (chunk) => {
-        stdout += chunk.toString()
+        child.stdout.on('data', (chunk) => {
+            stdout += chunk.toString()
+        })
+        child.stderr.on('data', (chunk) => {
+            stderr += chunk.toString()
+        })
+        child.on('error', (error) => {
+            clearTimeout(timer)
+            if (!finished) {
+                finished = true
+                reject(error)
+            }
+        })
+        child.on('close', (code, signal) => {
+            clearTimeout(timer)
+            if (!finished) {
+                finished = true
+                resolve({ status: code, signal, stdout, stderr })
+            }
+        })
     })
-    child.stderr.on('data', (chunk) => {
-        stderr += chunk.toString()
-    })
-    child.on('error', (error) => {
-        clearTimeout(timer)
-        if (!finished) {
-            finished = true
-            reject(error)
-        }
-    })
-    child.on('close', (code, signal) => {
-        clearTimeout(timer)
-        if (!finished) {
-            finished = true
-            resolve({ status: code, signal, stdout, stderr })
-        }
-    })
-})
 
-const makeProjectDir = (prefix) => fs.mkdtempSync(path.join(os.tmpdir(), prefix))
+const makeProjectDir = (prefix) =>
+    fs.mkdtempSync(path.join(os.tmpdir(), prefix))
 
 const assertSucceeded = (result, details) => {
     assert.equal(
@@ -166,9 +169,18 @@ const makeZipBuffer = async (entries) => {
 // Verifies push uploads multipart payload with expected component slug, zip content, and API key header.
 test('push uploads zip archive and sends expected metadata', async () => {
     const projectDir = makeProjectDir('pieui-step2-push-success-')
-    writeFile(path.join(projectDir, 'package.json'), JSON.stringify({ name: '@Acme/My_App' }))
-    writeFile(path.join(projectDir, 'piecomponents', 'AlertsCard', 'index.ts'), 'export {}\n')
-    writeFile(path.join(projectDir, 'piecomponents', 'AlertsCard', 'ui', 'view.tsx'), 'export default null\n')
+    writeFile(
+        path.join(projectDir, 'package.json'),
+        JSON.stringify({ name: '@Acme/My_App' })
+    )
+    writeFile(
+        path.join(projectDir, 'piecomponents', 'AlertsCard', 'index.ts'),
+        'export {}\n'
+    )
+    writeFile(
+        path.join(projectDir, 'piecomponents', 'AlertsCard', 'ui', 'view.tsx'),
+        'export default null\n'
+    )
 
     let requestRecord
     const { server, baseUrl } = await startServer(async (req, res) => {
@@ -197,7 +209,10 @@ test('push uploads zip archive and sends expected metadata', async () => {
         assert.equal(requestRecord.url, '/push')
         assert.equal(requestRecord.headers['x-api-key'], 'secret-key')
 
-        const parts = parseMultipartParts(requestRecord.body, requestRecord.headers['content-type'])
+        const parts = parseMultipartParts(
+            requestRecord.body,
+            requestRecord.headers['content-type']
+        )
         const componentPart = parts.find((p) => p.name === 'component')
         const filePart = parts.find((p) => p.name === 'file')
 
@@ -219,7 +234,10 @@ test('push falls back to cwd basename slug for remote component name', async () 
     const base = makeProjectDir('pieui-step2-push-fallback-')
     const projectDir = path.join(base, 'My Project!')
     fs.mkdirSync(projectDir, { recursive: true })
-    writeFile(path.join(projectDir, 'piecomponents', 'CardX', 'index.ts'), 'export {}\n')
+    writeFile(
+        path.join(projectDir, 'piecomponents', 'CardX', 'index.ts'),
+        'export {}\n'
+    )
 
     let requestRecord
     const { server, baseUrl } = await startServer(async (req, res) => {
@@ -239,7 +257,10 @@ test('push falls back to cwd basename slug for remote component name', async () 
         })
         assertSucceeded(result, 'push should succeed without package.json')
 
-        const parts = parseMultipartParts(requestRecord.body, requestRecord.headers['content-type'])
+        const parts = parseMultipartParts(
+            requestRecord.body,
+            requestRecord.headers['content-type']
+        )
         const componentPart = parts.find((p) => p.name === 'component')
         assert.ok(componentPart)
         assert.equal(componentPart.bodyText, 'my-project/CardX')
@@ -251,8 +272,14 @@ test('push falls back to cwd basename slug for remote component name', async () 
 // Verifies push reports upstream server errors with status and body details.
 test('push surfaces non-2xx server response', async () => {
     const projectDir = makeProjectDir('pieui-step2-push-error-')
-    writeFile(path.join(projectDir, 'package.json'), JSON.stringify({ name: 'demo' }))
-    writeFile(path.join(projectDir, 'piecomponents', 'BrokenCard', 'index.ts'), 'export {}\n')
+    writeFile(
+        path.join(projectDir, 'package.json'),
+        JSON.stringify({ name: 'demo' })
+    )
+    writeFile(
+        path.join(projectDir, 'piecomponents', 'BrokenCard', 'index.ts'),
+        'export {}\n'
+    )
 
     const { server, baseUrl } = await startServer(async (_req, res) => {
         res.statusCode = 500
@@ -278,12 +305,21 @@ test('push surfaces non-2xx server response', async () => {
 // Verifies push does not send API key header when PIEUI_EXTERNAL_API_KEY is not set.
 test('push omits api key header when environment key is absent', async () => {
     const projectDir = makeProjectDir('pieui-step2-push-no-apikey-')
-    writeFile(path.join(projectDir, 'package.json'), JSON.stringify({ name: 'demo' }))
-    writeFile(path.join(projectDir, 'piecomponents', 'NoKeyCard', 'index.ts'), 'export {}\n')
+    writeFile(
+        path.join(projectDir, 'package.json'),
+        JSON.stringify({ name: 'demo' })
+    )
+    writeFile(
+        path.join(projectDir, 'piecomponents', 'NoKeyCard', 'index.ts'),
+        'export {}\n'
+    )
 
     let requestRecord
     const { server, baseUrl } = await startServer(async (req, res) => {
-        requestRecord = { headers: req.headers, body: await readRequestBody(req) }
+        requestRecord = {
+            headers: req.headers,
+            body: await readRequestBody(req),
+        }
         res.statusCode = 200
         res.end('ok')
     })
@@ -324,8 +360,14 @@ test('push fails when target component directory is missing', async () => {
 // Verifies pull downloads zip payload, overwrites existing directory, and preserves API key headers.
 test('pull extracts downloaded archive and overwrites previous component files', async () => {
     const projectDir = makeProjectDir('pieui-step2-pull-success-')
-    writeFile(path.join(projectDir, 'package.json'), JSON.stringify({ name: 'Demo_App' }))
-    writeFile(path.join(projectDir, 'piecomponents', 'SyncCard', 'old.txt'), 'old\n')
+    writeFile(
+        path.join(projectDir, 'package.json'),
+        JSON.stringify({ name: 'Demo_App' })
+    )
+    writeFile(
+        path.join(projectDir, 'piecomponents', 'SyncCard', 'old.txt'),
+        'old\n'
+    )
 
     const zipBuffer = await makeZipBuffer({
         'index.ts': 'export const value = 1\n',
@@ -359,13 +401,30 @@ test('pull extracts downloaded archive and overwrites previous component files',
         assert.equal(requestRecord.headers['x-api-key'], 'pull-key')
         assert.match(requestRecord.url, /\/pull\?component=demo_app%2FSyncCard/)
 
-        assert.equal(fs.existsSync(path.join(projectDir, 'piecomponents', 'SyncCard', 'old.txt')), false)
         assert.equal(
-            fs.readFileSync(path.join(projectDir, 'piecomponents', 'SyncCard', 'index.ts'), 'utf8'),
+            fs.existsSync(
+                path.join(projectDir, 'piecomponents', 'SyncCard', 'old.txt')
+            ),
+            false
+        )
+        assert.equal(
+            fs.readFileSync(
+                path.join(projectDir, 'piecomponents', 'SyncCard', 'index.ts'),
+                'utf8'
+            ),
             'export const value = 1\n'
         )
         assert.equal(
-            fs.readFileSync(path.join(projectDir, 'piecomponents', 'SyncCard', 'ui', 'view.tsx'), 'utf8'),
+            fs.readFileSync(
+                path.join(
+                    projectDir,
+                    'piecomponents',
+                    'SyncCard',
+                    'ui',
+                    'view.tsx'
+                ),
+                'utf8'
+            ),
             'export default null\n'
         )
     } finally {
@@ -449,18 +508,33 @@ test('pull normalizes windows-style archive paths', async () => {
             args: ['pull', 'WinPathCard'],
             env: { PIEUI_EXTERNAL_PULL_URL: `${baseUrl}/pull` },
         })
-        assertSucceeded(result, 'pull should succeed for windows-style archive paths')
+        assertSucceeded(
+            result,
+            'pull should succeed for windows-style archive paths'
+        )
 
         assert.equal(
             fs.readFileSync(
-                path.join(projectDir, 'piecomponents', 'WinPathCard', 'ui', 'view.tsx'),
+                path.join(
+                    projectDir,
+                    'piecomponents',
+                    'WinPathCard',
+                    'ui',
+                    'view.tsx'
+                ),
                 'utf8'
             ),
             'export default 1\n'
         )
         assert.equal(
             fs.readFileSync(
-                path.join(projectDir, 'piecomponents', 'WinPathCard', 'types', 'index.ts'),
+                path.join(
+                    projectDir,
+                    'piecomponents',
+                    'WinPathCard',
+                    'types',
+                    'index.ts'
+                ),
                 'utf8'
             ),
             'export type T = string\n'
@@ -495,7 +569,10 @@ test('pull blocks unsafe archive paths', async () => {
 
         assert.equal(result.status, 1)
         assert.match(result.stderr, /unsafe path in archive/)
-        assert.equal(fs.existsSync(path.join(projectDir, 'piecomponents', 'escape.txt')), false)
+        assert.equal(
+            fs.existsSync(path.join(projectDir, 'piecomponents', 'escape.txt')),
+            false
+        )
         assert.equal(fs.existsSync(path.join(projectDir, 'escape.txt')), false)
     } finally {
         await stopServer(server)
@@ -514,7 +591,10 @@ test('pull fails when piecomponents directory is missing', async () => {
 // Verifies remote-remove uses DELETE with encoded component name and API key header.
 test('remote-remove sends delete request with expected query and headers', async () => {
     const projectDir = makeProjectDir('pieui-step2-remove-success-')
-    writeFile(path.join(projectDir, 'package.json'), JSON.stringify({ name: '@Org/My-App' }))
+    writeFile(
+        path.join(projectDir, 'package.json'),
+        JSON.stringify({ name: '@Org/My-App' })
+    )
 
     let requestRecord
     const { server, baseUrl } = await startServer(async (req, res) => {
@@ -540,7 +620,10 @@ test('remote-remove sends delete request with expected query and headers', async
         assertSucceeded(result, 'remote-remove should succeed')
         assert.equal(requestRecord.method, 'DELETE')
         assert.equal(requestRecord.headers['x-api-key'], 'remove-key')
-        assert.match(requestRecord.url, /\/remove\?component=my-app%2FLegacyCard/)
+        assert.match(
+            requestRecord.url,
+            /\/remove\?component=my-app%2FLegacyCard/
+        )
     } finally {
         await stopServer(server)
     }
@@ -549,7 +632,10 @@ test('remote-remove sends delete request with expected query and headers', async
 // Verifies remote-remove reports upstream errors with response payload details.
 test('remote-remove surfaces non-2xx server response', async () => {
     const projectDir = makeProjectDir('pieui-step2-remove-error-')
-    writeFile(path.join(projectDir, 'package.json'), JSON.stringify({ name: 'demo' }))
+    writeFile(
+        path.join(projectDir, 'package.json'),
+        JSON.stringify({ name: 'demo' })
+    )
 
     const { server, baseUrl } = await startServer(async (_req, res) => {
         res.statusCode = 404
@@ -575,7 +661,10 @@ test('remote-remove surfaces non-2xx server response', async () => {
 // Verifies remote-remove omits API key header when PIEUI_EXTERNAL_API_KEY is not set.
 test('remote-remove omits api key header when environment key is absent', async () => {
     const projectDir = makeProjectDir('pieui-step2-remove-no-apikey-')
-    writeFile(path.join(projectDir, 'package.json'), JSON.stringify({ name: 'demo' }))
+    writeFile(
+        path.join(projectDir, 'package.json'),
+        JSON.stringify({ name: 'demo' })
+    )
 
     let requestRecord
     const { server, baseUrl } = await startServer(async (req, res) => {
@@ -616,9 +705,15 @@ test('remote-remove falls back to cwd basename slug for remote component name', 
             args: ['remote-remove', 'LegacyCard'],
             env: { PIEUI_EXTERNAL_REMOVE_URL: `${baseUrl}/remove` },
         })
-        assertSucceeded(result, 'remote-remove should succeed without package.json')
+        assertSucceeded(
+            result,
+            'remote-remove should succeed without package.json'
+        )
         assert.equal(requestRecord.method, 'DELETE')
-        assert.match(requestRecord.url, /\/remove\?component=my-remove-app%2FLegacyCard/)
+        assert.match(
+            requestRecord.url,
+            /\/remove\?component=my-remove-app%2FLegacyCard/
+        )
     } finally {
         await stopServer(server)
     }
@@ -630,14 +725,26 @@ test('remote command args are required for push, pull, and remote-remove', async
 
     const pushResult = await runCli({ cwd: projectDir, args: ['push'] })
     const pullResult = await runCli({ cwd: projectDir, args: ['pull'] })
-    const removeResult = await runCli({ cwd: projectDir, args: ['remote-remove'] })
+    const removeResult = await runCli({
+        cwd: projectDir,
+        args: ['remote-remove'],
+    })
 
     assert.equal(pushResult.status, 1)
-    assert.match(pushResult.stderr, /Component name is required for push command/)
+    assert.match(
+        pushResult.stderr,
+        /Component name is required for push command/
+    )
 
     assert.equal(pullResult.status, 1)
-    assert.match(pullResult.stderr, /Component name is required for pull command/)
+    assert.match(
+        pullResult.stderr,
+        /Component name is required for pull command/
+    )
 
     assert.equal(removeResult.status, 1)
-    assert.match(removeResult.stderr, /Component name is required for remote-remove command/)
+    assert.match(
+        removeResult.stderr,
+        /Component name is required for remote-remove command/
+    )
 })

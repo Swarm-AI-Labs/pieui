@@ -31,7 +31,9 @@ const resolveCliCommand = () => {
         return ['node', distCli]
     }
 
-    throw new Error('Cannot resolve pieui CLI runtime. Install bun or build dist/cli.js.')
+    throw new Error(
+        'Cannot resolve pieui CLI runtime. Install bun or build dist/cli.js.'
+    )
 }
 
 const runCli = ({ cwd, args, env = {}, timeoutMs = 20000 }) =>
@@ -77,7 +79,8 @@ const runCli = ({ cwd, args, env = {}, timeoutMs = 20000 }) =>
         })
     })
 
-const makeProjectDir = (prefix) => fs.mkdtempSync(path.join(os.tmpdir(), prefix))
+const makeProjectDir = (prefix) =>
+    fs.mkdtempSync(path.join(os.tmpdir(), prefix))
 
 const startServer = async (handler) => {
     const server = http.createServer((req, res) => {
@@ -123,7 +126,10 @@ test('add without registry exits cleanly and rolls back created component direct
     })
 
     assert.equal(result.status, 1)
-    assert.match(result.stderr, /registry\.ts not found\. Run "pieui init" first\./)
+    assert.match(
+        result.stderr,
+        /registry\.ts not found\. Run "pieui init" first\./
+    )
 
     const componentDir = path.join(projectDir, 'piecomponents', 'RollbackCard')
     assert.equal(fs.existsSync(componentDir), false)
@@ -132,7 +138,12 @@ test('add without registry exits cleanly and rolls back created component direct
 // Verifies pull does not delete existing local component when archive extraction fails (unsafe path entry).
 test('pull keeps existing component when archive contains unsafe path', async () => {
     const projectDir = makeProjectDir('pieui-step5-pull-rollback-')
-    const existingPath = path.join(projectDir, 'piecomponents', 'SafeCard', 'index.ts')
+    const existingPath = path.join(
+        projectDir,
+        'piecomponents',
+        'SafeCard',
+        'index.ts'
+    )
     writeFile(existingPath, 'export const stable = true\n')
 
     const zipBuffer = await makeZipBuffer({
@@ -158,7 +169,10 @@ test('pull keeps existing component when archive contains unsafe path', async ()
 
         const kept = fs.readFileSync(existingPath, 'utf8')
         assert.match(kept, /stable = true/)
-        assert.equal(fs.existsSync(path.join(projectDir, 'piecomponents', 'escape.ts')), false)
+        assert.equal(
+            fs.existsSync(path.join(projectDir, 'piecomponents', 'escape.ts')),
+            false
+        )
     } finally {
         await stopServer(server)
     }
@@ -167,8 +181,14 @@ test('pull keeps existing component when archive contains unsafe path', async ()
 // Verifies async command failures (push/pull/remote-remove) are formatted consistently without stack traces.
 test('async command errors are surfaced with stable top-level error formatting', async () => {
     const projectDir = makeProjectDir('pieui-step5-cli-errors-')
-    writeFile(path.join(projectDir, 'package.json'), JSON.stringify({ name: 'demo' }))
-    writeFile(path.join(projectDir, 'piecomponents', 'ErrCard', 'index.ts'), 'export {}\n')
+    writeFile(
+        path.join(projectDir, 'package.json'),
+        JSON.stringify({ name: 'demo' })
+    )
+    writeFile(
+        path.join(projectDir, 'piecomponents', 'ErrCard', 'index.ts'),
+        'export {}\n'
+    )
 
     const { server, baseUrl } = await startServer(async (_req, res) => {
         res.statusCode = 500
@@ -181,17 +201,20 @@ test('async command errors are surfaced with stable top-level error formatting',
             {
                 args: ['push', 'ErrCard'],
                 env: { PIEUI_EXTERNAL_PUSH_URL: `${baseUrl}/push` },
-                expected: /\[pieui\] Error: push failed: 500 Internal Server Error/,
+                expected:
+                    /\[pieui\] Error: push failed: 500 Internal Server Error/,
             },
             {
                 args: ['pull', 'ErrCard'],
                 env: { PIEUI_EXTERNAL_PULL_URL: `${baseUrl}/pull` },
-                expected: /\[pieui\] Error: pull failed: 500 Internal Server Error/,
+                expected:
+                    /\[pieui\] Error: pull failed: 500 Internal Server Error/,
             },
             {
                 args: ['remote-remove', 'ErrCard'],
                 env: { PIEUI_EXTERNAL_REMOVE_URL: `${baseUrl}/remove` },
-                expected: /\[pieui\] Error: remote-remove failed: 500 Internal Server Error/,
+                expected:
+                    /\[pieui\] Error: remote-remove failed: 500 Internal Server Error/,
             },
         ]
 

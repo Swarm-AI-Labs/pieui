@@ -51,7 +51,10 @@ test('package.json includes step test scripts and cleanup script', () => {
         scripts['test:steps'],
         'bun test src/__tests__/step1-local.test.cjs src/__tests__/step2-remote.test.cjs src/__tests__/step3-contract.test.cjs src/__tests__/step4-ci.test.cjs src/__tests__/step5-regres.test.cjs'
     )
-    assert.equal(scripts['test:cleanup'], 'node scripts/cleanup-test-artifacts.mjs')
+    assert.equal(
+        scripts['test:cleanup'],
+        'node scripts/cleanup-test-artifacts.mjs'
+    )
 })
 
 // Verifies CI workflow enforces step suite gates and always uploads logs and cleanup.
@@ -93,8 +96,8 @@ test('cleanup script dry-run keeps matching directories intact', () => {
         ])
 
         assert.equal(result.status, 0)
-        assert.match(result.stdout, /Would remove/) 
-        assert.match(result.stdout, /DRY-RUN/) 
+        assert.match(result.stdout, /Would remove/)
+        assert.match(result.stdout, /DRY-RUN/)
         assert.ok(fs.existsSync(dirA))
         assert.ok(fs.existsSync(dirB))
     } finally {
@@ -118,8 +121,8 @@ test('cleanup script removes only matching prefix directories', () => {
         ])
 
         assert.equal(result.status, 0)
-        assert.match(result.stdout, /Removing/) 
-        assert.match(result.stdout, /Removed/) 
+        assert.match(result.stdout, /Removing/)
+        assert.match(result.stdout, /Removed/)
 
         assert.equal(fs.existsSync(matchingDir), false)
         assert.equal(fs.existsSync(otherDir), true)

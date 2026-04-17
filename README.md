@@ -98,6 +98,7 @@ bunx pieui create-pie-app my-pie-app
 ```
 
 This command:
+
 - runs `bun create next-app@latest my-pie-app --yes`
 - rewrites `dev/build/start` scripts to `bun --bun next ...`
 - appends a TODO marker in `app/page.tsx` for future backend (Python Unicorn) linking

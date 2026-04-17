@@ -29,7 +29,9 @@ const resolveCliCommand = () => {
         return ['node', distCli]
     }
 
-    throw new Error('Cannot resolve pieui CLI runtime. Install bun or build dist/cli.js.')
+    throw new Error(
+        'Cannot resolve pieui CLI runtime. Install bun or build dist/cli.js.'
+    )
 }
 
 const runCli = ({ cwd, args, env = {} }) => {
@@ -51,7 +53,8 @@ const runCli = ({ cwd, args, env = {} }) => {
     }
 }
 
-const makeProjectDir = (prefix) => fs.mkdtempSync(path.join(os.tmpdir(), prefix))
+const makeProjectDir = (prefix) =>
+    fs.mkdtempSync(path.join(os.tmpdir(), prefix))
 
 const assertSucceeded = (result, details) => {
     assert.equal(
@@ -90,7 +93,10 @@ test('unknown command prints usage and exits with code 1', () => {
 test('required arg contract for create-pie-app/add/remove/list-events/add-event', () => {
     const projectDir = makeProjectDir('pieui-step3-required-args-local-')
 
-    const createPieAppResult = runCli({ cwd: projectDir, args: ['create-pie-app'] })
+    const createPieAppResult = runCli({
+        cwd: projectDir,
+        args: ['create-pie-app'],
+    })
     assert.equal(createPieAppResult.status, 1)
     assert.match(
         createPieAppResult.stderr,
@@ -105,17 +111,29 @@ test('required arg contract for create-pie-app/add/remove/list-events/add-event'
 
     const removeResult = runCli({ cwd: projectDir, args: ['remove'] })
     assert.equal(removeResult.status, 1)
-    assert.match(removeResult.stderr, /Component name is required for remove command/)
+    assert.match(
+        removeResult.stderr,
+        /Component name is required for remove command/
+    )
     assertUsageShown(removeResult)
 
     const listEventsResult = runCli({ cwd: projectDir, args: ['list-events'] })
     assert.equal(listEventsResult.status, 1)
-    assert.match(listEventsResult.stderr, /Component name is required for list-events command/)
+    assert.match(
+        listEventsResult.stderr,
+        /Component name is required for list-events command/
+    )
     assertUsageShown(listEventsResult)
 
-    const addEventResult = runCli({ cwd: projectDir, args: ['add-event', 'OnlyCard'] })
+    const addEventResult = runCli({
+        cwd: projectDir,
+        args: ['add-event', 'OnlyCard'],
+    })
     assert.equal(addEventResult.status, 1)
-    assert.match(addEventResult.stderr, /Component name and event name are required for add-event command/)
+    assert.match(
+        addEventResult.stderr,
+        /Component name and event name are required for add-event command/
+    )
     assertUsageShown(addEventResult)
 })
 
@@ -129,7 +147,9 @@ test('postbuild defaults are stable and produce manifest in public', () => {
     assert.match(result.stdout, /Source directory: \./)
     assert.match(result.stdout, /Output directory: public/)
     assert.match(result.stdout, /Append mode: false/)
-    assert.ok(fs.existsSync(path.join(projectDir, 'public', 'pieui.components.json')))
+    assert.ok(
+        fs.existsSync(path.join(projectDir, 'public', 'pieui.components.json'))
+    )
 })
 
 // Verifies postbuild flag contracts for equals-form flags and append mode.
@@ -146,7 +166,9 @@ test('postbuild equals flags and append mode are reflected in output contract', 
     assert.match(result.stdout, /Source directory: appsrc/)
     assert.match(result.stdout, /Output directory: distx/)
     assert.match(result.stdout, /Append mode: true/)
-    assert.ok(fs.existsSync(path.join(projectDir, 'distx', 'pieui.components.json')))
+    assert.ok(
+        fs.existsSync(path.join(projectDir, 'distx', 'pieui.components.json'))
+    )
 })
 
 // Verifies short -s flag contract for list command source directory selection.
@@ -177,7 +199,10 @@ test('list invalid filter keeps unfiltered total wording contract', () => {
 // Verifies add default type contract prints complex-container in success output.
 test('add default type contract reports complex-container', () => {
     const projectDir = makeProjectDir('pieui-step3-add-default-type-contract-')
-    assertSucceeded(runCli({ cwd: projectDir, args: ['init'] }), 'init should succeed')
+    assertSucceeded(
+        runCli({ cwd: projectDir, args: ['init'] }),
+        'init should succeed'
+    )
 
     const result = runCli({ cwd: projectDir, args: ['add', 'ContractCard'] })
     assertSucceeded(result, 'add should succeed with default type')
@@ -188,9 +213,15 @@ test('add default type contract reports complex-container', () => {
 // Verifies add explicit type contract prints simple type in success output.
 test('add explicit simple type contract reports simple', () => {
     const projectDir = makeProjectDir('pieui-step3-add-explicit-type-contract-')
-    assertSucceeded(runCli({ cwd: projectDir, args: ['init'] }), 'init should succeed')
+    assertSucceeded(
+        runCli({ cwd: projectDir, args: ['init'] }),
+        'init should succeed'
+    )
 
-    const result = runCli({ cwd: projectDir, args: ['add', 'simple', 'SimpleContractCard'] })
+    const result = runCli({
+        cwd: projectDir,
+        args: ['add', 'simple', 'SimpleContractCard'],
+    })
     assertSucceeded(result, 'add with explicit type should succeed')
 
     assert.match(result.stdout, /Component type: simple/)
@@ -200,10 +231,19 @@ test('add explicit simple type contract reports simple', () => {
 test('init short -o flag creates piecomponents in provided directory', () => {
     const projectDir = makeProjectDir('pieui-step3-init-short-o-')
 
-    const result = runCli({ cwd: projectDir, args: ['init', '-o', 'apps/site'] })
+    const result = runCli({
+        cwd: projectDir,
+        args: ['init', '-o', 'apps/site'],
+    })
     assertSucceeded(result, 'init with short out-dir flag should succeed')
 
-    const registryPath = path.join(projectDir, 'apps', 'site', 'piecomponents', 'registry.ts')
+    const registryPath = path.join(
+        projectDir,
+        'apps',
+        'site',
+        'piecomponents',
+        'registry.ts'
+    )
     assert.ok(fs.existsSync(registryPath))
 })
 
@@ -213,7 +253,10 @@ test('remove without piecomponents returns stable error contract', () => {
     const result = runCli({ cwd: projectDir, args: ['remove', 'GhostCard'] })
 
     assert.equal(result.status, 1)
-    assert.match(result.stderr, /piecomponents directory not found\. Nothing to remove\./)
+    assert.match(
+        result.stderr,
+        /piecomponents directory not found\. Nothing to remove\./
+    )
 })
 
 // Verifies add-event contract for invalid event key remains explicit and non-zero.
@@ -247,7 +290,9 @@ test('postbuild short flags are reflected in output contract', () => {
     assert.match(result.stdout, /Source directory: ssrc/)
     assert.match(result.stdout, /Output directory: oout/)
     assert.match(result.stdout, /Append mode: false/)
-    assert.ok(fs.existsSync(path.join(projectDir, 'oout', 'pieui.components.json')))
+    assert.ok(
+        fs.existsSync(path.join(projectDir, 'oout', 'pieui.components.json'))
+    )
 })
 
 // Verifies init supports equals-form out-dir flag and creates target scaffold path.
@@ -261,7 +306,13 @@ test('init equals-form out-dir creates scaffold in requested directory', () => {
 
     assert.ok(
         fs.existsSync(
-            path.join(projectDir, 'apps', 'eqsite', 'piecomponents', 'registry.ts')
+            path.join(
+                projectDir,
+                'apps',
+                'eqsite',
+                'piecomponents',
+                'registry.ts'
+            )
         )
     )
 })
@@ -296,7 +347,10 @@ test('usage output includes key command entries', () => {
 // Verifies add parser fallback behavior when first positional token is not a known type.
 test('add unknown type token falls back to default type using first token as component name', () => {
     const projectDir = makeProjectDir('pieui-step3-add-unknown-type-token-')
-    assertSucceeded(runCli({ cwd: projectDir, args: ['init'] }), 'init should succeed')
+    assertSucceeded(
+        runCli({ cwd: projectDir, args: ['init'] }),
+        'init should succeed'
+    )
 
     const result = runCli({
         cwd: projectDir,
@@ -304,7 +358,10 @@ test('add unknown type token falls back to default type using first token as com
     })
     assertSucceeded(result, 'add fallback parsing should succeed')
 
-    assert.match(result.stdout, /Creating complex-container component: UnknownType/)
+    assert.match(
+        result.stdout,
+        /Creating complex-container component: UnknownType/
+    )
     assert.ok(
         fs.existsSync(
             path.join(projectDir, 'piecomponents', 'UnknownType', 'index.ts')

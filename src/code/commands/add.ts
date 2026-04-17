@@ -93,7 +93,10 @@ export const addCommand = (
         // Create types/index.ts based on component type
         fs.writeFileSync(
             path.join(componentDir, 'types', 'index.ts'),
-            componentTypesTemplate(componentName, baseInterfaceFor(componentType)),
+            componentTypesTemplate(
+                componentName,
+                baseInterfaceFor(componentType)
+            ),
             'utf8'
         )
 
