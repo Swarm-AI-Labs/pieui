@@ -44,8 +44,12 @@ test('package.json includes step test scripts and cleanup script', () => {
         'bun test src/__tests__/step4-ci.test.cjs'
     )
     assert.equal(
+        scripts['test:step5'],
+        'bun test src/__tests__/step5-regres.test.cjs'
+    )
+    assert.equal(
         scripts['test:steps'],
-        'bun test src/__tests__/step1-local.test.cjs src/__tests__/step2-remote.test.cjs src/__tests__/step3-contract.test.cjs src/__tests__/step4-ci.test.cjs'
+        'bun test src/__tests__/step1-local.test.cjs src/__tests__/step2-remote.test.cjs src/__tests__/step3-contract.test.cjs src/__tests__/step4-ci.test.cjs src/__tests__/step5-regres.test.cjs'
     )
     assert.equal(scripts['test:cleanup'], 'node scripts/cleanup-test-artifacts.mjs')
 })
@@ -61,6 +65,7 @@ test('ci workflow contains step-gating, cleanup, and artifact-upload contracts',
     assert.match(workflow, /bun run test:step2/)
     assert.match(workflow, /bun run test:step3/)
     assert.match(workflow, /bun run test:step4/)
+    assert.match(workflow, /bun run test:step5/)
 
     assert.match(workflow, /name:\s*Cleanup temporary test artifacts/)
     assert.match(workflow, /if:\s*always\(\)/)

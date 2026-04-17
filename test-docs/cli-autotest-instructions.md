@@ -14,6 +14,10 @@
   - package test script entrypoints
   - CI workflow gate steps/log artifact upload/cleanup hooks
   - local cleanup utility behavior (`dry-run` and real removal)
+- Step 5 (`step5-regres`) covers targeted bug-regression contracts:
+  - `add` rollback/clean failure when `registry.ts` is missing
+  - `pull` rollback safety when archive extraction fails
+  - top-level async error formatting for `push`, `pull`, `remote-remove`
 
 ## Prerequisites
 - Bun installed (`1.3.x` recommended)
@@ -43,7 +47,7 @@ bun test src/__tests__/step1-local.test.cjs
 ## Run Full Step Suite
 
 ```bash
-~/.bun/bin/bun test src/__tests__/step1-local.test.cjs src/__tests__/step2-remote.test.cjs src/__tests__/step3-contract.test.cjs src/__tests__/step4-ci.test.cjs
+~/.bun/bin/bun test src/__tests__/step1-local.test.cjs src/__tests__/step2-remote.test.cjs src/__tests__/step3-contract.test.cjs src/__tests__/step4-ci.test.cjs src/__tests__/step5-regres.test.cjs
 ```
 
 ## Step-Named Suites
@@ -51,6 +55,7 @@ bun test src/__tests__/step1-local.test.cjs
 - `src/__tests__/step2-remote.test.cjs` - implemented remote regression tests
 - `src/__tests__/step3-contract.test.cjs` - implemented contract regression tests
 - `src/__tests__/step4-ci.test.cjs` - implemented CI hardening tests
+- `src/__tests__/step5-regres.test.cjs` - implemented bug-regression tests
 
 ## Run Step 2 Remote Tests
 From repository root:
@@ -71,6 +76,13 @@ From repository root:
 
 ```bash
 ~/.bun/bin/bun test src/__tests__/step4-ci.test.cjs
+```
+
+## Run Step 5 Bug-Regression Tests
+From repository root:
+
+```bash
+~/.bun/bin/bun test src/__tests__/step5-regres.test.cjs
 ```
 
 ## What Phase 1 Verifies
