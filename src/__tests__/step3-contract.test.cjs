@@ -486,13 +486,19 @@ test('add unknown type token falls back to default type using first token as com
 // Verifies SSR/client boundary contract for files that must or must not include 'use client'.
 test("client boundary contract for 'use client' directives remains stable", () => {
     for (const relPath of CLIENT_REQUIRED_PATTERNS) {
-        const content = fs.readFileSync(path.join(repoRoot, 'src', relPath), 'utf8')
+        const content = fs.readFileSync(
+            path.join(repoRoot, 'src', relPath),
+            'utf8'
+        )
         const firstLine = content.split('\n')[0].trim()
         assert.equal(firstLine, "'use client'")
     }
 
     for (const relPath of SERVER_SAFE_PATTERNS) {
-        const content = fs.readFileSync(path.join(repoRoot, 'src', relPath), 'utf8')
+        const content = fs.readFileSync(
+            path.join(repoRoot, 'src', relPath),
+            'utf8'
+        )
         assert.equal(content.startsWith("'use client'"), false)
     }
 })

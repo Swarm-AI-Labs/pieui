@@ -104,8 +104,7 @@ const ensureBuildArtifacts = () => {
     }
 
     const bunBin = resolveBunBinary()
-    const bunDir =
-        bunBin.includes(path.sep) ? path.dirname(bunBin) : undefined
+    const bunDir = bunBin.includes(path.sep) ? path.dirname(bunBin) : undefined
     const buildResult = runCommand(
         bunBin,
         ['run', 'build'],
@@ -139,7 +138,6 @@ const checkBundle = (filePath, expectedExports) => {
             `${filePath} should reference export ${exportName}`
         )
     }
-
 }
 
 const checkTypeDefinitions = () => {
@@ -323,10 +321,7 @@ test('build artifacts expose required exports, components, types, and registry e
         path.join(repoRoot, 'dist', 'index.esm.js'),
         EXPECTED_MAIN_EXPORTS
     )
-    checkBundle(
-        path.join(repoRoot, 'dist', 'index.js'),
-        EXPECTED_MAIN_EXPORTS
-    )
+    checkBundle(path.join(repoRoot, 'dist', 'index.js'), EXPECTED_MAIN_EXPORTS)
     checkBundle(
         path.join(repoRoot, 'dist', 'components', 'index.esm.js'),
         EXPECTED_COMPONENTS_EXPORTS

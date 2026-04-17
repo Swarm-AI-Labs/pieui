@@ -726,7 +726,10 @@ test('create-pie-app scaffolds blank app template with Bun-backed next scripts',
     const logPath = path.join(projectDir, 'bun-create.log')
     const sharedSourceDir = path.join(projectDir, 'ai-exchange-bot', '_shared')
 
-    writeFile(path.join(sharedSourceDir, 'config.ts'), 'export const marker = "shared"\n')
+    writeFile(
+        path.join(sharedSourceDir, 'config.ts'),
+        'export const marker = "shared"\n'
+    )
     writeFile(path.join(sharedSourceDir, 'ui', 'index.ts'), 'export {}\n')
 
     writeFile(
