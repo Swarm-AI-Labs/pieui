@@ -156,24 +156,29 @@ const checkTypeDefinitions = () => {
 }
 
 const checkRuntimeExports = () => {
-    const main = require(path.join(repoRoot, 'dist', 'index.js'))
-    const components = require(path.join(repoRoot, 'dist', 'components', 'index.js'))
+    const checkScript = `
+const path = require('node:path');
+const repoRoot = ${JSON.stringify(repoRoot)};
+const expectedMain = ${JSON.stringify(EXPECTED_MAIN_EXPORTS)};
+const expectedComponents = ${JSON.stringify(EXPECTED_COMPONENTS_EXPORTS)};
 
-    for (const exportName of EXPECTED_MAIN_EXPORTS) {
-        assert.ok(
-            Object.prototype.hasOwnProperty.call(main, exportName) ||
-                exportName in main,
-            `dist/index.js should export ${exportName}`
-        )
-    }
+const main = require(path.join(repoRoot, 'dist', 'index.js'));
+const components = require(path.join(repoRoot, 'dist', 'components', 'index.js'));
 
-    for (const exportName of EXPECTED_COMPONENTS_EXPORTS) {
-        assert.ok(
-            Object.prototype.hasOwnProperty.call(components, exportName) ||
-                exportName in components,
-            `dist/components/index.js should export ${exportName}`
-        )
-    }
+const hasExport = (obj, key) =>
+  Object.prototype.hasOwnProperty.call(obj, key) || key in obj;
+
+const missingMain = expectedMain.filter((key) => !hasExport(main, key));
+const missingComponents = expectedComponents.filter((key) => !hasExport(components, key));
+
+if (missingMain.length > 0 || missingComponents.length > 0) {
+  console.error(JSON.stringify({ missingMain, missingComponents }));
+  process.exit(1);
+}
+`
+
+    const result = runCommand('node', ['-e', checkScript], repoRoot)
+    assertSucceeded(result, 'node runtime export contract check should succeed')
 }
 
 const checkRegisteredComponentNamesInBundle = () => {
