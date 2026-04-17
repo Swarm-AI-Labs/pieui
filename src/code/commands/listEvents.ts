@@ -71,7 +71,11 @@ const objectLiteralFromFunctionBody = (
     visited: Set<string>
 ): any => {
     if (ts.isArrowFunction(fn)) {
-        const direct = resolveExpressionToObjectLiteral(fn.body, checker, visited)
+        const direct = resolveExpressionToObjectLiteral(
+            fn.body,
+            checker,
+            visited
+        )
         if (direct) return direct
         if (ts.isBlock(fn.body)) {
             for (const stmt of fn.body.statements) {
@@ -122,10 +126,18 @@ const resolveExpressionToObjectLiteral = (
     if (ts.isObjectLiteralExpression(expr)) return expr
 
     if (ts.isParenthesizedExpression(expr)) {
-        return resolveExpressionToObjectLiteral(expr.expression, checker, visited)
+        return resolveExpressionToObjectLiteral(
+            expr.expression,
+            checker,
+            visited
+        )
     }
     if (ts.isAsExpression(expr) || ts.isTypeAssertionExpression(expr)) {
-        return resolveExpressionToObjectLiteral(expr.expression, checker, visited)
+        return resolveExpressionToObjectLiteral(
+            expr.expression,
+            checker,
+            visited
+        )
     }
 
     if (ts.isCallExpression(expr) && isUseMemoCall(expr)) {
@@ -147,11 +159,19 @@ const resolveExpressionToObjectLiteral = (
     if (!decl) return
 
     if (ts.isVariableDeclaration(decl) && decl.initializer) {
-        return resolveExpressionToObjectLiteral(decl.initializer, checker, visited)
+        return resolveExpressionToObjectLiteral(
+            decl.initializer,
+            checker,
+            visited
+        )
     }
 
     if (ts.isPropertyAssignment(decl)) {
-        return resolveExpressionToObjectLiteral(decl.initializer, checker, visited)
+        return resolveExpressionToObjectLiteral(
+            decl.initializer,
+            checker,
+            visited
+        )
     }
 }
 

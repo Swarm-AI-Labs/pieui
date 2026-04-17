@@ -11,6 +11,7 @@ import { postbuildCommand } from './code/commands/postbuild'
 import { pushCommand } from './code/commands/push'
 import { pullCommand } from './code/commands/pull'
 import { remoteRemoveCommand } from './code/commands/remoteRemove'
+import { createPieAppCommand } from './code/commands/createPieApp'
 
 const main = async () => {
     const {
@@ -19,6 +20,7 @@ const main = async () => {
         srcDir,
         append,
         componentName,
+        createAppName,
         componentType,
         removeComponentName,
         listFilter,
@@ -30,6 +32,17 @@ const main = async () => {
     switch (command) {
         case 'init':
             initCommand(outDir)
+            return
+
+        case 'create-pie-app':
+            if (!createAppName) {
+                console.error(
+                    '[pieui] Error: App name is required for create-pie-app command'
+                )
+                printUsage()
+                process.exit(1)
+            }
+            createPieAppCommand(createAppName)
             return
 
         case 'add':
@@ -117,25 +130,17 @@ const main = async () => {
             console.log(`[pieui] Source directory: ${srcDir}`)
             console.log(`[pieui] Output directory: ${outDir}`)
             console.log(`[pieui] Append mode: ${append}`)
-            break
+            await postbuildCommand(srcDir, outDir, append)
+            return
 
         default:
             printUsage()
             process.exit(1)
     }
-
-    try {
-        await postbuildCommand(srcDir, outDir, append)
-    } catch (error) {
-        const message = error instanceof Error ? error.message : String(error)
-        console.error(
-            `[pieui] Failed to generate component manifest: ${message}`
-        )
-        if (error instanceof Error && error.stack) {
-            console.error('[pieui] Stack trace:', error.stack)
-        }
-        process.exit(1)
-    }
 }
 
-void main()
+void main().catch((error: unknown) => {
+    const message = error instanceof Error ? error.message : String(error)
+    console.error(`[pieui] Error: ${message}`)
+    process.exit(1)
+})

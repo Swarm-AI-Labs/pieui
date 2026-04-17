@@ -1,29 +1,33 @@
 # CLI Autotest Instructions
 
 ## Brief
+
 - Step 1 (`step1-local`) covers local CLI regression behavior:
-  - `init`, `add`, `remove`, `list`, `list-events`, `add-event`, `postbuild`
-  - includes edge cases (idempotency, invalid args, built-in methods scanning, schema overrides)
+    - `init`, `add`, `remove`, `list`, `list-events`, `add-event`, `postbuild`
+    - includes edge cases (idempotency, invalid args, built-in methods scanning, schema overrides)
 - Step 2 (`step2-remote`) covers remote CLI regression behavior:
-  - `push`, `pull`, `remote-remove`
-  - includes request/response contracts, slug/header/query checks, header-presence/absence checks, error propagation, and archive safety
+    - `push`, `pull`, `remote-remove`
+    - includes request/response contracts, slug/header/query checks, header-presence/absence checks, error propagation, and archive safety
 - Step 3 (`step3-contract`) covers CLI contract regression behavior:
-  - usage output, exit codes, required-argument errors, and flag/default contracts
-  - includes wording checks for stable user-facing CLI output and parser edge-case contracts
+    - usage output, exit codes, required-argument errors, and flag/default contracts
+    - includes wording checks for stable user-facing CLI output and parser edge-case contracts
 - Step 4 (`step4-ci`) covers CI hardening contracts:
-  - package test script entrypoints
-  - CI workflow gate steps/log artifact upload/cleanup hooks
-  - local cleanup utility behavior (`dry-run` and real removal)
+    - package test script entrypoints
+    - CI workflow gate steps/log artifact upload/cleanup hooks
+    - built artifact export contracts (dist bundles, required symbols, types, and component registration markers)
+    - local cleanup utility behavior (`dry-run` and real removal)
 - Step 5 (`step5-regres`) covers targeted bug-regression contracts:
-  - `add` rollback/clean failure when `registry.ts` is missing
-  - `pull` rollback safety when archive extraction fails
-  - top-level async error formatting for `push`, `pull`, `remote-remove`
+    - `add` rollback/clean failure when `registry.ts` is missing
+    - `pull` rollback safety when archive extraction fails
+    - top-level async error formatting for `push`, `pull`, `remote-remove`
 
 ## Prerequisites
+
 - Bun installed (`1.3.x` recommended)
 - Dependencies installed in repo root
 
 ## Run Phase 1 CLI Tests
+
 Phase 1 scenarios are now unified in one test file (`step1-local.test.cjs`).
 
 From repository root:
@@ -51,6 +55,7 @@ bun test src/__tests__/step1-local.test.cjs
 ```
 
 ## Step-Named Suites
+
 - `src/__tests__/step1-local.test.cjs` - implemented local regression tests
 - `src/__tests__/step2-remote.test.cjs` - implemented remote regression tests
 - `src/__tests__/step3-contract.test.cjs` - implemented contract regression tests
@@ -58,6 +63,7 @@ bun test src/__tests__/step1-local.test.cjs
 - `src/__tests__/step5-regres.test.cjs` - implemented bug-regression tests
 
 ## Run Step 2 Remote Tests
+
 From repository root:
 
 ```bash
@@ -65,6 +71,7 @@ From repository root:
 ```
 
 ## Run Step 3 Contract Tests
+
 From repository root:
 
 ```bash
@@ -72,6 +79,7 @@ From repository root:
 ```
 
 ## Run Step 4 CI-Hardening Tests
+
 From repository root:
 
 ```bash
@@ -79,6 +87,7 @@ From repository root:
 ```
 
 ## Run Step 5 Bug-Regression Tests
+
 From repository root:
 
 ```bash
@@ -86,15 +95,17 @@ From repository root:
 ```
 
 ## What Phase 1 Verifies
+
 - Local scaffold and config flows (`init`, `add`, `remove`)
 - Local analysis/edit flows (`list`, `list-events`, `add-event`)
 - Local manifest generation (`postbuild`)
 - Idempotency/defaults/error paths for regression protection
 
 ## Troubleshooting
+
 - If you see `command not found: bun`:
-  - use the full binary path `~/.bun/bin/bun`
-  - or start a new shell session so PATH updates apply
+    - use the full binary path `~/.bun/bin/bun`
+    - or start a new shell session so PATH updates apply
 - If tests fail unexpectedly, re-run with file-level command first:
 
 ```bash
@@ -102,6 +113,7 @@ From repository root:
 ```
 
 ## Manual Example (Remote Flow)
+
 Manual `remote-remove` contract check against a local mock server:
 
 ```bash
@@ -132,10 +144,12 @@ kill "$SERVER_PID"
 ```
 
 Expected:
+
 - CLI exits successfully.
 - Server log prints `DELETE /remove?component=demo-app%2FLegacyCard manual-key`.
 
 ## Manual Example (Step 3 Contract)
+
 Manual usage/exit-code contract check:
 
 ```bash
@@ -146,10 +160,12 @@ echo "exit_code=$?"
 ```
 
 Expected:
+
 - Output includes `Usage: pieui <command> [options]`
 - `exit_code=1`
 
 ## Manual Example (Step 4 Cleanup Utility)
+
 Preview cleanup targets without deleting:
 
 ```bash

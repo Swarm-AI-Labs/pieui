@@ -88,3 +88,30 @@ Type exports:
 - `PieConfig`: Configuration object for Pie roots. Includes `apiServer` and optional `centrifugeServer`, `enableRenderingLog`, `pageProcessor`.
 - `UIConfigType`: Server-driven UI configuration with `card`, `data`, and `content` (nested `UIConfigType` or array).
 - `SetUiAjaxConfigurationType`: Setter type for updating the UI configuration or streaming UI events.
+
+## CLI Template Scaffolding
+
+Create a blank Next.js web app template with PieUI CLI:
+
+```sh
+bunx pieui create-pie-app my-pie-app
+```
+
+This command:
+
+- runs `bun create next-app@latest my-pie-app --yes`
+- copies a standard `_shared` folder into the new app (sourced from `ai-exchange-bot`)
+- rewrites `dev/build/start` scripts to `bun --bun next ...`
+- appends a TODO marker in `app/page.tsx` for future backend (Python Unicorn) linking
+
+If the `_shared` source cannot be found automatically, set:
+
+```sh
+PIEUI_SHARED_TEMPLATE_DIR=/absolute/path/to/_shared bunx pieui create-pie-app my-pie-app
+```
+
+Planned create flow target:
+
+```sh
+bun create pieui@latest my-pie-app
+```

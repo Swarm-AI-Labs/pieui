@@ -40,6 +40,9 @@ const ensureDir = (dir: string) => {
     fs.mkdirSync(dir, { recursive: true })
 }
 
+const makeTempComponentDir = (componentDir: string) =>
+    `${componentDir}.pieui-tmp-${process.pid}-${Date.now()}`
+
 const safeJoin = (baseDir: string, relPath: string) => {
     const normalized = relPath.replaceAll('\\', '/')
     const target = path.resolve(baseDir, normalized)
@@ -83,28 +86,37 @@ export const pullCommand = async (componentName: string) => {
     const zipBytes = new Uint8Array(await res.arrayBuffer())
     const zip = await JSZip.loadAsync(zipBytes)
 
-    if (fs.existsSync(componentDir)) {
-        fs.rmSync(componentDir, { recursive: true, force: true })
-    }
-    ensureDir(componentDir)
+    const tempComponentDir = makeTempComponentDir(componentDir)
+    fs.rmSync(tempComponentDir, { recursive: true, force: true })
+    ensureDir(tempComponentDir)
 
     console.log(`[pieui] Extracting into: piecomponents/${componentName}`)
 
-    const entries = Object.values(zip.files)
-    for (const entry of entries) {
-        const rel = entry.name
-        if (!rel) continue
+    try {
+        const entries = Object.values(zip.files)
+        for (const entry of entries) {
+            const rel = entry.name
+            if (!rel) continue
 
-        const outPath = safeJoin(componentDir, rel)
-        if (entry.dir) {
-            ensureDir(outPath)
-            continue
+            const outPath = safeJoin(tempComponentDir, rel)
+            if (entry.dir) {
+                ensureDir(outPath)
+                continue
+            }
+
+            ensureDir(path.dirname(outPath))
+            const buf = await entry.async('uint8array')
+            fs.writeFileSync(outPath, buf)
         }
-
-        ensureDir(path.dirname(outPath))
-        const buf = await entry.async('uint8array')
-        fs.writeFileSync(outPath, buf)
+    } catch (error) {
+        fs.rmSync(tempComponentDir, { recursive: true, force: true })
+        throw error
     }
+
+    if (fs.existsSync(componentDir)) {
+        fs.rmSync(componentDir, { recursive: true, force: true })
+    }
+    fs.renameSync(tempComponentDir, componentDir)
 
     console.log(`[pieui] Pull completed: ${remoteName}`)
 }

@@ -1,4 +1,4 @@
-const test = require('node:test')
+const { test } = require('bun:test')
 const assert = require('node:assert/strict')
 const fs = require('node:fs')
 const os = require('node:os')
@@ -7,10 +7,66 @@ const { spawnSync } = require('node:child_process')
 
 const repoRoot = path.resolve(__dirname, '../..')
 
-const runNodeScript = (args, cwd = repoRoot) => {
-    const result = spawnSync('node', args, {
+const EXPECTED_MAIN_EXPORTS = [
+    'UI',
+    'PieRoot',
+    'PieTelegramRoot',
+    'PieBaseRoot',
+    'PieMaxRoot',
+    'PieCard',
+    'registerPieComponent',
+    'useAjaxSubmit',
+    'useOpenAIWebRTC',
+    'cn',
+    'PIEBREAK',
+    'submitGlobalForm',
+]
+
+const EXPECTED_COMPONENTS_EXPORTS = [
+    'PieCard',
+    'UI',
+    'SequenceCard',
+    'BoxCard',
+    'UnionCard',
+    'AjaxGroupCard',
+    'HTMLEmbedCard',
+    'HiddenCard',
+    'AutoRedirectCard',
+    'IOEventsCard',
+    'SessionStorageCard',
+    'DeviceStorageCard',
+    'CloudStorageCard',
+    'SecureStorageCard',
+]
+
+const EXPECTED_REGISTERED = [
+    'SequenceCard',
+    'BoxCard',
+    'UnionCard',
+    'AjaxGroupCard',
+    'HTMLEmbedCard',
+    'HiddenCard',
+    'AutoRedirectCard',
+    'IOEventsCard',
+]
+
+const DIST_FILES = [
+    path.join(repoRoot, 'dist', 'index.esm.js'),
+    path.join(repoRoot, 'dist', 'index.js'),
+    path.join(repoRoot, 'dist', 'components', 'index.esm.js'),
+    path.join(repoRoot, 'dist', 'components', 'index.js'),
+    path.join(repoRoot, 'dist', 'index.d.ts'),
+    path.join(repoRoot, 'dist', 'components', 'index.d.ts'),
+    path.join(repoRoot, 'dist', 'cli.js'),
+    path.join(repoRoot, 'dist', 'create.js'),
+]
+
+const MIN_BUNDLE_SIZE = 200
+
+const runCommand = (command, args, cwd = repoRoot, env = {}) => {
+    const result = spawnSync(command, args, {
         cwd,
-        env: { ...process.env },
+        env: { ...process.env, ...env },
         stdio: 'pipe',
     })
 
@@ -18,6 +74,113 @@ const runNodeScript = (args, cwd = repoRoot) => {
         status: result.status,
         stdout: result.stdout ? result.stdout.toString() : '',
         stderr: result.stderr ? result.stderr.toString() : '',
+    }
+}
+
+const runNodeScript = (args, cwd = repoRoot) => runCommand('node', args, cwd)
+
+const assertSucceeded = (result, details) => {
+    assert.equal(
+        result.status,
+        0,
+        `${details}\nSTDOUT:\n${result.stdout}\nSTDERR:\n${result.stderr}`
+    )
+}
+
+const resolveBunBinary = () => {
+    const bunInPath = runCommand('bun', ['--version'])
+    if (bunInPath.status === 0) return 'bun'
+
+    const homeBun = path.join(os.homedir(), '.bun', 'bin', 'bun')
+    const bunFromHome = runCommand(homeBun, ['--version'])
+    if (bunFromHome.status === 0) return homeBun
+
+    throw new Error('Cannot resolve bun runtime for step4 build verification.')
+}
+
+const ensureBuildArtifacts = () => {
+    if (DIST_FILES.every((filePath) => fs.existsSync(filePath))) {
+        return
+    }
+
+    const bunBin = resolveBunBinary()
+    const bunDir =
+        bunBin.includes(path.sep) ? path.dirname(bunBin) : undefined
+    const buildResult = runCommand(
+        bunBin,
+        ['run', 'build'],
+        repoRoot,
+        bunDir
+            ? {
+                  PATH: `${bunDir}${path.delimiter}${process.env.PATH || ''}`,
+              }
+            : {}
+    )
+    assertSucceeded(
+        buildResult,
+        'build should succeed before export verification checks'
+    )
+}
+
+const checkBundle = (filePath, expectedExports) => {
+    assert.ok(fs.existsSync(filePath), `${filePath} should exist`)
+
+    const content = fs.readFileSync(filePath, 'utf8')
+    const size = Buffer.byteLength(content)
+    assert.ok(
+        size >= MIN_BUNDLE_SIZE,
+        `${filePath} looks too small (${size} bytes)`
+    )
+
+    for (const exportName of expectedExports) {
+        assert.match(
+            content,
+            new RegExp(exportName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')),
+            `${filePath} should reference export ${exportName}`
+        )
+    }
+
+}
+
+const checkTypeDefinitions = () => {
+    const files = [
+        path.join(repoRoot, 'dist', 'index.d.ts'),
+        path.join(repoRoot, 'dist', 'components', 'index.d.ts'),
+    ]
+
+    for (const filePath of files) {
+        assert.ok(fs.existsSync(filePath), `${filePath} should exist`)
+        const content = fs.readFileSync(filePath, 'utf8')
+        assert.ok(content.length >= 100, `${filePath} is suspiciously small`)
+    }
+}
+
+const checkRuntimeExports = () => {
+    const main = require(path.join(repoRoot, 'dist', 'index.js'))
+    const components = require(path.join(repoRoot, 'dist', 'components', 'index.js'))
+
+    for (const exportName of EXPECTED_MAIN_EXPORTS) {
+        assert.ok(
+            Object.prototype.hasOwnProperty.call(main, exportName) ||
+                exportName in main,
+            `dist/index.js should export ${exportName}`
+        )
+    }
+
+    for (const exportName of EXPECTED_COMPONENTS_EXPORTS) {
+        assert.ok(
+            Object.prototype.hasOwnProperty.call(components, exportName) ||
+                exportName in components,
+            `dist/components/index.js should export ${exportName}`
+        )
+    }
+}
+
+const checkRegisteredComponentNamesInBundle = () => {
+    const mainBundlePath = path.join(repoRoot, 'dist', 'index.js')
+    const content = fs.readFileSync(mainBundlePath, 'utf8')
+    for (const cardName of EXPECTED_REGISTERED) {
+        assert.match(content, new RegExp(cardName))
     }
 }
 
@@ -51,11 +214,14 @@ test('package.json includes step test scripts and cleanup script', () => {
         scripts['test:steps'],
         'bun test src/__tests__/step1-local.test.cjs src/__tests__/step2-remote.test.cjs src/__tests__/step3-contract.test.cjs src/__tests__/step4-ci.test.cjs src/__tests__/step5-regres.test.cjs'
     )
-    assert.equal(scripts['test:cleanup'], 'node scripts/cleanup-test-artifacts.mjs')
+    assert.equal(
+        scripts['test:cleanup'],
+        'node scripts/cleanup-test-artifacts.mjs'
+    )
 })
 
-// Verifies CI workflow enforces step suite gates and always uploads logs and cleanup.
-test('ci workflow contains step-gating, cleanup, and artifact-upload contracts', () => {
+// Verifies CI workflow enforces step suite gates, build gate, and cleanup/artifact hooks.
+test('ci workflow contains step-gating, build, and artifact cleanup contracts', () => {
     const workflowPath = path.join(repoRoot, '.github', 'workflows', 'ci.yml')
     const workflow = fs.readFileSync(workflowPath, 'utf8')
 
@@ -64,8 +230,13 @@ test('ci workflow contains step-gating, cleanup, and artifact-upload contracts',
     assert.match(workflow, /bun run test:step1/)
     assert.match(workflow, /bun run test:step2/)
     assert.match(workflow, /bun run test:step3/)
-    assert.match(workflow, /bun run test:step4/)
     assert.match(workflow, /bun run test:step5/)
+
+    assert.match(workflow, /name:\s*Build package/)
+    assert.match(workflow, /bun run build/)
+
+    assert.match(workflow, /name:\s*Run step4 build\/export checks with logs/)
+    assert.match(workflow, /bun run test:step4/)
 
     assert.match(workflow, /name:\s*Cleanup temporary test artifacts/)
     assert.match(workflow, /if:\s*always\(\)/)
@@ -93,8 +264,8 @@ test('cleanup script dry-run keeps matching directories intact', () => {
         ])
 
         assert.equal(result.status, 0)
-        assert.match(result.stdout, /Would remove/) 
-        assert.match(result.stdout, /DRY-RUN/) 
+        assert.match(result.stdout, /Would remove/)
+        assert.match(result.stdout, /DRY-RUN/)
         assert.ok(fs.existsSync(dirA))
         assert.ok(fs.existsSync(dirB))
     } finally {
@@ -118,8 +289,8 @@ test('cleanup script removes only matching prefix directories', () => {
         ])
 
         assert.equal(result.status, 0)
-        assert.match(result.stdout, /Removing/) 
-        assert.match(result.stdout, /Removed/) 
+        assert.match(result.stdout, /Removing/)
+        assert.match(result.stdout, /Removed/)
 
         assert.equal(fs.existsSync(matchingDir), false)
         assert.equal(fs.existsSync(otherDir), true)
@@ -127,3 +298,33 @@ test('cleanup script removes only matching prefix directories', () => {
         fs.rmSync(otherDir, { recursive: true, force: true })
     }
 })
+
+// Verifies built artifacts export required API/runtime symbols and type definitions.
+test(
+    'build artifacts expose required exports, components, types, and registry entries',
+    { timeout: 300000 },
+    () => {
+        ensureBuildArtifacts()
+
+        checkBundle(
+            path.join(repoRoot, 'dist', 'index.esm.js'),
+            EXPECTED_MAIN_EXPORTS
+        )
+        checkBundle(
+            path.join(repoRoot, 'dist', 'index.js'),
+            EXPECTED_MAIN_EXPORTS
+        )
+        checkBundle(
+            path.join(repoRoot, 'dist', 'components', 'index.esm.js'),
+            EXPECTED_COMPONENTS_EXPORTS
+        )
+        checkBundle(
+            path.join(repoRoot, 'dist', 'components', 'index.js'),
+            EXPECTED_COMPONENTS_EXPORTS
+        )
+
+        checkTypeDefinitions()
+        checkRuntimeExports()
+        checkRegisteredComponentNamesInBundle()
+    }
+)

@@ -16,6 +16,7 @@ export const parseArgs = (argv: string[]): ParsedArgs => {
     let srcDir = '.'
     let componentType: ComponentType | undefined
     let componentName: string | undefined
+    let createAppName: string | undefined
     let eventName: string | undefined
 
     let removeComponentName: string | undefined
@@ -23,6 +24,10 @@ export const parseArgs = (argv: string[]): ParsedArgs => {
 
     if (command === 'remove' && argv[1]) {
         removeComponentName = argv[1]
+    }
+
+    if (command === 'create-pie-app' && argv[1]) {
+        createAppName = argv[1]
     }
 
     if (command === 'list') {
@@ -92,6 +97,7 @@ export const parseArgs = (argv: string[]): ParsedArgs => {
         srcDir,
         append: appendFlag,
         componentName,
+        createAppName,
         componentType,
         eventName,
         removeComponentName,
@@ -103,6 +109,9 @@ export const printUsage = () => {
     console.log('Usage: pieui <command> [options]')
     console.log('')
     console.log('Commands:')
+    console.log(
+        '  create-pie-app <AppName>                Create a blank Next.js web template for PieUI (bun create next-app under the hood)'
+    )
     console.log(
         '  init                                    Initialize piecomponents directory with registry.ts'
     )
@@ -189,6 +198,7 @@ export const printUsage = () => {
     console.log('')
     console.log('Examples:')
     console.log('  pieui init')
+    console.log('  pieui create-pie-app my-pie-app')
     console.log('  pieui init --out-dir packages/app')
     console.log(
         '  pieui add MyCustomCard                        # Creates complex-container by default'
