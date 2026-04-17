@@ -8,10 +8,13 @@ Scope: local CLI commands only (no real network calls)
 Implement initial automated tests for PieUI CLI local workflows and validate they run reliably in isolation.
 
 ## Implemented
-- Added new integration test suite:
-  - `src/__tests__/cli-phase1.test.cjs`
-- Updated existing CLI test runtime resolution:
-  - `src/__tests__/cli-postbuild.test.cjs`
+- Added unified Phase 1 integration test suite:
+  - `src/__tests__/step1-local.test.cjs`
+- Added roadmap placeholder suites:
+  - `src/__tests__/step2-remote.test.cjs`
+  - `src/__tests__/step3-contract.test.cjs`
+  - `src/__tests__/step4-ci.test.cjs`
+- Consolidated previous split local scenarios into `step1-local.test.cjs`.
 
 ## Covered Commands
 - `init`
@@ -35,15 +38,37 @@ Implement initial automated tests for PieUI CLI local workflows and validate the
 - `postbuild`
   - writes empty manifest when no components found
 
+## Scenario Inventory
+- `init` baseline behavior with Tailwind/Next config updates
+- `init` idempotency and `--out-dir` support
+- `add` + `remove` happy path
+- `add` default type behavior (implicit `complex-container`)
+- `add` invalid component name failure
+- `add` duplicate component failure
+- `remove` missing component warning behavior
+- `list` general output and filter behavior
+- `list` invalid filter fallback to `all`
+- `list-events` extraction for matching component
+- `list-events` extraction from `useMemo`-backed methods variable
+- `list-events` mixed method syntax support (property/shorthand/method declaration)
+- `list-events` built-in component method coverage (repository source)
+- `list-events` no-match behavior
+- `add-event` inline insertion success
+- `add-event` insertion into empty methods object
+- `add-event` invalid event key failure
+- `add-event` failure for non-inline methods objects
+- `postbuild` empty-manifest behavior
+- `postbuild` discovered component schema generation
+
 ## Test Execution
 Command used:
 
 ```bash
-~/.bun/bin/bun test src/__tests__/cli-phase1.test.cjs src/__tests__/cli-postbuild.test.cjs
+~/.bun/bin/bun test src/__tests__/step1-local.test.cjs
 ```
 
 Result:
-- 7 passed
+- 20 passed
 - 0 failed
 
 ## Notes / Observations

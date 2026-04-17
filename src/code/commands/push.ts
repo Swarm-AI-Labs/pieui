@@ -4,6 +4,7 @@ import JSZip from 'jszip'
 
 const PUSH_URL = 'https://api-pieui.swarm.ing/external/push'
 const API_KEY_ENV = 'PIEUI_EXTERNAL_API_KEY'
+const PUSH_URL_ENV = 'PIEUI_EXTERNAL_PUSH_URL'
 
 const toProjectSlug = (raw: string): string => {
     const base = raw.trim().replace(/^@/, '').replaceAll('/', '-')
@@ -109,11 +110,12 @@ export const pushCommand = async (componentName: string) => {
     if (apiKey) {
         headers['x-api-key'] = apiKey
     }
+    const pushUrl = process.env[PUSH_URL_ENV] || PUSH_URL
 
-    console.log(`[pieui] Uploading to: ${PUSH_URL}`)
+    console.log(`[pieui] Uploading to: ${pushUrl}`)
     console.log(`[pieui] Remote component name: ${remoteName}`)
 
-    const res = await fetch(PUSH_URL, {
+    const res = await fetch(pushUrl, {
         method: 'POST',
         body: form,
         headers,
