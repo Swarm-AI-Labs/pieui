@@ -95,16 +95,20 @@ Create a blank Next.js web app template with PieUI CLI:
 
 ```sh
 bunx pieui create-pie-app my-pie-app
+# or alias:
+bunx pieui create-pieui my-pie-app
 ```
 
 This command:
 
 - runs `bun create next-app@latest my-pie-app --yes`
-- copies a standard `_shared` folder into the new app (sourced from `ai-exchange-bot`)
+- copies a standard `_shared` folder into the new app (sourced from `ai-exchange-bot` when found)
 - rewrites `dev/build/start` scripts to `bun --bun next ...`
 - appends a TODO marker in `app/page.tsx` for future backend (Python Unicorn) linking
 
-If the `_shared` source cannot be found automatically, set:
+If the `_shared` source cannot be found automatically, PieUI now creates a fallback `_shared/simple.tsx` scaffold and continues.
+
+To force a specific shared source, set:
 
 ```sh
 PIEUI_SHARED_TEMPLATE_DIR=/absolute/path/to/_shared bunx pieui create-pie-app my-pie-app

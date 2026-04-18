@@ -1,7 +1,8 @@
 import type { ComponentType, ListFilter, ParsedArgs } from './types'
 
 export const parseArgs = (argv: string[]): ParsedArgs => {
-    const [command = ''] = argv
+    const [rawCommand = ''] = argv
+    const command = rawCommand === 'create-pieui' ? 'create-pie-app' : rawCommand
     const outDirFlag = argv.find((arg) => arg.startsWith('--out-dir='))
     const srcDirFlag = argv.find((arg) => arg.startsWith('--src-dir='))
     const outDirIndex = argv.findIndex(
@@ -111,6 +112,9 @@ export const printUsage = () => {
     console.log('Commands:')
     console.log(
         '  create-pie-app <AppName>                Create a blank Next.js web template for PieUI (bun create next-app under the hood)'
+    )
+    console.log(
+        '  create-pieui <AppName>                  Alias of create-pie-app'
     )
     console.log(
         '  init                                    Initialize piecomponents directory with registry.ts'

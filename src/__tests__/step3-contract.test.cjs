@@ -214,6 +214,17 @@ test('required arg contract for create-pie-app/add/remove/list-events/add-event'
     )
     assertUsageShown(createPieAppResult)
 
+    const createPieUiAliasResult = runCli({
+        cwd: projectDir,
+        args: ['create-pieui'],
+    })
+    assert.equal(createPieUiAliasResult.status, 1)
+    assert.match(
+        createPieUiAliasResult.stderr,
+        /App name is required for create-pie-app command/
+    )
+    assertUsageShown(createPieUiAliasResult)
+
     const addResult = runCli({ cwd: projectDir, args: ['add'] })
     assert.equal(addResult.status, 1)
     assert.match(addResult.stderr, /Component name is required for add command/)
