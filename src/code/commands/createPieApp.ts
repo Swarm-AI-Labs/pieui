@@ -5,6 +5,105 @@ import { spawnSync } from 'child_process'
 const DEFAULT_TEMPLATE_SPEC = 'next-app@latest'
 const SHARED_TEMPLATE_DIR_ENV = 'PIEUI_SHARED_TEMPLATE_DIR'
 const AI_EXCHANGE_BOT_DIR_ENV = 'PIEUI_AI_EXCHANGE_BOT_DIR'
+const DEFAULT_SHARED_SIMPLE_TSX = `"use client";
+
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { PieTelegramRoot, PieQueryOptions } from "@piedata/pieui";
+
+import { usePathname, useSearchParams } from "next/navigation";
+import LoadingScreen from "@/components/LoadingScreen";
+import { ErrorToast } from "@/components/ErrorToast";
+import piecache from "@/app/piecache.json";
+import "@/piecomponents/registry";
+
+const pieQueryOptions: PieQueryOptions = {
+  staleTime: 0, // always stale - refetch on every mount
+  gcTime: 60 * 1000, // keep cache for 1 minute
+  refetchOnMount: "always" as const,
+  refetchOnWindowFocus: "always" as const,
+  refetchOnReconnect: "always" as const,
+};
+
+export default function PiePage({
+  fallback,
+}: { fallback?: React.ReactNode } = {}) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const search = searchParams.toString();
+  const [showVpnError, setShowVpnError] = useState(false);
+
+  const handleError = () => {
+    if (showVpnError) {
+    }
+    setShowVpnError(true);
+    setTimeout(() => setShowVpnError(false), 2000);
+  };
+
+  useEffect(() => {
+    const backButton = window.Telegram?.WebApp?.BackButton;
+    if (!backButton) return;
+
+    const slashCount = (pathname.match(/\\//g) || []).length;
+    const historyState = window.history.state as { idx?: number } | null;
+    const hasHistory =
+      typeof historyState?.idx === "number"
+        ? historyState.idx > 0
+        : window.history.length > 1;
+    const showBack = slashCount > 1 && hasHistory;
+
+    const handleBack = () => router.back();
+
+    if (showBack) {
+      backButton.onClick(handleBack);
+      backButton.show();
+    } else {
+      backButton.offClick(handleBack);
+      backButton.hide();
+    }
+
+    return () => {
+      backButton.offClick(handleBack);
+      backButton.hide();
+    };
+  }, [router, pathname]);
+
+  useEffect(() => {
+    const webApp = window.Telegram?.WebApp;
+    webApp?.expand();
+    webApp?.disableVerticalSwipes();
+  }, []);
+
+  const Root = PieTelegramRoot;
+
+  return (
+    <>
+      <ErrorToast
+        visible={showVpnError}
+        message="Connection issues. Please check your VPN."
+      />
+      <Root
+        location={{
+          pathname: pathname,
+          search: search,
+        }}
+        config={{
+          apiServer: process.env.PIE_API_SERVER!,
+          centrifugeServer: process.env.PIE_CENTRIFUGE_SERVER!,
+          enableRenderingLog: true,
+          pageProcessor: "telegram",
+        }}
+        onNavigate={(url) => router.push(url)}
+        fallback={<LoadingScreen />}
+        piecache={piecache as any}
+        queryOptions={pieQueryOptions}
+        onError={handleError}
+      />
+    </>
+  );
+}
+`
 const BACKEND_LINK_COMMENT =
     '// TODO(pie-backend): Link generated Python Unicorn backend routes here once backend template sync is enabled.'
 
@@ -62,7 +161,7 @@ const isDirectory = (target: string) => {
     }
 }
 
-const resolveSharedTemplateDir = (): string => {
+const resolveSharedTemplateDir = (): string | null => {
     const explicitSharedDir = process.env[SHARED_TEMPLATE_DIR_ENV]
     if (explicitSharedDir) {
         const normalized = path.resolve(explicitSharedDir)
@@ -108,18 +207,22 @@ const resolveSharedTemplateDir = (): string => {
         }
     }
 
-    throw new Error(
-        [
-            'Could not locate a _shared template directory from ai-exchange-bot.',
-            `Set ${SHARED_TEMPLATE_DIR_ENV}=/absolute/path/to/_shared`,
-            `or ${AI_EXCHANGE_BOT_DIR_ENV}=/absolute/path/to/ai-exchange-bot.`,
-        ].join(' ')
-    )
+    return null
 }
 
 const copySharedTemplate = (sharedTemplateDir: string, appDir: string) => {
     const destination = path.join(appDir, '_shared')
     fs.cpSync(sharedTemplateDir, destination, { recursive: true, force: true })
+}
+
+const scaffoldFallbackSharedTemplate = (appDir: string) => {
+    const destination = path.join(appDir, '_shared')
+    fs.mkdirSync(destination, { recursive: true })
+    fs.writeFileSync(
+        path.join(destination, 'simple.tsx'),
+        DEFAULT_SHARED_SIMPLE_TSX,
+        'utf8'
+    )
 }
 
 export const createPieAppCommand = (appName: string) => {
@@ -164,13 +267,31 @@ export const createPieAppCommand = (appName: string) => {
     }
 
     const sharedTemplateDir = resolveSharedTemplateDir()
-    copySharedTemplate(sharedTemplateDir, appDir)
+    if (sharedTemplateDir) {
+        copySharedTemplate(sharedTemplateDir, appDir)
+    } else {
+        scaffoldFallbackSharedTemplate(appDir)
+        console.warn(
+            [
+                `[pieui] Warning: Could not locate a _shared template directory automatically.`,
+                `Generated fallback "${trimmedAppName}/_shared/simple.tsx".`,
+                `Set ${SHARED_TEMPLATE_DIR_ENV}=/absolute/path/to/_shared`,
+                `or ${AI_EXCHANGE_BOT_DIR_ENV}=/absolute/path/to/ai-exchange-bot to copy a project-standard folder.`,
+            ].join(' ')
+        )
+    }
 
     updateNextScriptsToBun(path.join(appDir, 'package.json'))
     appendBackendLinkComment(path.join(appDir, 'app', 'page.tsx'))
 
     console.log('[pieui] Template created successfully.')
-    console.log(`[pieui] Copied _shared from: ${sharedTemplateDir}`)
+    if (sharedTemplateDir) {
+        console.log(`[pieui] Copied _shared from: ${sharedTemplateDir}`)
+    } else {
+        console.log(
+            `[pieui] Using fallback _shared scaffold. Update it with your project standards.`
+        )
+    }
     console.log(`[pieui] Next steps:`)
     console.log(`  1. cd ${trimmedAppName}`)
     console.log(`  2. bun install`)

@@ -801,3 +801,126 @@ EOF
     assert.ok(fs.existsSync(path.join(copiedShared, 'config.ts')))
     assert.ok(fs.existsSync(path.join(copiedShared, 'ui', 'index.ts')))
 })
+
+// Verifies create-pie-app succeeds with a fallback _shared scaffold when no external template source is available.
+test('create-pie-app falls back to generated _shared scaffold when template source is missing', () => {
+    const projectDir = makeProjectDir('pieui-cli-create-template-fallback-')
+    const fakeBunPath = path.join(projectDir, 'fake-bun.sh')
+    const logPath = path.join(projectDir, 'bun-create.log')
+
+    writeFile(
+        fakeBunPath,
+        `#!/bin/sh
+set -eu
+printf '%s\\n' "$*" > "${logPath}"
+if [ "$#" -lt 4 ]; then
+  echo "missing args" >&2
+  exit 2
+fi
+APP_DIR="$PWD/$3"
+mkdir -p "$APP_DIR/app"
+cat > "$APP_DIR/package.json" <<'EOF'
+{
+  "name": "fake-next-app",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+  }
+}
+EOF
+cat > "$APP_DIR/app/page.tsx" <<'EOF'
+export default function Page() {
+  return <main>Hello</main>
+}
+EOF
+`
+    )
+    fs.chmodSync(fakeBunPath, 0o755)
+
+    const result = runCli({
+        cwd: projectDir,
+        args: ['create-pie-app', 'my-pie-app'],
+        env: {
+            PIEUI_CREATE_BUN_BIN: fakeBunPath,
+        },
+    })
+    assertSucceeded(
+        result,
+        'create-pie-app should succeed with fallback _shared scaffold'
+    )
+
+    const commandArgs = fs.readFileSync(logPath, 'utf8')
+    assert.match(commandArgs, /^create next-app@latest my-pie-app --yes/m)
+    assert.match(
+        result.stdout,
+        /Using fallback _shared scaffold\. Update it with your project standards\./
+    )
+    assert.match(
+        result.stderr,
+        /Could not locate a _shared template directory automatically\./
+    )
+
+    const fallbackSharedFile = path.join(
+        projectDir,
+        'my-pie-app',
+        '_shared',
+        'simple.tsx'
+    )
+    assert.ok(fs.existsSync(fallbackSharedFile))
+    assert.match(
+        fs.readFileSync(fallbackSharedFile, 'utf8'),
+        /PieTelegramRoot/
+    )
+})
+
+// Verifies create-pieui command alias maps to create-pie-app behavior.
+test('create-pieui alias scaffolds app template', () => {
+    const projectDir = makeProjectDir('pieui-cli-create-alias-')
+    const fakeBunPath = path.join(projectDir, 'fake-bun.sh')
+    const sharedSourceDir = path.join(projectDir, 'ai-exchange-web', 'app', '_shared')
+
+    writeFile(path.join(sharedSourceDir, 'simple.tsx'), 'export default function Simple() { return null }\n')
+    writeFile(
+        fakeBunPath,
+        `#!/bin/sh
+set -eu
+if [ "$#" -lt 4 ]; then
+  echo "missing args" >&2
+  exit 2
+fi
+APP_DIR="$PWD/$3"
+mkdir -p "$APP_DIR/app"
+cat > "$APP_DIR/package.json" <<'EOF'
+{
+  "name": "fake-next-app",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+  }
+}
+EOF
+cat > "$APP_DIR/app/page.tsx" <<'EOF'
+export default function Page() {
+  return <main>Hello</main>
+}
+EOF
+`
+    )
+    fs.chmodSync(fakeBunPath, 0o755)
+
+    const result = runCli({
+        cwd: projectDir,
+        args: ['create-pieui', 'my-pie-app'],
+        env: {
+            PIEUI_CREATE_BUN_BIN: fakeBunPath,
+            PIEUI_SHARED_TEMPLATE_DIR: sharedSourceDir,
+        },
+    })
+
+    assertSucceeded(result, 'create-pieui alias should scaffold app')
+    assert.ok(
+        fs.existsSync(path.join(projectDir, 'my-pie-app', '_shared', 'simple.tsx'))
+    )
+})
