@@ -748,3 +748,87 @@ test('remote command args are required for push, pull, and remote-remove', async
         /Component name is required for remote-remove command/
     )
 })
+
+// ---------------------------------------------------------------------------
+// Connection-refused error handling
+// ---------------------------------------------------------------------------
+
+// Verifies push exits non-zero and surfaces a human-readable error (no raw
+// stack trace) when the target server refuses the connection.
+test('push surfaces a clean error message when the server refuses the connection', async () => {
+    // Bind a server to get a free port, close it immediately — leaves nothing listening
+    const { server, baseUrl } = await startServer((_req, res) => {
+        res.statusCode = 200
+        res.end('ok')
+    })
+    const url = `${baseUrl}/push`
+    await stopServer(server)
+
+    const projectDir = makeProjectDir('pieui-step2-push-refused-')
+    writeFile(
+        path.join(projectDir, 'package.json'),
+        JSON.stringify({ name: 'demo' })
+    )
+    writeFile(
+        path.join(projectDir, 'piecomponents', 'AnyCard', 'index.ts'),
+        'export {}\n'
+    )
+
+    const result = await runCli({
+        cwd: projectDir,
+        args: ['push', 'AnyCard'],
+        env: { PIEUI_EXTERNAL_PUSH_URL: url },
+    })
+
+    assert.equal(result.status, 1)
+    assert.doesNotMatch(result.stderr, /\n\s*at\s+.*\(/)
+})
+
+// Verifies pull exits non-zero and surfaces a human-readable error when the
+// target server refuses the connection.
+test('pull surfaces a clean error message when the server refuses the connection', async () => {
+    const { server, baseUrl } = await startServer((_req, res) => {
+        res.statusCode = 200
+        res.end('ok')
+    })
+    const url = `${baseUrl}/pull`
+    await stopServer(server)
+
+    const projectDir = makeProjectDir('pieui-step2-pull-refused-')
+    fs.mkdirSync(path.join(projectDir, 'piecomponents'), { recursive: true })
+
+    const result = await runCli({
+        cwd: projectDir,
+        args: ['pull', 'AnyCard'],
+        env: { PIEUI_EXTERNAL_PULL_URL: url },
+    })
+
+    assert.equal(result.status, 1)
+    assert.doesNotMatch(result.stderr, /\n\s*at\s+.*\(/)
+})
+
+// Verifies remote-remove exits non-zero and surfaces a human-readable error
+// when the target server refuses the connection.
+test('remote-remove surfaces a clean error message when the server refuses the connection', async () => {
+    const { server, baseUrl } = await startServer((_req, res) => {
+        res.statusCode = 200
+        res.end('ok')
+    })
+    const url = `${baseUrl}/remove`
+    await stopServer(server)
+
+    const projectDir = makeProjectDir('pieui-step2-remove-refused-')
+    writeFile(
+        path.join(projectDir, 'package.json'),
+        JSON.stringify({ name: 'demo' })
+    )
+
+    const result = await runCli({
+        cwd: projectDir,
+        args: ['remote-remove', 'OldCard'],
+        env: { PIEUI_EXTERNAL_REMOVE_URL: url },
+    })
+
+    assert.equal(result.status, 1)
+    assert.doesNotMatch(result.stderr, /\n\s*at\s+.*\(/)
+})
