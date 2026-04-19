@@ -4,7 +4,7 @@ module.exports = {
     content: [
         './src/app/**/*.{js,ts,jsx,tsx}',
         './src/components/**/*.{js,ts,jsx,tsx}',
-        './node_modules/@piedata/pieui/dist/**/*.{js,mjs,ts,jsx,tsx}',
+        './node_modules/@swarm.ing/pieui/dist/**/*.{js,mjs,ts,jsx,tsx}',
     ],
     theme: {
         extend: {

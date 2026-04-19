@@ -102,7 +102,7 @@ export default nextConfig
         path.join(projectDir, 'tailwind.config.js'),
         'utf8'
     )
-    assert.match(tailwind, /@piedata\/pieui\/dist\/\*\*\//)
+    assert.match(tailwind, /@swarm\.ing\/pieui\/dist\/\*\*\//)
 
     const nextConfig = fs.readFileSync(
         path.join(projectDir, 'next.config.ts'),
@@ -110,7 +110,7 @@ export default nextConfig
     )
     assert.match(nextConfig, /PIE_PLATFORM/)
     assert.match(nextConfig, /PIE_API_SERVER/)
-    assert.match(nextConfig, /transpilePackages\s*:\s*\["@piedata\/pieui"\]/)
+    assert.match(nextConfig, /transpilePackages\s*:\s*\["@swarm\.ing\/pieui"\]/)
 })
 
 // Verifies add/remove create and clean component files plus registry wiring.
@@ -189,7 +189,7 @@ test('card add writes IO and AJAX fields when flags are provided', () => {
     assert.match(uiFile, /methods=\{\{\s*\}\}/)
     assert.match(
         uiFile,
-        /import \{ PieCard, useAjaxSubmit, type SetUiAjaxConfigurationType \} from '@piedata\/pieui'/
+        /import \{ PieCard, useAjaxSubmit, type SetUiAjaxConfigurationType \} from '@swarm\.ing\/pieui'/
     )
     assert.match(uiFile, /const ajaxSubmit = useAjaxSubmit\(/)
     assert.match(uiFile, /setUiAjaxConfiguration,/)
@@ -509,7 +509,7 @@ test('init supports --out-dir and does not duplicate tailwind content path', () 
         path.join(appDir, 'tailwind.config.js'),
         'utf8'
     )
-    const matchCount = (tailwind.match(/@piedata\/pieui\/dist\/\*\*\//g) || [])
+    const matchCount = (tailwind.match(/@swarm\.ing\/pieui\/dist\/\*\*\//g) || [])
         .length
     assert.equal(matchCount, 1)
 })
@@ -694,7 +694,7 @@ test('postbuild generates manifest entry for discovered component', () => {
 
     writeFile(
         path.join(projectDir, 'src', 'InvoiceCard.tsx'),
-        `import { registerPieComponent } from '@piedata/pieui'\n\nexport interface InvoiceCardData {\n  name: string\n  total: number\n}\n\nconst InvoiceCard = (_props: { data: InvoiceCardData }) => null\n\nregisterPieComponent({\n  name: 'InvoiceCard',\n  component: InvoiceCard,\n})\n`
+        `import { registerPieComponent } from '@swarm.ing/pieui'\n\nexport interface InvoiceCardData {\n  name: string\n  total: number\n}\n\nconst InvoiceCard = (_props: { data: InvoiceCardData }) => null\n\nregisterPieComponent({\n  name: 'InvoiceCard',\n  component: InvoiceCard,\n})\n`
     )
 
     const result = runCli({
@@ -886,6 +886,10 @@ cat > "$APP_DIR/package.json" <<'EOF'
   "name": "fake-next-app"
 }
 EOF
+mkdir -p "$APP_DIR/public"
+cat > "$APP_DIR/public/keep.txt" <<'EOF'
+remove me
+EOF
 cat > "$APP_DIR/next.config.ts" <<'EOF'
 const nextConfig = {}
 
@@ -921,6 +925,60 @@ EOF
         'registry.ts'
     )
     assert.ok(fs.existsSync(registryPath), 'registry.ts should be created')
+
+    const publicDir = path.join(projectDir, 'my-app-name', 'public')
+    assert.deepEqual(fs.readdirSync(publicDir), [])
+
+    const sharedPagePath = path.join(
+        projectDir,
+        'my-app-name',
+        'app',
+        '_shared',
+        'page.tsx'
+    )
+    const sharedPage = fs.readFileSync(sharedPagePath, 'utf8')
+    assert.match(sharedPage, /import \{ PieRoot \} from "@swarm\.ing\/pieui";/)
+    assert.match(sharedPage, /fallback=\{<><\/>\}/)
+    assert.equal(
+        fs.existsSync(
+            path.join(projectDir, 'my-app-name', 'app', '_shared', 'simple.tsx')
+        ),
+        false
+    )
+    assert.equal(
+        fs.existsSync(
+            path.join(projectDir, 'my-app-name', 'app', 'piecache.json')
+        ),
+        false
+    )
+    assert.ok(
+        fs.existsSync(
+            path.join(
+                projectDir,
+                'my-app-name',
+                'components',
+                'LoadingScreen.tsx'
+            )
+        )
+    )
+    assert.equal(
+        fs.existsSync(
+            path.join(
+                projectDir,
+                'my-app-name',
+                'components',
+                'ErrorToast.tsx'
+            )
+        ),
+        false
+    )
+
+    const homePage = fs.readFileSync(
+        path.join(projectDir, 'my-app-name', 'app', 'page.tsx'),
+        'utf8'
+    )
+    assert.match(homePage, /import PiePage from "@\/app\/_shared\/page";/)
+    assert.match(homePage, /<Suspense fallback=\{<><\/>\}>/)
 })
 
 // Verifies page add creates app/<path>/page.tsx and derives the component name from the route path.
@@ -941,13 +999,12 @@ test('page add creates nested app page scaffold', () => {
         page,
         `"use client";
 
-import PiePage from "@/app/_shared/simple";
+import PiePage from "@/app/_shared/page";
 import { Suspense } from "react";
-import LoadingScreen from "@/components/LoadingScreen";
 
 export default function AlphaBetaPage() {
   return (
-    <Suspense fallback={<LoadingScreen />}>
+    <Suspense fallback={<></>}>
       <PiePage />
     </Suspense>
   );

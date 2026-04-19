@@ -1,6 +1,6 @@
 'use client'
 
-import { PieBaseRoot, UI, type UIConfigType } from '@piedata/pieui'
+import { PieBaseRoot, UI, type UIConfigType } from '@swarm.ing/pieui'
 import '@/components/initComponents'
 
 const staticConfig: UIConfigType = {

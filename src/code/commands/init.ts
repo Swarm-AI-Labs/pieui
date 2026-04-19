@@ -39,7 +39,7 @@ export const initCommand = (outDir: string) => {
     const tailwindConfigPath = path.join(resolvedOutDir, 'tailwind.config.js')
     const tailwindConfigTsPath = path.join(resolvedOutDir, 'tailwind.config.ts')
     const pieuiContentPath =
-        './node_modules/@piedata/pieui/dist/**/*.{js,mjs,ts,jsx,tsx}'
+        './node_modules/@swarm.ing/pieui/dist/**/*.{js,mjs,ts,jsx,tsx}'
 
     let configPath = null
     if (fs.existsSync(tailwindConfigPath)) {
@@ -206,22 +206,22 @@ const ensureEnvKeys = (content: string): string => {
 const ensureTranspilePieui = (content: string): string => {
     const match = content.match(/transpilePackages\s*:\s*\[([\s\S]*?)]/)
     if (match) {
-        if (match[1].includes('@piedata/pieui')) return content
+        if (match[1].includes('@swarm.ing/pieui')) return content
         const inner = match[1].trim()
         const separator = inner.length > 0 ? ', ' : ''
-        console.log('[pieui] Adding "@piedata/pieui" to transpilePackages')
+        console.log('[pieui] Adding "@swarm.ing/pieui" to transpilePackages')
         return content.replace(
             match[0],
-            `transpilePackages: [${inner}${separator}"@piedata/pieui"]`
+            `transpilePackages: [${inner}${separator}"@swarm.ing/pieui"]`
         )
     }
 
     const inserted = insertIntoConfigObject(
         content,
-        '  transpilePackages: ["@piedata/pieui"],'
+        '  transpilePackages: ["@swarm.ing/pieui"],'
     )
     if (inserted) {
-        console.log('[pieui] Adding transpilePackages: ["@piedata/pieui"]')
+        console.log('[pieui] Adding transpilePackages: ["@swarm.ing/pieui"]')
         return inserted
     }
     console.log(

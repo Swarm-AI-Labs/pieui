@@ -19,7 +19,7 @@ export const componentTypesTemplate = (
         .join('\n\n')
     const extraFields = extraSections ? `\n\n${extraSections}` : ''
 
-    return `import { ${baseInterface} } from '@piedata/pieui'
+    return `import { ${baseInterface} } from '@swarm.ing/pieui'
 
 export interface ${componentName}Data {
     name: string

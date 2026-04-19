@@ -2,7 +2,7 @@
 
 import { Suspense } from 'react'
 import { usePathname, useSearchParams } from 'next/navigation'
-import { PieRoot } from '@piedata/pieui'
+import { PieRoot } from '@swarm.ing/pieui'
 import '@/components/initComponents'
 
 function DynamicContent() {

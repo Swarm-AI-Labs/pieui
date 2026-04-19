@@ -18,7 +18,7 @@ const nextConfig: NextConfig = {
     PIE_PLATFORM: process.env.PIE_PLATFORM || "telegram",
   },
   reactStrictMode: true,
-  transpilePackages: ["@piedata/pieui"],
+  transpilePackages: ["@swarm.ing/pieui"],
 };
 
 export default nextConfig;

@@ -10,7 +10,7 @@ export const complexComponentTemplate = (
     options: CardScaffoldOptions = {}
 ): string =>
     `import React from 'react'
-import { PieCard${options.ajax ? ', useAjaxSubmit' : ''} } from '@piedata/pieui'
+import { PieCard${options.ajax ? ', useAjaxSubmit' : ''} } from '@swarm.ing/pieui'
 import { ${componentName}Props } from '../types'
 
 const ${componentName} = ({ data${options.ajax ? ', setUiAjaxConfiguration' : ''} }: ${componentName}Props) => {

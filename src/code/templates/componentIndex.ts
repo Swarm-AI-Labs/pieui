@@ -1,5 +1,5 @@
 export const componentIndexTemplate = (componentName: string): string =>
-    `import { registerPieComponent } from "@piedata/pieui";
+    `import { registerPieComponent } from "@swarm.ing/pieui";
 import ${componentName} from "./ui/${componentName}";
 
 export default registerPieComponent({

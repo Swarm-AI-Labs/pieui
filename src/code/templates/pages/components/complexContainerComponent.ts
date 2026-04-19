@@ -10,7 +10,7 @@ export const complexContainerComponentTemplate = (
     options: CardScaffoldOptions = {}
 ): string =>
     `import React, { useContext } from 'react'
-import { PieCard, UI, UIRendererContext${options.ajax ? ', useAjaxSubmit' : ''} } from '@piedata/pieui'
+import { PieCard, UI, UIRendererContext${options.ajax ? ', useAjaxSubmit' : ''} } from '@swarm.ing/pieui'
 import { ${componentName}Props } from '../types'
 
 const ${componentName} = ({

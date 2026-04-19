@@ -12,7 +12,7 @@
         "next": "16.2.1",
         "react": "19.2.4",
         "react-dom": "19.2.4",
-        "@piedata/pieui": "file:../piedata-pieui-1.2.1.tgz",
+        "@swarm.ing/pieui": "file:../swarm.ing-pieui-2.0.10.tgz",
         "@tanstack/react-query": "^5"
     },
     "devDependencies": {

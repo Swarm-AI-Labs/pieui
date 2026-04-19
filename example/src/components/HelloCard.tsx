@@ -3,7 +3,7 @@
 import {
     registerPieComponent,
     type PieSimpleComponentProps,
-} from '@piedata/pieui'
+} from '@swarm.ing/pieui'
 
 interface HelloData {
     title: string

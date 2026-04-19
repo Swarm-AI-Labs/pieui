@@ -161,7 +161,7 @@ export const postbuildCommand = async (
         const nodeModulesPath = path.join(
             process.cwd(),
             'node_modules',
-            '@piedata',
+            '@swarm.ing',
             'pieui',
             'dist',
             MANIFEST_FILENAME
