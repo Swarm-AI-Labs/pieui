@@ -157,6 +157,9 @@ export const printUsage = () => {
         '  create-pie-app <AppName>                Create a blank Next.js web template for PieUI (bun create next-app under the hood)'
     )
     console.log(
+        '  login                                   Sign in to PieUI and save credentials to .pie/config.json'
+    )
+    console.log(
         '  init                                    Initialize piecomponents directory with registry.ts'
     )
     console.log(
@@ -252,6 +255,7 @@ export const printUsage = () => {
     console.log('  complex-container   Container with array content')
     console.log('')
     console.log('Examples:')
+    console.log('  pieui login')
     console.log('  pieui init')
     console.log('  pieui create my-pie-app')
     console.log('  pieui create-pie-app my-pie-app')

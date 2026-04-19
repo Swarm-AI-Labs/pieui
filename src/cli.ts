@@ -13,6 +13,7 @@ import { pullCommand } from './code/commands/pull'
 import { remoteRemoveCommand } from './code/commands/remoteRemove'
 import { pageAddCommand } from './code/commands/pageAdd'
 import { createCommand } from './code/commands/create'
+import { loginCommand } from './code/commands/login'
 
 const main = async () => {
     const {
@@ -179,6 +180,10 @@ const main = async () => {
             console.log(`[pieui] Output directory: ${outDir}`)
             console.log(`[pieui] Append mode: ${append}`)
             await postbuildCommand(srcDir, outDir, append)
+            return
+
+        case 'login':
+            await loginCommand()
             return
 
         default:
