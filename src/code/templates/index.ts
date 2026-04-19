@@ -1,6 +1,10 @@
 import { componentIndexTemplate } from './componentIndex'
 import { componentTypesTemplate } from './componentTypes'
+import { envTemplate } from './env'
+import { homePageTemplate } from './homePage'
+import { loadingScreenTemplate } from './loadingScreen'
 import { registerCallTemplate } from './registerCall'
+import { sharedPageTemplate } from './sharedPage'
 import { nextConfigTemplate, REQUIRED_NEXT_CONFIG_ENV_KEYS } from './nextConfig'
 import {
     baseInterfaceFor,
@@ -13,8 +17,12 @@ export {
     componentTemplateFor,
     componentIndexTemplate,
     componentTypesTemplate,
+    envTemplate,
+    homePageTemplate,
+    loadingScreenTemplate,
     pageTemplate,
     registerCallTemplate,
     nextConfigTemplate,
     REQUIRED_NEXT_CONFIG_ENV_KEYS,
+    sharedPageTemplate,
 }

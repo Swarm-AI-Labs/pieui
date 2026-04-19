@@ -164,12 +164,7 @@ const ensureNextConfig = (resolvedOutDir: string) => {
 const CONFIG_OBJECT_OPEN =
     /(const\s+nextConfig\s*(?::\s*[A-Za-z_][\w.]*)?\s*=\s*|module\.exports\s*=\s*|export\s+default\s*)\{/
 
-const envEntryFor = (key: string): string => {
-    if (key === 'PIE_PLATFORM') {
-        return `    ${key}: process.env.${key} || "telegram",`
-    }
-    return `    ${key}: process.env.${key},`
-}
+const envEntryFor = (key: string): string => `    ${key}: process.env.${key},`
 
 const ensureEnvKeys = (content: string): string => {
     const missingKeys = REQUIRED_NEXT_CONFIG_ENV_KEYS.filter(

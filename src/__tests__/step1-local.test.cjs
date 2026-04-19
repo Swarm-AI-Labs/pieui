@@ -108,9 +108,10 @@ export default nextConfig
         path.join(projectDir, 'next.config.ts'),
         'utf8'
     )
-    assert.match(nextConfig, /PIE_PLATFORM/)
     assert.match(nextConfig, /PIE_API_SERVER/)
+    assert.match(nextConfig, /PIE_ENABLE_RENDERING_LOG/)
     assert.match(nextConfig, /transpilePackages\s*:\s*\["@swarm\.ing\/pieui"\]/)
+    assert.doesNotMatch(nextConfig, /PIE_PLATFORM/)
 })
 
 // Verifies add/remove create and clean component files plus registry wiring.
@@ -979,6 +980,22 @@ EOF
     )
     assert.match(homePage, /import PiePage from "@\/app\/_shared\/page";/)
     assert.match(homePage, /<Suspense fallback=\{<><\/>\}>/)
+
+    const envFile = fs.readFileSync(
+        path.join(projectDir, 'my-app-name', '.env'),
+        'utf8'
+    )
+    assert.equal(
+        envFile,
+        `PIE_ENABLE_RENDERING_LOG=true
+PIE_API_SERVER=http://localhost:8008/
+PIE_CENTRIFUGE_SERVER=wss://localhost:8000/connection/websocket
+
+NEXT_PUBLIC_PIE_ENABLE_RENDERING_LOG=true
+NEXT_PUBLIC_PIE_API_SERVER=http://localhost:8008/
+NEXT_PUBLIC_PIE_CENTRIFUGE_SERVER=wss://localhost:8000/connection/websocket
+`
+    )
 })
 
 // Verifies page add creates app/<path>/page.tsx and derives the component name from the route path.

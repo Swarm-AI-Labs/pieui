@@ -10,8 +10,7 @@
     "module": "dist/index.esm.js",
     "types": "dist/index.d.ts",
     "bin": {
-        "pieui": "dist/cli.js",
-        "create-pieui": "dist/create.js"
+        "pieui": "dist/cli.js"
     },
     "files": [
         "dist"

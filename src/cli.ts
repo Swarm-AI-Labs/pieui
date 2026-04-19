@@ -11,7 +11,6 @@ import { postbuildCommand } from './code/commands/postbuild'
 import { pushCommand } from './code/commands/push'
 import { pullCommand } from './code/commands/pull'
 import { remoteRemoveCommand } from './code/commands/remoteRemove'
-import { createPieAppCommand } from './code/commands/createPieApp'
 import { pageAddCommand } from './code/commands/pageAdd'
 import { createCommand } from './code/commands/create'
 
@@ -39,17 +38,6 @@ const main = async () => {
     switch (command) {
         case 'init':
             initCommand(outDir)
-            return
-
-        case 'create-pie-app':
-            if (!createAppName) {
-                console.error(
-                    '[pieui] Error: App name is required for create-pie-app command'
-                )
-                printUsage()
-                process.exit(1)
-            }
-            createPieAppCommand(createAppName)
             return
 
         case 'create':
