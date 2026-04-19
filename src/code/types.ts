@@ -10,6 +10,8 @@ export type ComponentType =
     | 'complex-container'
 
 export type ListFilter = 'all' | ComponentType
+export type CardAction = 'add'
+export type PageAction = 'add'
 
 export type ParsedArgs = {
     command: string
@@ -22,6 +24,16 @@ export type ParsedArgs = {
     eventName?: string
     removeComponentName?: string
     listFilter?: ListFilter
+    cardAction?: CardAction
+    cardAjax?: boolean
+    cardIo?: boolean
+    pageAction?: PageAction
+    pagePath?: string
+}
+
+export type CardScaffoldOptions = {
+    ajax?: boolean
+    io?: boolean
 }
 
 export type ComponentManifestEntry = {

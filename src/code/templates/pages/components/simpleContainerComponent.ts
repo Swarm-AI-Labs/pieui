@@ -1,8 +1,16 @@
+import type { CardScaffoldOptions } from '../../../types'
+import {
+    ajaxSubmitDeclarationFor,
+    dataDestructureFor,
+    pieCardOpeningTagFor,
+} from './shared'
+
 export const simpleContainerComponentTemplate = (
-    componentName: string
+    componentName: string,
+    options: CardScaffoldOptions = {}
 ): string =>
     `import React, { useContext } from 'react'
-import { PieCard, UI, UIRendererContext } from '@piedata/pieui'
+import { PieCard, UI, UIRendererContext${options.ajax ? ', useAjaxSubmit' : ''} } from '@piedata/pieui'
 import { ${componentName}Props } from '../types'
 
 const ${componentName} = ({
@@ -10,11 +18,12 @@ const ${componentName} = ({
     content,
     setUiAjaxConfiguration,
 }: ${componentName}Props) => {
-    const { name } = data
+    ${dataDestructureFor(options)}
+    ${ajaxSubmitDeclarationFor(options)}
     const Renderer = useContext(UIRendererContext) ?? UI
 
     return (
-        <PieCard card='${componentName}' data={data}>
+        ${pieCardOpeningTagFor(componentName, options)}
             <div>
                 <h2>${componentName}</h2>
                 {/* Add your component logic here */}

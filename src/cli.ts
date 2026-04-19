@@ -12,6 +12,7 @@ import { pushCommand } from './code/commands/push'
 import { pullCommand } from './code/commands/pull'
 import { remoteRemoveCommand } from './code/commands/remoteRemove'
 import { createPieAppCommand } from './code/commands/createPieApp'
+import { pageAddCommand } from './code/commands/pageAdd'
 
 const main = async () => {
     const {
@@ -25,6 +26,11 @@ const main = async () => {
         removeComponentName,
         listFilter,
         eventName,
+        cardAction,
+        cardAjax,
+        cardIo,
+        pageAction,
+        pagePath,
     } = parseArgs(process.argv.slice(2))
 
     console.log(`[pieui] CLI started with command: "${command}"`)
@@ -45,15 +51,57 @@ const main = async () => {
             createPieAppCommand(createAppName)
             return
 
-        case 'add':
-            if (!componentName) {
+        case 'card':
+            if (cardAction !== 'add') {
                 console.error(
-                    '[pieui] Error: Component name is required for add command'
+                    '[pieui] Error: Supported card subcommands: add'
                 )
                 printUsage()
                 process.exit(1)
             }
-            addCommand(componentName, componentType)
+            if (!componentName) {
+                console.error(
+                    '[pieui] Error: Component name is required for card add command'
+                )
+                printUsage()
+                process.exit(1)
+            }
+            addCommand(componentName, componentType, {
+                ajax: cardAjax,
+                io: cardIo,
+            })
+            return
+
+        case 'add':
+            if (!componentName) {
+                console.error(
+                    '[pieui] Error: Component name is required for card add command'
+                )
+                printUsage()
+                process.exit(1)
+            }
+            addCommand(componentName, componentType, {
+                ajax: cardAjax,
+                io: cardIo,
+            })
+            return
+
+        case 'page':
+            if (pageAction !== 'add') {
+                console.error(
+                    '[pieui] Error: Supported page subcommands: add'
+                )
+                printUsage()
+                process.exit(1)
+            }
+            if (!pagePath) {
+                console.error(
+                    '[pieui] Error: Path is required for page add command'
+                )
+                printUsage()
+                process.exit(1)
+            }
+            pageAddCommand(pagePath)
             return
 
         case 'remove':

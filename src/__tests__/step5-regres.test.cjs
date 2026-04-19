@@ -122,7 +122,7 @@ test('add without registry exits cleanly and rolls back created component direct
 
     const result = await runCli({
         cwd: projectDir,
-        args: ['add', 'simple', 'RollbackCard'],
+        args: ['card', 'add', 'simple', 'RollbackCard'],
     })
 
     assert.equal(result.status, 1)

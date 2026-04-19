@@ -1,7 +1,14 @@
-import type { ComponentType, ListFilter, ParsedArgs } from './types'
+import type {
+    CardAction,
+    ComponentType,
+    ListFilter,
+    PageAction,
+    ParsedArgs,
+} from './types'
 
 export const parseArgs = (argv: string[]): ParsedArgs => {
     const [command = ''] = argv
+    const cardFlagSet = new Set(['--io', '--ajax'])
     const outDirFlag = argv.find((arg) => arg.startsWith('--out-dir='))
     const srcDirFlag = argv.find((arg) => arg.startsWith('--src-dir='))
     const outDirIndex = argv.findIndex(
@@ -18,6 +25,11 @@ export const parseArgs = (argv: string[]): ParsedArgs => {
     let componentName: string | undefined
     let createAppName: string | undefined
     let eventName: string | undefined
+    let cardAction: CardAction | undefined
+    let cardAjax = false
+    let cardIo = false
+    let pageAction: PageAction | undefined
+    let pagePath: string | undefined
 
     let removeComponentName: string | undefined
     let listFilter: ListFilter | undefined
@@ -43,7 +55,23 @@ export const parseArgs = (argv: string[]): ParsedArgs => {
             filterArg && validFilters.includes(filterArg) ? filterArg : 'all'
     }
 
-    if (command === 'add' && argv[1]) {
+    if (command === 'card' && argv[1]) {
+        const validActions: CardAction[] = ['add']
+        if (validActions.includes(argv[1] as CardAction)) {
+            cardAction = argv[1] as CardAction
+        }
+    }
+
+    if (
+        ((command === 'card' && cardAction === 'add') || command === 'add') &&
+        argv[1]
+    ) {
+        const offset = command === 'card' ? 2 : 1
+        const cardArgv = argv.slice(offset)
+        const positionalArgs = cardArgv.filter((arg) => !cardFlagSet.has(arg))
+        cardIo = cardArgv.includes('--io')
+        cardAjax = cardArgv.includes('--ajax')
+
         // Check if first argument is a component type
         const validTypes: ComponentType[] = [
             'simple',
@@ -51,13 +79,21 @@ export const parseArgs = (argv: string[]): ParsedArgs => {
             'simple-container',
             'complex-container',
         ]
-        if (validTypes.includes(argv[1] as ComponentType)) {
-            componentType = argv[1] as ComponentType
-            componentName = argv[2]
+        if (validTypes.includes(positionalArgs[0] as ComponentType)) {
+            componentType = positionalArgs[0] as ComponentType
+            componentName = positionalArgs[1]
         } else {
             // Default to complex-container if no type specified
             componentType = 'complex-container'
-            componentName = argv[1]
+            componentName = positionalArgs[0]
+        }
+    }
+
+    if (command === 'page' && argv[1]) {
+        const validActions: PageAction[] = ['add']
+        if (validActions.includes(argv[1] as PageAction)) {
+            pageAction = argv[1] as PageAction
+            pagePath = argv[2]
         }
     }
 
@@ -102,6 +138,11 @@ export const parseArgs = (argv: string[]): ParsedArgs => {
         eventName,
         removeComponentName,
         listFilter,
+        cardAction,
+        cardAjax,
+        cardIo,
+        pageAction,
+        pagePath,
     }
 }
 
@@ -116,7 +157,10 @@ export const printUsage = () => {
         '  init                                    Initialize piecomponents directory with registry.ts'
     )
     console.log(
-        '  add [type] <ComponentName>              Create a new component in piecomponents directory'
+        '  card add [type] <ComponentName> [--io] [--ajax] Create a new component in piecomponents directory'
+    )
+    console.log(
+        '  page add <path>                         Create app/<path>/page.tsx from the standard Pie page template'
     )
     console.log(
         '  push <ComponentName>                    Archive piecomponents/<ComponentName> and upload to PieUI server'
@@ -143,7 +187,7 @@ export const printUsage = () => {
         '  list [filter]                            List registered components in a table'
     )
     console.log('')
-    console.log('Component types for add command:')
+    console.log('Component types for card add command:')
     console.log('  simple                  Simple component (only data prop)')
     console.log(
         '  complex                 Complex component (data + children props)'
@@ -155,6 +199,14 @@ export const printUsage = () => {
         '  complex-container       Container with array content (data + content[])'
     )
     console.log('                         (default if type not specified)')
+    console.log('')
+    console.log('Options for card add:')
+    console.log(
+        '  --io                         Add realtime support fields to the generated data interface'
+    )
+    console.log(
+        '  --ajax                       Add AJAX request fields to the generated data interface'
+    )
     console.log('')
     console.log('Options for init:')
     console.log(
@@ -201,13 +253,19 @@ export const printUsage = () => {
     console.log('  pieui create-pie-app my-pie-app')
     console.log('  pieui init --out-dir packages/app')
     console.log(
-        '  pieui add MyCustomCard                        # Creates complex-container by default'
+        '  pieui card add MyCustomCard                   # Creates complex-container by default'
     )
     console.log(
-        '  pieui add simple MySimpleCard                 # Creates simple component'
+        '  pieui card add simple MySimpleCard            # Creates simple component'
     )
     console.log(
-        '  pieui add complex-container MyContainerCard   # Creates complex container'
+        '  pieui card add complex-container MyContainerCard # Creates complex container'
+    )
+    console.log(
+        '  pieui card add simple LiveCard --io --ajax    # Adds realtime and AJAX fields'
+    )
+    console.log(
+        '  pieui page add chat                          # Creates app/chat/page.tsx'
     )
     console.log('  pieui postbuild --append --out-dir dist')
     console.log(

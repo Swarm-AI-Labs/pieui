@@ -1,6 +1,6 @@
 import fs from 'fs'
 import path from 'path'
-import { ComponentType } from '../types'
+import { CardScaffoldOptions, ComponentType } from '../types'
 import { resolveRegistryPath } from '../registryPath'
 import {
     baseInterfaceFor,
@@ -44,11 +44,12 @@ const updateRegistryFile = (
 
 export const addCommand = (
     componentName: string,
-    componentType: ComponentType = 'complex-container'
+    componentType: ComponentType = 'complex-container',
+    options: CardScaffoldOptions = {}
 ) => {
     if (!componentName) {
         console.error('[pieui] Error: Component name is required')
-        console.log('Usage: pieui add [type] <ComponentName>')
+        console.log('Usage: pieui card add [type] <ComponentName>')
         process.exit(1)
     }
 
@@ -95,14 +96,15 @@ export const addCommand = (
             path.join(componentDir, 'types', 'index.ts'),
             componentTypesTemplate(
                 componentName,
-                baseInterfaceFor(componentType)
+                baseInterfaceFor(componentType),
+                options
             ),
             'utf8'
         )
 
         fs.writeFileSync(
             path.join(componentDir, 'ui', `${componentName}.tsx`),
-            componentTemplateFor(componentType, componentName),
+            componentTemplateFor(componentType, componentName, options),
             'utf8'
         )
 
@@ -124,6 +126,8 @@ export const addCommand = (
     console.log(`[pieui] Updated registry.ts with new component`)
     console.log('')
     console.log(`[pieui] Component type: ${componentType}`)
+    console.log(`[pieui] IO fields: ${options.io ? 'enabled' : 'disabled'}`)
+    console.log(`[pieui] AJAX fields: ${options.ajax ? 'enabled' : 'disabled'}`)
     switch (componentType) {
         case 'simple':
             console.log('  - Props: data only')

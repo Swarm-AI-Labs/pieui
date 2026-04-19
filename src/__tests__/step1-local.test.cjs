@@ -124,7 +124,7 @@ test('add and remove manage files and registry entry', () => {
 
     const addResult = runCli({
         cwd: projectDir,
-        args: ['add', 'simple', 'StatusCard'],
+        args: ['card', 'add', 'simple', 'StatusCard'],
     })
     assertSucceeded(addResult, 'add command should succeed')
 
@@ -148,6 +148,56 @@ test('add and remove manage files and registry entry', () => {
     assert.doesNotMatch(registryAfterRemove, /StatusCard/)
 })
 
+// Verifies card add can opt into IO and AJAX data fields in the generated type scaffold.
+test('card add writes IO and AJAX fields when flags are provided', () => {
+    const projectDir = makeProjectDir('pieui-cli-add-flags-')
+
+    assertSucceeded(
+        runCli({ cwd: projectDir, args: ['init'] }),
+        'init should succeed before card add with flags'
+    )
+
+    const addResult = runCli({
+        cwd: projectDir,
+        args: ['card', 'add', 'simple', 'LiveCard', '--io', '--ajax'],
+    })
+    assertSucceeded(addResult, 'card add with flags should succeed')
+
+    const typesFile = fs.readFileSync(
+        path.join(projectDir, 'piecomponents', 'LiveCard', 'types', 'index.ts'),
+        'utf8'
+    )
+    const uiFile = fs.readFileSync(
+        path.join(projectDir, 'piecomponents', 'LiveCard', 'ui', 'LiveCard.tsx'),
+        'utf8'
+    )
+
+    assert.match(typesFile, /useSocketioSupport\?: boolean/)
+    assert.match(typesFile, /useCentrifugeSupport\?: boolean/)
+    assert.match(typesFile, /useMittSupport\?: boolean/)
+    assert.match(typesFile, /centrifugeChannel\?: string/)
+    assert.match(typesFile, /pathname\?: string/)
+    assert.match(typesFile, /depsNames: string\[\]/)
+    assert.match(
+        typesFile,
+        /kwargs: Record<string, string \| number \| boolean>/
+    )
+    assert.match(uiFile, /useSocketioSupport=\{useSocketioSupport\}/)
+    assert.match(uiFile, /useCentrifugeSupport=\{useCentrifugeSupport\}/)
+    assert.match(uiFile, /useMittSupport=\{useMittSupport\}/)
+    assert.match(uiFile, /centrifugeChannel=\{centrifugeChannel\}/)
+    assert.match(uiFile, /methods=\{\{\s*\}\}/)
+    assert.match(
+        uiFile,
+        /import \{ PieCard, useAjaxSubmit, type SetUiAjaxConfigurationType \} from '@piedata\/pieui'/
+    )
+    assert.match(uiFile, /const ajaxSubmit = useAjaxSubmit\(/)
+    assert.match(uiFile, /setUiAjaxConfiguration,/)
+    assert.match(uiFile, /kwargs,/)
+    assert.match(uiFile, /depsNames,/)
+    assert.match(uiFile, /pathname/)
+})
+
 // Verifies list command discovers components and applies simple filter output.
 test('list prints components and supports type filter', () => {
     const projectDir = makeProjectDir('pieui-cli-list-')
@@ -157,11 +207,17 @@ test('list prints components and supports type filter', () => {
         'init should succeed'
     )
     assertSucceeded(
-        runCli({ cwd: projectDir, args: ['add', 'simple', 'SimpleCard'] }),
+        runCli({
+            cwd: projectDir,
+            args: ['card', 'add', 'simple', 'SimpleCard'],
+        }),
         'add simple should succeed'
     )
     assertSucceeded(
-        runCli({ cwd: projectDir, args: ['add', 'complex', 'ComplexCard'] }),
+        runCli({
+            cwd: projectDir,
+            args: ['card', 'add', 'complex', 'ComplexCard'],
+        }),
         'add complex should succeed'
     )
 
@@ -467,7 +523,7 @@ test('add without explicit type defaults to complex-container templates', () => 
     )
 
     assertSucceeded(
-        runCli({ cwd: projectDir, args: ['add', 'OrdersCard'] }),
+        runCli({ cwd: projectDir, args: ['card', 'add', 'OrdersCard'] }),
         'add should succeed with implicit type'
     )
 
@@ -506,7 +562,7 @@ test('add rejects invalid component names', () => {
 
     const result = runCli({
         cwd: projectDir,
-        args: ['add', 'simple', 'invalidName'],
+        args: ['card', 'add', 'simple', 'invalidName'],
     })
 
     assert.equal(result.status, 1)
@@ -524,13 +580,16 @@ test('add fails when component already exists', () => {
         'init should succeed'
     )
     assertSucceeded(
-        runCli({ cwd: projectDir, args: ['add', 'simple', 'AlphaCard'] }),
+        runCli({
+            cwd: projectDir,
+            args: ['card', 'add', 'simple', 'AlphaCard'],
+        }),
         'first add should succeed'
     )
 
     const duplicate = runCli({
         cwd: projectDir,
-        args: ['add', 'simple', 'AlphaCard'],
+        args: ['card', 'add', 'simple', 'AlphaCard'],
     })
 
     assert.equal(duplicate.status, 1)
@@ -573,7 +632,10 @@ test('list with invalid filter falls back to all', () => {
         'init should succeed'
     )
     assertSucceeded(
-        runCli({ cwd: projectDir, args: ['add', 'simple', 'OneCard'] }),
+        runCli({
+            cwd: projectDir,
+            args: ['card', 'add', 'simple', 'OneCard'],
+        }),
         'add should succeed'
     )
 
@@ -800,4 +862,37 @@ EOF
     const copiedShared = path.join(projectDir, 'my-pie-app', '_shared')
     assert.ok(fs.existsSync(path.join(copiedShared, 'config.ts')))
     assert.ok(fs.existsSync(path.join(copiedShared, 'ui', 'index.ts')))
+})
+
+// Verifies page add creates app/<path>/page.tsx and derives the component name from the route path.
+test('page add creates nested app page scaffold', () => {
+    const projectDir = makeProjectDir('pieui-cli-page-add-')
+
+    const result = runCli({
+        cwd: projectDir,
+        args: ['page', 'add', 'alpha/beta'],
+    })
+    assertSucceeded(result, 'page add should succeed')
+
+    const pagePath = path.join(projectDir, 'app', 'alpha', 'beta', 'page.tsx')
+    assert.ok(fs.existsSync(pagePath), 'page.tsx should be created')
+
+    const page = fs.readFileSync(pagePath, 'utf8')
+    assert.equal(
+        page,
+        `"use client";
+
+import PiePage from "@/app/_shared/simple";
+import { Suspense } from "react";
+import LoadingScreen from "@/components/LoadingScreen";
+
+export default function AlphaBetaPage() {
+  return (
+    <Suspense fallback={<LoadingScreen />}>
+      <PiePage />
+    </Suspense>
+  );
+}
+`
+    )
 })

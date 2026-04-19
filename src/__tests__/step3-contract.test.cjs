@@ -200,7 +200,7 @@ test('unknown command prints usage and exits with code 1', () => {
 })
 
 // Verifies required-argument errors keep their contract for local commands.
-test('required arg contract for create-pie-app/add/remove/list-events/add-event', () => {
+test('required arg contract for create-pie-app/card-add/page-add/remove/list-events/add-event', () => {
     const projectDir = makeProjectDir('pieui-step3-required-args-local-')
 
     const createPieAppResult = runCli({
@@ -214,10 +214,18 @@ test('required arg contract for create-pie-app/add/remove/list-events/add-event'
     )
     assertUsageShown(createPieAppResult)
 
-    const addResult = runCli({ cwd: projectDir, args: ['add'] })
+    const addResult = runCli({ cwd: projectDir, args: ['card', 'add'] })
     assert.equal(addResult.status, 1)
-    assert.match(addResult.stderr, /Component name is required for add command/)
+    assert.match(
+        addResult.stderr,
+        /Component name is required for card add command/
+    )
     assertUsageShown(addResult)
+
+    const pageAddResult = runCli({ cwd: projectDir, args: ['page', 'add'] })
+    assert.equal(pageAddResult.status, 1)
+    assert.match(pageAddResult.stderr, /Path is required for page add command/)
+    assertUsageShown(pageAddResult)
 
     const removeResult = runCli({ cwd: projectDir, args: ['remove'] })
     assert.equal(removeResult.status, 1)
@@ -297,7 +305,7 @@ test('list invalid filter keeps unfiltered total wording contract', () => {
     const projectDir = makeProjectDir('pieui-step3-list-filter-contract-')
 
     runCli({ cwd: projectDir, args: ['init'] })
-    runCli({ cwd: projectDir, args: ['add', 'simple', 'OneCard'] })
+    runCli({ cwd: projectDir, args: ['card', 'add', 'simple', 'OneCard'] })
 
     const result = runCli({ cwd: projectDir, args: ['list', 'not-a-filter'] })
     assertSucceeded(result, 'list should succeed with invalid filter')
@@ -314,7 +322,10 @@ test('add default type contract reports complex-container', () => {
         'init should succeed'
     )
 
-    const result = runCli({ cwd: projectDir, args: ['add', 'ContractCard'] })
+    const result = runCli({
+        cwd: projectDir,
+        args: ['card', 'add', 'ContractCard'],
+    })
     assertSucceeded(result, 'add should succeed with default type')
 
     assert.match(result.stdout, /Component type: complex-container/)
@@ -330,11 +341,29 @@ test('add explicit simple type contract reports simple', () => {
 
     const result = runCli({
         cwd: projectDir,
-        args: ['add', 'simple', 'SimpleContractCard'],
+        args: ['card', 'add', 'simple', 'SimpleContractCard'],
     })
     assertSucceeded(result, 'add with explicit type should succeed')
 
     assert.match(result.stdout, /Component type: simple/)
+})
+
+// Verifies card add flag contract prints enabled scaffold sections.
+test('card add flags are reflected in success output contract', () => {
+    const projectDir = makeProjectDir('pieui-step3-add-flags-contract-')
+    assertSucceeded(
+        runCli({ cwd: projectDir, args: ['init'] }),
+        'init should succeed'
+    )
+
+    const result = runCli({
+        cwd: projectDir,
+        args: ['card', 'add', 'simple', 'RealtimeCard', '--io', '--ajax'],
+    })
+    assertSucceeded(result, 'card add with flags should succeed')
+
+    assert.match(result.stdout, /IO fields: enabled/)
+    assert.match(result.stdout, /AJAX fields: enabled/)
 })
 
 // Verifies init short -o flag contract creates scaffold under requested base path.
@@ -448,14 +477,18 @@ test('usage output includes key command entries', () => {
     assert.equal(result.status, 1)
     assert.match(result.stdout, /init/)
     assert.match(result.stdout, /create-pie-app <AppName>/)
-    assert.match(result.stdout, /add \[type\] <ComponentName>/)
+    assert.match(
+        result.stdout,
+        /card add \[type\] <ComponentName> \[--io\] \[--ajax\]/
+    )
+    assert.match(result.stdout, /page add <path>/)
     assert.match(result.stdout, /postbuild/)
     assert.match(result.stdout, /list-events <ComponentName>/)
     assert.match(result.stdout, /remote-remove <ComponentName>/)
 })
 
-// Verifies add parser fallback behavior when first positional token is not a known type.
-test('add unknown type token falls back to default type using first token as component name', () => {
+// Verifies card add parser fallback behavior when first positional token is not a known type.
+test('card add unknown type token falls back to default type using first token as component name', () => {
     const projectDir = makeProjectDir('pieui-step3-add-unknown-type-token-')
     assertSucceeded(
         runCli({ cwd: projectDir, args: ['init'] }),
@@ -464,7 +497,7 @@ test('add unknown type token falls back to default type using first token as com
 
     const result = runCli({
         cwd: projectDir,
-        args: ['add', 'UnknownType', 'IgnoredName'],
+        args: ['card', 'add', 'UnknownType', 'IgnoredName'],
     })
     assertSucceeded(result, 'add fallback parsing should succeed')
 

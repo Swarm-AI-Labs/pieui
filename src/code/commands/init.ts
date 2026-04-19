@@ -109,7 +109,9 @@ export const initCommand = (outDir: string) => {
     console.log(
         '  1. Import "./piecomponents/registry" in your app entry point'
     )
-    console.log('  2. Use "pieui add <ComponentName>" to create new components')
+    console.log(
+        '  2. Use "pieui card add <ComponentName>" to create new components'
+    )
 }
 
 const ensureNextConfig = (resolvedOutDir: string) => {

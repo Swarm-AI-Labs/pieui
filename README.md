@@ -115,3 +115,39 @@ Planned create flow target:
 ```sh
 bun create pieui@latest my-pie-app
 ```
+
+Create a page scaffold inside an existing Next app:
+
+```sh
+bunx pieui page add chat
+```
+
+This command writes `app/chat/page.tsx` with the standard Suspense-wrapped Pie page shell:
+
+```tsx
+"use client";
+
+import PiePage from "@/app/_shared/simple";
+import { Suspense } from "react";
+import LoadingScreen from "@/components/LoadingScreen";
+
+export default function ChatPage() {
+  return (
+    <Suspense fallback={<LoadingScreen />}>
+      <PiePage />
+    </Suspense>
+  );
+}
+```
+
+Create a component scaffold inside `piecomponents/`:
+
+```sh
+bunx pieui card add simple StatusCard
+```
+
+Add optional realtime and AJAX fields to the generated `types/index.ts`:
+
+```sh
+bunx pieui card add simple LiveCard --io --ajax
+```

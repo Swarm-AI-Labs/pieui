@@ -1,44 +1,20 @@
-import { ComponentType } from '../types'
 import { componentIndexTemplate } from './componentIndex'
 import { componentTypesTemplate } from './componentTypes'
 import { registerCallTemplate } from './registerCall'
-import { simpleComponentTemplate } from './simpleComponent'
-import { complexComponentTemplate } from './complexComponent'
-import { simpleContainerComponentTemplate } from './simpleContainerComponent'
-import { complexContainerComponentTemplate } from './complexContainerComponent'
 import { nextConfigTemplate, REQUIRED_NEXT_CONFIG_ENV_KEYS } from './nextConfig'
+import {
+    baseInterfaceFor,
+    componentTemplateFor,
+    pageTemplate,
+} from './pages'
 
 export {
+    baseInterfaceFor,
+    componentTemplateFor,
     componentIndexTemplate,
     componentTypesTemplate,
+    pageTemplate,
     registerCallTemplate,
     nextConfigTemplate,
     REQUIRED_NEXT_CONFIG_ENV_KEYS,
-}
-
-const BASE_INTERFACE_BY_TYPE: Record<ComponentType, string> = {
-    simple: 'PieSimpleComponentProps',
-    complex: 'PieComplexComponentProps',
-    'simple-container': 'PieContainerComponentProps',
-    'complex-container': 'PieComplexContainerComponentProps',
-}
-
-export const baseInterfaceFor = (componentType: ComponentType): string =>
-    BASE_INTERFACE_BY_TYPE[componentType]
-
-export const componentTemplateFor = (
-    componentType: ComponentType,
-    componentName: string
-): string => {
-    switch (componentType) {
-        case 'simple':
-            return simpleComponentTemplate(componentName)
-        case 'complex':
-            return complexComponentTemplate(componentName)
-        case 'simple-container':
-            return simpleContainerComponentTemplate(componentName)
-        case 'complex-container':
-        default:
-            return complexContainerComponentTemplate(componentName)
-    }
 }
