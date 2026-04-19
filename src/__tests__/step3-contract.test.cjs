@@ -200,8 +200,19 @@ test('unknown command prints usage and exits with code 1', () => {
 })
 
 // Verifies required-argument errors keep their contract for local commands.
-test('required arg contract for create-pie-app/card-add/page-add/remove/list-events/add-event', () => {
+test('required arg contract for create/create-pie-app/card-add/page-add/remove/list-events/add-event', () => {
     const projectDir = makeProjectDir('pieui-step3-required-args-local-')
+
+    const createResult = runCli({
+        cwd: projectDir,
+        args: ['create'],
+    })
+    assert.equal(createResult.status, 1)
+    assert.match(
+        createResult.stderr,
+        /App name is required for create command/
+    )
+    assertUsageShown(createResult)
 
     const createPieAppResult = runCli({
         cwd: projectDir,
@@ -476,6 +487,7 @@ test('usage output includes key command entries', () => {
 
     assert.equal(result.status, 1)
     assert.match(result.stdout, /init/)
+    assert.match(result.stdout, /create <AppName>/)
     assert.match(result.stdout, /create-pie-app <AppName>/)
     assert.match(
         result.stdout,

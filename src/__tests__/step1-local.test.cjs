@@ -864,6 +864,65 @@ EOF
     assert.ok(fs.existsSync(path.join(copiedShared, 'ui', 'index.ts')))
 })
 
+// Verifies create shells out to Bun create and initializes piecomponents in the new app.
+test('create scaffolds next app and runs pieui init in the new app directory', () => {
+    const projectDir = makeProjectDir('pieui-cli-create-app-')
+    const fakeBunPath = path.join(projectDir, 'fake-bun.sh')
+    const logPath = path.join(projectDir, 'bun-create.log')
+
+    writeFile(
+        fakeBunPath,
+        `#!/bin/sh
+set -eu
+printf '%s\\n' "$*" > "${logPath}"
+if [ "$#" -lt 4 ]; then
+  echo "missing args" >&2
+  exit 2
+fi
+APP_DIR="$PWD/$3"
+mkdir -p "$APP_DIR"
+cat > "$APP_DIR/package.json" <<'EOF'
+{
+  "name": "fake-next-app"
+}
+EOF
+cat > "$APP_DIR/next.config.ts" <<'EOF'
+const nextConfig = {}
+
+export default nextConfig
+EOF
+cat > "$APP_DIR/tailwind.config.js" <<'EOF'
+module.exports = {
+  content: ['./app/**/*.{js,ts,jsx,tsx}'],
+  theme: { extend: {} },
+  plugins: [],
+}
+EOF
+`
+    )
+    fs.chmodSync(fakeBunPath, 0o755)
+
+    const result = runCli({
+        cwd: projectDir,
+        args: ['create', 'my-app-name'],
+        env: {
+            PIEUI_CREATE_BUN_BIN: fakeBunPath,
+        },
+    })
+    assertSucceeded(result, 'create should succeed with fake bun runtime')
+
+    const commandArgs = fs.readFileSync(logPath, 'utf8')
+    assert.match(commandArgs, /^create next-app@latest my-app-name --yes/m)
+
+    const registryPath = path.join(
+        projectDir,
+        'my-app-name',
+        'piecomponents',
+        'registry.ts'
+    )
+    assert.ok(fs.existsSync(registryPath), 'registry.ts should be created')
+})
+
 // Verifies page add creates app/<path>/page.tsx and derives the component name from the route path.
 test('page add creates nested app page scaffold', () => {
     const projectDir = makeProjectDir('pieui-cli-page-add-')

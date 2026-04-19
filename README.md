@@ -91,6 +91,18 @@ Type exports:
 
 ## CLI Template Scaffolding
 
+Create a fresh Next.js app and initialize PieUI in it:
+
+```sh
+bunx pieui create my-app-name
+```
+
+This command:
+
+- runs `bun create next-app@latest my-app-name --yes`
+- initializes `piecomponents/registry.ts` and PieUI config in the new app
+- prepares the app for `bunx pieui card add ...`
+
 Create a blank Next.js web app template with PieUI CLI:
 
 ```sh

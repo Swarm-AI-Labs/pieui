@@ -38,7 +38,7 @@ export const parseArgs = (argv: string[]): ParsedArgs => {
         removeComponentName = argv[1]
     }
 
-    if (command === 'create-pie-app' && argv[1]) {
+    if ((command === 'create-pie-app' || command === 'create') && argv[1]) {
         createAppName = argv[1]
     }
 
@@ -151,6 +151,9 @@ export const printUsage = () => {
     console.log('')
     console.log('Commands:')
     console.log(
+        '  create <AppName>                        Create a Next.js app and run pieui init inside it'
+    )
+    console.log(
         '  create-pie-app <AppName>                Create a blank Next.js web template for PieUI (bun create next-app under the hood)'
     )
     console.log(
@@ -250,6 +253,7 @@ export const printUsage = () => {
     console.log('')
     console.log('Examples:')
     console.log('  pieui init')
+    console.log('  pieui create my-pie-app')
     console.log('  pieui create-pie-app my-pie-app')
     console.log('  pieui init --out-dir packages/app')
     console.log(
