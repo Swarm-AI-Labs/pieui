@@ -4,6 +4,7 @@ import { envTemplate } from './env'
 import { homePageTemplate } from './homePage'
 import { loadingScreenTemplate } from './loadingScreen'
 import { registerCallTemplate } from './registerCall'
+import { rootLayoutTemplate } from './rootLayout'
 import { sharedPageTemplate } from './sharedPage'
 import { nextConfigTemplate, REQUIRED_NEXT_CONFIG_ENV_KEYS } from './nextConfig'
 import {
@@ -24,5 +25,6 @@ export {
     registerCallTemplate,
     nextConfigTemplate,
     REQUIRED_NEXT_CONFIG_ENV_KEYS,
+    rootLayoutTemplate,
     sharedPageTemplate,
 }

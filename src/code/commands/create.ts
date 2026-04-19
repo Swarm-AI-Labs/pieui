@@ -6,6 +6,7 @@ import {
     envTemplate,
     homePageTemplate,
     loadingScreenTemplate,
+    rootLayoutTemplate,
     sharedPageTemplate,
 } from '../templates'
 
@@ -24,20 +25,63 @@ const writeFile = (filePath: string, content: string) => {
     fs.writeFileSync(filePath, content, 'utf8')
 }
 
+const resolveTemplatePublicDir = () => {
+    const entrypointPath = process.argv[1]
+        ? path.resolve(process.argv[1])
+        : path.join(process.cwd(), 'src', 'cli.ts')
+    const entrypointDir = path.dirname(entrypointPath)
+    const candidateDirs = [
+        path.join(entrypointDir, 'code', 'public'),
+        path.join(process.cwd(), 'src', 'code', 'public'),
+    ]
+
+    for (const candidateDir of candidateDirs) {
+        if (fs.existsSync(candidateDir)) {
+            return candidateDir
+        }
+    }
+
+    throw new Error('[pieui] Could not resolve bundled public template assets')
+}
+
 const scaffoldCreateAppFiles = (appDir: string) => {
     clearDirectory(path.join(appDir, 'public'))
 
     writeFile(path.join(appDir, 'app', '_shared', 'page.tsx'), sharedPageTemplate)
     writeFile(path.join(appDir, 'app', 'page.tsx'), homePageTemplate)
+    writeFile(path.join(appDir, 'app', 'layout.tsx'), rootLayoutTemplate)
     fs.rmSync(path.join(appDir, 'app', '_shared', 'simple.tsx'), {
         force: true,
     })
     fs.rmSync(path.join(appDir, 'app', 'piecache.json'), { force: true })
+    fs.rmSync(path.join(appDir, 'app', 'favicon.ico'), { force: true })
     writeFile(
         path.join(appDir, 'components', 'LoadingScreen.tsx'),
         loadingScreenTemplate
     )
     fs.rmSync(path.join(appDir, 'components', 'ErrorToast.tsx'), { force: true })
+    fs.cpSync(resolveTemplatePublicDir(), path.join(appDir, 'public'), {
+        recursive: true,
+        force: true,
+    })
+}
+
+const runBunCommand = (bunBin: string, args: string[], cwd: string) => {
+    const result = spawnSync(bunBin, args, {
+        cwd,
+        stdio: 'inherit',
+        env: process.env,
+    })
+
+    if (result.error) {
+        throw result.error
+    }
+
+    if (result.status !== 0) {
+        throw new Error(
+            `${args.join(' ')} failed (exit code ${result.status ?? 'unknown'})`
+        )
+    }
 }
 
 export const createCommand = (appName: string) => {
@@ -83,20 +127,6 @@ export const createCommand = (appName: string) => {
     scaffoldCreateAppFiles(appDir)
     initCommand(trimmedAppName)
     writeFile(path.join(appDir, '.env'), envTemplate())
-
-    const devResult = spawnSync(bunBin, ['run', 'dev'], {
-        cwd: appDir,
-        stdio: 'inherit',
-        env: process.env,
-    })
-
-    if (devResult.error) {
-        throw devResult.error
-    }
-    if (devResult.status !== 0) {
-        throw new Error(
-            `dev failed (exit code ${devResult.status ?? 'unknown'})`
-        )
-    }
-
+    runBunCommand(bunBin, ['install'], appDir)
+    runBunCommand(bunBin, ['run', 'dev'], appDir)
 }
