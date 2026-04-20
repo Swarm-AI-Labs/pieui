@@ -61,7 +61,13 @@
         "publish:npm": "npm publish",
         "publish:beta": "npm publish --tag beta",
         "unrelease": "git tag -d v$(node -p \"require('./package.json').version\") && git push origin :refs/tags/v$(node -p \"require('./package.json').version\")",
-        "version:current": "node -p \"require('./package.json').version\""
+        "version:current": "node -p \"require('./package.json').version\"",
+        "test:step1": "bun test src/__tests__/step1-local.test.cjs",
+        "test:step2": "bun test src/__tests__/step2-remote.test.cjs",
+        "test:step3": "bun test src/__tests__/step3-contract.test.cjs",
+        "test:step4": "bun test src/__tests__/step4-ci.test.cjs",
+        "test:step5": "bun test src/__tests__/step5-regres.test.cjs",
+        "test:steps": "bun test src/__tests__/step1-local.test.cjs src/__tests__/step2-remote.test.cjs src/__tests__/step3-contract.test.cjs src/__tests__/step4-ci.test.cjs src/__tests__/step5-regres.test.cjs"
     },
     "keywords": [
         "react",

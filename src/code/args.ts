@@ -38,7 +38,12 @@ export const parseArgs = (argv: string[]): ParsedArgs => {
         removeComponentName = argv[1]
     }
 
-    if ((command === 'create-pie-app' || command === 'create') && argv[1]) {
+    if (
+        (command === 'create-pie-app' ||
+            command === 'create-pieui' ||
+            command === 'create') &&
+        argv[1]
+    ) {
         createAppName = argv[1]
     }
 
@@ -157,6 +162,9 @@ export const printUsage = () => {
         '  create-pie-app <AppName>                Create a blank Next.js web template for PieUI (bun create next-app under the hood)'
     )
     console.log(
+        '  create-pieui <AppName>                  Alias for create-pie-app'
+    )
+    console.log(
         '  login                                   Sign in to PieUI and save credentials to .pie/config.json'
     )
     console.log(
@@ -259,6 +267,7 @@ export const printUsage = () => {
     console.log('  pieui init')
     console.log('  pieui create my-pie-app')
     console.log('  pieui create-pie-app my-pie-app')
+    console.log('  pieui create-pieui my-pie-app')
     console.log('  pieui init --out-dir packages/app')
     console.log(
         '  pieui card add MyCustomCard                   # Creates complex-container by default'

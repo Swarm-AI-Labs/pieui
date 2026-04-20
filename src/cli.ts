@@ -13,6 +13,7 @@ import { pullCommand } from './code/commands/pull'
 import { remoteRemoveCommand } from './code/commands/remoteRemove'
 import { pageAddCommand } from './code/commands/pageAdd'
 import { createCommand } from './code/commands/create'
+import { createPieAppCommand } from './code/commands/createPieApp'
 import { loginCommand } from './code/commands/login'
 
 const main = async () => {
@@ -50,6 +51,17 @@ const main = async () => {
                 process.exit(1)
             }
             createCommand(createAppName)
+            return
+        case 'create-pie-app':
+        case 'create-pieui':
+            if (!createAppName) {
+                console.error(
+                    '[pieui] Error: App name is required for create-pie-app command'
+                )
+                printUsage()
+                process.exit(1)
+            }
+            createPieAppCommand(createAppName)
             return
 
         case 'card':
