@@ -1,0 +1,1385 @@
+const { test } = require('bun:test')
+const assert = require('node:assert/strict')
+const fs = require('node:fs')
+const os = require('node:os')
+const path = require('node:path')
+const { spawnSync } = require('node:child_process')
+
+const repoRoot = path.resolve(__dirname, '../..')
+
+const writeFile = (filePath, contents) => {
+    fs.mkdirSync(path.dirname(filePath), { recursive: true })
+    fs.writeFileSync(filePath, contents, 'utf8')
+}
+
+const resolveCliCommand = () => {
+    const bunInPath = spawnSync('bun', ['--version'], { stdio: 'ignore' })
+    if (bunInPath.status === 0) {
+        return ['bun', path.join(repoRoot, 'src', 'cli.ts')]
+    }
+
+    const homeBun = path.join(os.homedir(), '.bun', 'bin', 'bun')
+    const bunFromHome = spawnSync(homeBun, ['--version'], { stdio: 'ignore' })
+    if (bunFromHome.status === 0) {
+        return [homeBun, path.join(repoRoot, 'src', 'cli.ts')]
+    }
+
+    const distCli = path.join(repoRoot, 'dist', 'cli.js')
+    if (fs.existsSync(distCli)) {
+        return ['node', distCli]
+    }
+
+    throw new Error(
+        'Cannot resolve pieui CLI runtime. Install bun or build dist/cli.js.'
+    )
+}
+
+const runCli = ({ cwd, args, env = {} }) => {
+    const cmd = resolveCliCommand()
+    const result = spawnSync(cmd[0], [...cmd.slice(1), ...args], {
+        cwd,
+        env: {
+            ...process.env,
+            ...env,
+            NODE_PATH: path.join(repoRoot, 'node_modules'),
+        },
+        stdio: 'pipe',
+    })
+
+    return {
+        status: result.status,
+        stdout: result.stdout ? result.stdout.toString() : '',
+        stderr: result.stderr ? result.stderr.toString() : '',
+    }
+}
+
+const makeProjectDir = (prefix) =>
+    fs.mkdtempSync(path.join(os.tmpdir(), prefix))
+
+const assertSucceeded = (result, details) => {
+    assert.equal(
+        result.status,
+        0,
+        `${details}\nSTDOUT:\n${result.stdout}\nSTDERR:\n${result.stderr}`
+    )
+}
+
+const assertEventsInOutput = (stdout, events) => {
+    for (const eventName of events) {
+        const escaped = eventName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+        assert.match(stdout, new RegExp(`\\n\\s*${escaped}\\s+│`))
+    }
+}
+
+// Verifies init creates core scaffolding and updates common config files.
+test('init creates piecomponents and updates tailwind/next config', () => {
+    const projectDir = makeProjectDir('pieui-cli-init-')
+
+    writeFile(
+        path.join(projectDir, 'tailwind.config.js'),
+        `module.exports = {
+  content: ['./src/**/*.{js,ts,jsx,tsx}'],
+  theme: { extend: {} },
+  plugins: [],
+}\n`
+    )
+
+    writeFile(
+        path.join(projectDir, 'next.config.ts'),
+        `const nextConfig = {}
+
+export default nextConfig
+`
+    )
+
+    const result = runCli({ cwd: projectDir, args: ['init'] })
+    assertSucceeded(result, 'init command should succeed')
+
+    const registryPath = path.join(projectDir, 'piecomponents', 'registry.ts')
+    assert.ok(fs.existsSync(registryPath), 'registry.ts should be created')
+
+    const tailwind = fs.readFileSync(
+        path.join(projectDir, 'tailwind.config.js'),
+        'utf8'
+    )
+    assert.match(tailwind, /@swarm\.ing\/pieui\/dist\/\*\*\//)
+
+    const nextConfig = fs.readFileSync(
+        path.join(projectDir, 'next.config.ts'),
+        'utf8'
+    )
+    assert.match(nextConfig, /PIE_API_SERVER/)
+    assert.match(nextConfig, /PIE_CENTRIFUGE_SERVER/)
+    assert.match(nextConfig, /PIE_ENABLE_RENDERING_LOG/)
+    assert.match(nextConfig, /transpilePackages\s*:\s*\["@swarm\.ing\/pieui"\]/)
+})
+
+// Verifies add/remove create and clean component files plus registry wiring.
+test('add and remove manage files and registry entry', () => {
+    const projectDir = makeProjectDir('pieui-cli-add-remove-')
+
+    assertSucceeded(
+        runCli({ cwd: projectDir, args: ['init'] }),
+        'init should succeed before add/remove'
+    )
+
+    const addResult = runCli({
+        cwd: projectDir,
+        args: ['add', 'simple', 'StatusCard'],
+    })
+    assertSucceeded(addResult, 'add command should succeed')
+
+    const componentDir = path.join(projectDir, 'piecomponents', 'StatusCard')
+    assert.ok(fs.existsSync(path.join(componentDir, 'index.ts')))
+    assert.ok(fs.existsSync(path.join(componentDir, 'types', 'index.ts')))
+    assert.ok(fs.existsSync(path.join(componentDir, 'ui', 'StatusCard.tsx')))
+
+    const registryPath = path.join(projectDir, 'piecomponents', 'registry.ts')
+    const registryAfterAdd = fs.readFileSync(registryPath, 'utf8')
+    assert.match(registryAfterAdd, /import "@\/piecomponents\/StatusCard";/)
+
+    const removeResult = runCli({
+        cwd: projectDir,
+        args: ['remove', 'StatusCard'],
+    })
+    assertSucceeded(removeResult, 'remove command should succeed')
+
+    assert.equal(fs.existsSync(componentDir), false)
+    const registryAfterRemove = fs.readFileSync(registryPath, 'utf8')
+    assert.doesNotMatch(registryAfterRemove, /StatusCard/)
+})
+
+// Verifies list command discovers components and applies simple filter output.
+test('list prints components and supports type filter', () => {
+    const projectDir = makeProjectDir('pieui-cli-list-')
+
+    assertSucceeded(
+        runCli({ cwd: projectDir, args: ['init'] }),
+        'init should succeed'
+    )
+    assertSucceeded(
+        runCli({ cwd: projectDir, args: ['add', 'simple', 'SimpleCard'] }),
+        'add simple should succeed'
+    )
+    assertSucceeded(
+        runCli({ cwd: projectDir, args: ['add', 'complex', 'ComplexCard'] }),
+        'add complex should succeed'
+    )
+
+    const listAll = runCli({ cwd: projectDir, args: ['list'] })
+    assertSucceeded(listAll, 'list should succeed')
+    assert.match(listAll.stdout, /SimpleCard/)
+    assert.match(listAll.stdout, /ComplexCard/)
+
+    const listSimple = runCli({ cwd: projectDir, args: ['list', 'simple'] })
+    assertSucceeded(listSimple, 'list simple should succeed')
+    assert.match(listSimple.stdout, /SimpleCard/)
+    assert.match(listSimple.stdout, /\(filtered by: simple\)/)
+})
+
+// Verifies list-events reads inline methods object from PieCard JSX.
+test('list-events prints methods keys for PieCard', () => {
+    const projectDir = makeProjectDir('pieui-cli-list-events-')
+
+    writeFile(
+        path.join(projectDir, 'src', 'Screen.tsx'),
+        `export const Screen = () => (
+  <PieCard
+    card="AlertsCard"
+    methods={{
+      alert: (payload) => payload,
+      refresh() {
+        return true
+      },
+    }}
+  />
+)
+`
+    )
+
+    const result = runCli({
+        cwd: projectDir,
+        args: ['list-events', 'AlertsCard', '--src-dir', 'src'],
+    })
+
+    assertSucceeded(result, 'list-events should succeed')
+    assert.match(result.stdout, /alert/)
+    assert.match(result.stdout, /refresh/)
+})
+
+// Verifies list-events resolves methods provided via useMemo variable.
+test('list-events resolves methods from useMemo variable', () => {
+    const projectDir = makeProjectDir('pieui-cli-list-events-usememo-')
+
+    writeFile(
+        path.join(projectDir, 'src', 'Screen.tsx'),
+        `import { useMemo } from 'react'
+
+export const Screen = () => {
+  const methods = useMemo(
+    () => ({
+      update: (payload) => payload,
+      reload(event) {
+        return event
+      },
+    }),
+    []
+  )
+
+  return <PieCard card="IOEventsCard" methods={methods} />
+}
+`
+    )
+
+    const result = runCli({
+        cwd: projectDir,
+        args: ['list-events', 'IOEventsCard', '--src-dir', 'src'],
+    })
+
+    assertSucceeded(
+        result,
+        'list-events should support useMemo methods variable'
+    )
+    assert.match(result.stdout, /update/)
+    assert.match(result.stdout, /reload/)
+})
+
+// Verifies list-events supports property, shorthand, and method declaration keys.
+test('list-events handles identifier methods with property, shorthand, and method declaration', () => {
+    const projectDir = makeProjectDir('pieui-cli-list-events-shapes-')
+
+    writeFile(
+        path.join(projectDir, 'src', 'Screen.tsx'),
+        `const ping = (payload) => payload
+
+export const Screen = () => {
+  const methods = {
+    update: (payload) => payload,
+    ping,
+    reload() {
+      return true
+    },
+  }
+
+  return (
+    <PieCard card={'ShapeCard'} methods={methods}>
+      <div />
+    </PieCard>
+  )
+}
+`
+    )
+
+    const result = runCli({
+        cwd: projectDir,
+        args: ['list-events', 'ShapeCard', '--src-dir', 'src'],
+    })
+
+    assertSucceeded(
+        result,
+        'list-events should support mixed object-property method syntaxes'
+    )
+    assertEventsInOutput(result.stdout, ['update', 'ping', 'reload'])
+    assert.match(result.stdout, /\[pieui\] Total: 3/)
+})
+
+// Verifies list-events returns expected methods for built-in cards in repo source.
+test('list-events covers built-in component methods in repository source', () => {
+    const cases = [
+        { component: 'AjaxGroupCard', events: ['changeContent'], total: 1 },
+        {
+            component: 'HTMLEmbedCard',
+            events: ['update', 'generateUsingAI', 'initializeAI'],
+            total: 3,
+        },
+        {
+            component: 'IOEventsCard',
+            events: ['alert', 'log', 'push', 'redirect', 'reload'],
+            total: 5,
+        },
+        {
+            component: 'CloudStorageCard',
+            events: ['update', 'remove'],
+            total: 2,
+        },
+        {
+            component: 'DeviceStorageCard',
+            events: ['update', 'remove'],
+            total: 2,
+        },
+        {
+            component: 'SecureStorageCard',
+            events: ['update', 'remove'],
+            total: 2,
+        },
+        {
+            component: 'SessionStorageCard',
+            events: ['update', 'remove'],
+            total: 2,
+        },
+        { component: 'HiddenCard', events: ['update'], total: 1 },
+    ]
+
+    for (const testCase of cases) {
+        const result = runCli({
+            cwd: repoRoot,
+            args: ['list-events', testCase.component, '--src-dir', './src'],
+        })
+
+        assertSucceeded(
+            result,
+            `list-events should succeed for built-in component ${testCase.component}`
+        )
+        assertEventsInOutput(result.stdout, testCase.events)
+        assert.match(
+            result.stdout,
+            new RegExp(`\\[pieui\\] Total: ${testCase.total}`)
+        )
+    }
+}, 20000)
+
+// Verifies add-event appends a new handler and validates invalid event keys.
+test('add-event appends a methods handler for inline object literal', () => {
+    const projectDir = makeProjectDir('pieui-cli-add-event-')
+    const targetFile = path.join(projectDir, 'src', 'Screen.tsx')
+
+    writeFile(
+        targetFile,
+        `export const Screen = () => (
+  <PieCard
+    card="AlertsCard"
+    methods={{
+      alert: (payload) => payload,
+    }}
+  />
+)
+`
+    )
+
+    const addEvent = runCli({
+        cwd: projectDir,
+        args: ['add-event', 'AlertsCard', 'create', '--src-dir', 'src'],
+    })
+    assertSucceeded(addEvent, 'add-event should succeed')
+
+    const updated = fs.readFileSync(targetFile, 'utf8')
+    assert.match(updated, /create:\s*\(payload: any\) => \{/)
+    assert.match(updated, /\[pieui\] AlertsCard:create/)
+
+    const addInvalid = runCli({
+        cwd: projectDir,
+        args: ['add-event', 'AlertsCard', 'invalid key', '--src-dir', 'src'],
+    })
+    assert.equal(addInvalid.status, 1)
+    assert.match(addInvalid.stderr, /Invalid event key/)
+})
+
+// Verifies add-event can insert into an empty inline methods object.
+test('add-event inserts into empty inline methods object', () => {
+    const projectDir = makeProjectDir('pieui-cli-add-event-empty-methods-')
+    const targetFile = path.join(projectDir, 'src', 'Screen.tsx')
+
+    writeFile(
+        targetFile,
+        `export const Screen = () => (
+  <PieCard
+    card="AlertsCard"
+    methods={{}}
+  />
+)
+`
+    )
+
+    const result = runCli({
+        cwd: projectDir,
+        args: ['add-event', 'AlertsCard', 'create', '--src-dir', 'src'],
+    })
+    assertSucceeded(result, 'add-event should support empty methods object')
+
+    const updated = fs.readFileSync(targetFile, 'utf8')
+    assert.match(updated, /methods=\{\{\s*create:\s*\(payload: any\) => \{/s)
+})
+
+// Verifies postbuild writes an empty manifest when no components are found.
+test('postbuild without components still writes empty manifest', () => {
+    const projectDir = makeProjectDir('pieui-cli-postbuild-empty-')
+    fs.mkdirSync(path.join(projectDir, 'src'), { recursive: true })
+
+    const result = runCli({
+        cwd: projectDir,
+        args: ['postbuild', '--src-dir', 'src', '--out-dir', 'public'],
+    })
+    assertSucceeded(result, 'postbuild should succeed when no components found')
+
+    const manifestPath = path.join(
+        projectDir,
+        'public',
+        'pieui.components.json'
+    )
+    assert.ok(fs.existsSync(manifestPath), 'manifest file should be created')
+
+    const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'))
+    assert.deepEqual(manifest, [])
+})
+// Verifies init out-dir mode is idempotent and avoids duplicate tailwind entries.
+test('init supports --out-dir and does not duplicate tailwind content path', () => {
+    const projectDir = makeProjectDir('pieui-cli-init-outdir-')
+    const appDir = path.join(projectDir, 'apps', 'web')
+
+    writeFile(
+        path.join(appDir, 'tailwind.config.js'),
+        `module.exports = {\n  content: ['./src/**/*.{js,ts,jsx,tsx}'],\n}\n`
+    )
+
+    assertSucceeded(
+        runCli({
+            cwd: projectDir,
+            args: ['init', '--out-dir', 'apps/web'],
+        }),
+        'init with --out-dir should succeed'
+    )
+
+    assertSucceeded(
+        runCli({
+            cwd: projectDir,
+            args: ['init', '--out-dir', 'apps/web'],
+        }),
+        'second init should be idempotent'
+    )
+
+    const registryPath = path.join(appDir, 'piecomponents', 'registry.ts')
+    assert.ok(fs.existsSync(registryPath))
+
+    const tailwind = fs.readFileSync(
+        path.join(appDir, 'tailwind.config.js'),
+        'utf8'
+    )
+    const matchCount = (tailwind.match(/@swarm\.ing\/pieui\/dist\/\*\*\//g) || [])
+        .length
+    assert.equal(matchCount, 1)
+})
+
+// Verifies add defaults to complex-container when type argument is omitted.
+test('add without explicit type defaults to complex-container templates', () => {
+    const projectDir = makeProjectDir('pieui-cli-add-default-type-')
+    assertSucceeded(
+        runCli({ cwd: projectDir, args: ['init'] }),
+        'init should succeed'
+    )
+
+    assertSucceeded(
+        runCli({ cwd: projectDir, args: ['add', 'OrdersCard'] }),
+        'add should succeed with implicit type'
+    )
+
+    const typesFile = fs.readFileSync(
+        path.join(
+            projectDir,
+            'piecomponents',
+            'OrdersCard',
+            'types',
+            'index.ts'
+        ),
+        'utf8'
+    )
+    assert.match(typesFile, /PieComplexContainerComponentProps/)
+
+    const uiFile = fs.readFileSync(
+        path.join(
+            projectDir,
+            'piecomponents',
+            'OrdersCard',
+            'ui',
+            'OrdersCard.tsx'
+        ),
+        'utf8'
+    )
+    assert.match(uiFile, /content,\n\s*setUiAjaxConfiguration/)
+})
+
+// Verifies add rejects component names that violate naming rules.
+test('add rejects invalid component names', () => {
+    const projectDir = makeProjectDir('pieui-cli-add-invalid-name-')
+    assertSucceeded(
+        runCli({ cwd: projectDir, args: ['init'] }),
+        'init should succeed'
+    )
+
+    const result = runCli({
+        cwd: projectDir,
+        args: ['add', 'simple', 'invalidName'],
+    })
+
+    assert.equal(result.status, 1)
+    assert.match(
+        result.stderr,
+        /Component name must start with uppercase letter/
+    )
+})
+
+// Verifies add fails for duplicates and does not duplicate registry imports.
+test('add fails when component already exists', () => {
+    const projectDir = makeProjectDir('pieui-cli-add-duplicate-')
+    assertSucceeded(
+        runCli({ cwd: projectDir, args: ['init'] }),
+        'init should succeed'
+    )
+    assertSucceeded(
+        runCli({ cwd: projectDir, args: ['add', 'simple', 'AlphaCard'] }),
+        'first add should succeed'
+    )
+
+    const duplicate = runCli({
+        cwd: projectDir,
+        args: ['add', 'simple', 'AlphaCard'],
+    })
+
+    assert.equal(duplicate.status, 1)
+    assert.match(duplicate.stderr, /already exists/)
+
+    const registry = fs.readFileSync(
+        path.join(projectDir, 'piecomponents', 'registry.ts'),
+        'utf8'
+    )
+    const importCount = (registry.match(/piecomponents\/AlphaCard/g) || [])
+        .length
+    assert.equal(importCount, 1)
+})
+
+// Verifies remove warns (but succeeds) when target component directory is absent.
+test('remove missing component warns but succeeds when piecomponents exists', () => {
+    const projectDir = makeProjectDir('pieui-cli-remove-missing-')
+    assertSucceeded(
+        runCli({ cwd: projectDir, args: ['init'] }),
+        'init should succeed'
+    )
+
+    const result = runCli({
+        cwd: projectDir,
+        args: ['remove', 'GhostCard'],
+    })
+
+    assertSucceeded(
+        result,
+        'remove should succeed even if component is missing'
+    )
+    assert.match(result.stdout, /Warning: Component directory/)
+})
+
+// Verifies list falls back to all components for unknown filter values.
+test('list with invalid filter falls back to all', () => {
+    const projectDir = makeProjectDir('pieui-cli-list-invalid-filter-')
+    assertSucceeded(
+        runCli({ cwd: projectDir, args: ['init'] }),
+        'init should succeed'
+    )
+    assertSucceeded(
+        runCli({ cwd: projectDir, args: ['add', 'simple', 'OneCard'] }),
+        'add should succeed'
+    )
+
+    const listResult = runCli({
+        cwd: projectDir,
+        args: ['list', 'not-a-filter'],
+    })
+
+    assertSucceeded(listResult, 'list should succeed with invalid filter input')
+    assert.match(listResult.stdout, /OneCard/)
+    assert.doesNotMatch(listResult.stdout, /filtered by:/)
+})
+
+// Verifies list-events reports no methods for non-matching component names.
+test('list-events returns no methods for unknown component', () => {
+    const projectDir = makeProjectDir('pieui-cli-list-events-empty-')
+
+    writeFile(
+        path.join(projectDir, 'src', 'Screen.tsx'),
+        `export const Screen = () => <PieCard card="KnownCard" methods={{ ping: () => true }} />\n`
+    )
+
+    const result = runCli({
+        cwd: projectDir,
+        args: ['list-events', 'UnknownCard', '--src-dir=src'],
+    })
+
+    assertSucceeded(
+        result,
+        'list-events should succeed for unknown component name'
+    )
+    assert.match(result.stdout, /No methods found for: UnknownCard/)
+})
+
+// Verifies add-event fails when methods is not an inline object literal.
+test('add-event fails if target PieCard with inline methods object is missing', () => {
+    const projectDir = makeProjectDir('pieui-cli-add-event-not-found-')
+
+    writeFile(
+        path.join(projectDir, 'src', 'Screen.tsx'),
+        `const methods = { ping: () => true }\nexport const Screen = () => <PieCard card="AlertsCard" methods={methods} />\n`
+    )
+
+    const result = runCli({
+        cwd: projectDir,
+        args: ['add-event', 'AlertsCard', 'create', '-s', 'src'],
+    })
+
+    assert.equal(result.status, 1)
+    assert.match(result.stderr, /supports only inline object literals/)
+})
+
+// Verifies postbuild emits schema for a discovered registered component.
+test('postbuild generates manifest entry for discovered component', () => {
+    const projectDir = makeProjectDir('pieui-cli-postbuild-entry-')
+
+    writeFile(
+        path.join(projectDir, 'src', 'InvoiceCard.tsx'),
+        `import { registerPieComponent } from '@swarm.ing/pieui'\n\nexport interface InvoiceCardData {\n  name: string\n  total: number\n}\n\nconst InvoiceCard = (_props: { data: InvoiceCardData }) => null\n\nregisterPieComponent({\n  name: 'InvoiceCard',\n  component: InvoiceCard,\n})\n`
+    )
+
+    const result = runCli({
+        cwd: projectDir,
+        args: ['postbuild', '-s', 'src', '-o', 'build'],
+    })
+    assertSucceeded(result, 'postbuild should succeed for discovered component')
+
+    const manifestPath = path.join(projectDir, 'build', 'pieui.components.json')
+    const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'))
+
+    assert.ok(Array.isArray(manifest))
+    assert.equal(manifest.length, 1)
+    assert.equal(manifest[0].card, 'InvoiceCard')
+    assert.equal(manifest[0].data.type, 'object')
+    assert.equal(manifest[0].data.properties.name.type, 'string')
+    assert.equal(manifest[0].data.properties.total.type, 'number')
+})
+
+// Verifies postbuild schema patching for sx/kwargs/meta special cases.
+test('postbuild applies schema overrides for sx/kwargs/meta', () => {
+    const projectDir = makeProjectDir('pieui-postbuild-overrides-')
+    const srcDir = path.join(projectDir, 'src')
+    const outDir = path.join(projectDir, 'out')
+
+    writeFile(
+        path.join(projectDir, 'node_modules', '@types', 'react', 'index.d.ts'),
+        `declare module 'react' {
+    export interface CSSProperties {
+        color?: string
+        width?: string | number
+    }
+}
+`
+    )
+
+    writeFile(
+        path.join(srcDir, 'TestCard.tsx'),
+        `import { CSSProperties } from 'react'
+
+export interface TestCardData {
+    name: string
+    sx?: CSSProperties
+    kwargs?: Record<string, string>
+    meta?: Record<string, any>
+}
+
+const TestCard = ({ data }: { data: TestCardData }) => null
+
+const registerPieComponent = (_: any) => undefined
+
+registerPieComponent({
+    name: 'TestCard',
+    component: TestCard,
+})
+`
+    )
+
+    const result = runCli({
+        cwd: projectDir,
+        args: ['postbuild', '--src-dir', 'src', '--out-dir', outDir],
+    })
+    assertSucceeded(result, 'postbuild should succeed for schema override case')
+
+    const manifestPath = path.join(outDir, 'pieui.components.json')
+    const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'))
+    const entry = manifest.find((item) => item.card === 'TestCard')
+
+    assert.ok(entry)
+    const schema = entry.data
+    const sxSchema = schema.properties?.sx
+    const kwargsSchema = schema.properties?.kwargs
+    const metaSchema = schema.properties?.meta
+
+    assert.equal(sxSchema?.type, 'object')
+    assert.deepEqual(sxSchema?.additionalProperties, {})
+    assert.equal(sxSchema?.properties, undefined)
+
+    assert.equal(kwargsSchema?.type, 'object')
+    assert.deepEqual(kwargsSchema?.additionalProperties, { type: 'string' })
+
+    assert.equal(metaSchema?.type, 'object')
+    assert.ok(metaSchema?.additionalProperties)
+    assert.notEqual(metaSchema?.additionalProperties, false)
+})
+
+// Verifies create-pie-app shells out to Bun create, rewrites Next scripts for Bun runtime, and writes backend-link TODO.
+test('create-pie-app scaffolds blank app template with Bun-backed next scripts', () => {
+    const projectDir = makeProjectDir('pieui-cli-create-template-')
+    const fakeBunPath = path.join(projectDir, 'fake-bun.sh')
+    const logPath = path.join(projectDir, 'bun-create.log')
+    const sharedSourceDir = path.join(projectDir, 'ai-exchange-bot', '_shared')
+
+    writeFile(
+        path.join(sharedSourceDir, 'config.ts'),
+        'export const marker = "shared"\n'
+    )
+    writeFile(path.join(sharedSourceDir, 'ui', 'index.ts'), 'export {}\n')
+
+    writeFile(
+        fakeBunPath,
+        `#!/bin/sh
+set -eu
+printf '%s\\n' "$*" > "${logPath}"
+if [ "$#" -lt 4 ]; then
+  echo "missing args" >&2
+  exit 2
+fi
+APP_DIR="$PWD/$3"
+mkdir -p "$APP_DIR/app"
+cat > "$APP_DIR/package.json" <<'EOF'
+{
+  "name": "fake-next-app",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+  }
+}
+EOF
+cat > "$APP_DIR/app/page.tsx" <<'EOF'
+export default function Page() {
+  return <main>Hello</main>
+}
+EOF
+`
+    )
+    fs.chmodSync(fakeBunPath, 0o755)
+
+    const result = runCli({
+        cwd: projectDir,
+        args: ['create-pie-app', 'my-pie-app'],
+        env: {
+            PIEUI_CREATE_BUN_BIN: fakeBunPath,
+            PIEUI_SHARED_TEMPLATE_DIR: sharedSourceDir,
+        },
+    })
+    assertSucceeded(
+        result,
+        'create-pie-app should succeed with fake bun runtime'
+    )
+
+    const commandArgs = fs.readFileSync(logPath, 'utf8')
+    assert.match(commandArgs, /^create next-app@latest my-pie-app --yes/m)
+
+    const appPackage = JSON.parse(
+        fs.readFileSync(
+            path.join(projectDir, 'my-pie-app', 'package.json'),
+            'utf8'
+        )
+    )
+    assert.equal(appPackage.scripts.dev, 'bun --bun next dev')
+    assert.equal(appPackage.scripts.build, 'bun --bun next build')
+    assert.equal(appPackage.scripts.start, 'bun --bun next start')
+
+    const pageTsx = fs.readFileSync(
+        path.join(projectDir, 'my-pie-app', 'app', 'page.tsx'),
+        'utf8'
+    )
+    assert.match(
+        pageTsx,
+        /TODO\(pie-backend\): Link generated Python Unicorn backend routes here/
+    )
+
+    const copiedShared = path.join(projectDir, 'my-pie-app', '_shared')
+    assert.ok(fs.existsSync(path.join(copiedShared, 'config.ts')))
+    assert.ok(fs.existsSync(path.join(copiedShared, 'ui', 'index.ts')))
+})
+
+// Verifies create-pie-app succeeds with a fallback _shared scaffold when no external template source is available.
+test('create-pie-app falls back to generated _shared scaffold when template source is missing', () => {
+    const projectDir = makeProjectDir('pieui-cli-create-template-fallback-')
+    const fakeBunPath = path.join(projectDir, 'fake-bun.sh')
+    const logPath = path.join(projectDir, 'bun-create.log')
+
+    writeFile(
+        fakeBunPath,
+        `#!/bin/sh
+set -eu
+printf '%s\\n' "$*" > "${logPath}"
+if [ "$#" -lt 4 ]; then
+  echo "missing args" >&2
+  exit 2
+fi
+APP_DIR="$PWD/$3"
+mkdir -p "$APP_DIR/app"
+cat > "$APP_DIR/package.json" <<'EOF'
+{
+  "name": "fake-next-app",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+  }
+}
+EOF
+cat > "$APP_DIR/app/page.tsx" <<'EOF'
+export default function Page() {
+  return <main>Hello</main>
+}
+EOF
+`
+    )
+    fs.chmodSync(fakeBunPath, 0o755)
+
+    const result = runCli({
+        cwd: projectDir,
+        args: ['create-pie-app', 'my-pie-app'],
+        env: {
+            PIEUI_CREATE_BUN_BIN: fakeBunPath,
+        },
+    })
+    assertSucceeded(
+        result,
+        'create-pie-app should succeed with fallback _shared scaffold'
+    )
+
+    const commandArgs = fs.readFileSync(logPath, 'utf8')
+    assert.match(commandArgs, /^create next-app@latest my-pie-app --yes/m)
+    assert.match(
+        result.stdout,
+        /Using fallback _shared scaffold\. Update it with your project standards\./
+    )
+    assert.match(
+        result.stderr,
+        /Could not locate a _shared template directory automatically\./
+    )
+
+    const fallbackSharedFile = path.join(
+        projectDir,
+        'my-pie-app',
+        '_shared',
+        'simple.tsx'
+    )
+    assert.ok(fs.existsSync(fallbackSharedFile))
+    assert.match(
+        fs.readFileSync(fallbackSharedFile, 'utf8'),
+        /PieTelegramRoot/
+    )
+})
+
+// Verifies create-pieui command alias maps to create-pie-app behavior.
+test('create-pieui alias scaffolds app template', () => {
+    const projectDir = makeProjectDir('pieui-cli-create-alias-')
+    const fakeBunPath = path.join(projectDir, 'fake-bun.sh')
+    const sharedSourceDir = path.join(projectDir, 'ai-exchange-web', 'app', '_shared')
+
+    writeFile(path.join(sharedSourceDir, 'simple.tsx'), 'export default function Simple() { return null }\n')
+    writeFile(
+        fakeBunPath,
+        `#!/bin/sh
+set -eu
+if [ "$#" -lt 4 ]; then
+  echo "missing args" >&2
+  exit 2
+fi
+APP_DIR="$PWD/$3"
+mkdir -p "$APP_DIR/app"
+cat > "$APP_DIR/package.json" <<'EOF'
+{
+  "name": "fake-next-app",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+  }
+}
+EOF
+cat > "$APP_DIR/app/page.tsx" <<'EOF'
+export default function Page() {
+  return <main>Hello</main>
+}
+EOF
+`
+    )
+    fs.chmodSync(fakeBunPath, 0o755)
+
+    const result = runCli({
+        cwd: projectDir,
+        args: ['create-pieui', 'my-pie-app'],
+        env: {
+            PIEUI_CREATE_BUN_BIN: fakeBunPath,
+            PIEUI_SHARED_TEMPLATE_DIR: sharedSourceDir,
+        },
+    })
+
+    assertSucceeded(result, 'create-pieui alias should scaffold app')
+    assert.ok(
+        fs.existsSync(path.join(projectDir, 'my-pie-app', '_shared', 'simple.tsx'))
+    )
+})
+
+// Verifies create route scaffolds app files and executes Bun create/install/dev flow.
+test('create command scaffolds app and runs bun create/install/dev pipeline', () => {
+    const projectDir = makeProjectDir('pieui-cli-create-route-')
+    const fakeBunPath = path.join(projectDir, 'fake-bun.sh')
+    const logPath = path.join(projectDir, 'bun-route.log')
+
+    writeFile(
+        fakeBunPath,
+        `#!/bin/sh
+set -eu
+printf '%s\\n' "$*" >> "${logPath}"
+
+if [ "$1" = "create" ]; then
+  APP_DIR="$PWD/$3"
+  mkdir -p "$APP_DIR/app/_shared" "$APP_DIR/components" "$APP_DIR/public"
+  cat > "$APP_DIR/package.json" <<'EOF'
+{
+  "name": "fake-next-app",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+  }
+}
+EOF
+  cat > "$APP_DIR/app/page.tsx" <<'EOF'
+export default function Page() {
+  return <main>Hello</main>
+}
+EOF
+  cat > "$APP_DIR/app/_shared/simple.tsx" <<'EOF'
+export default function Simple() { return null }
+EOF
+  cat > "$APP_DIR/components/ErrorToast.tsx" <<'EOF'
+export const ErrorToast = () => null
+EOF
+  touch "$APP_DIR/app/piecache.json"
+  touch "$APP_DIR/app/favicon.ico"
+  exit 0
+fi
+
+if [ "$1" = "install" ]; then
+  exit 0
+fi
+
+if [ "$1" = "run" ] && [ "\${2:-}" = "dev" ]; then
+  exit 0
+fi
+
+echo "unexpected args: $*" >&2
+exit 3
+`
+    )
+    fs.chmodSync(fakeBunPath, 0o755)
+
+    const result = runCli({
+        cwd: projectDir,
+        args: ['create', 'my-create-app'],
+        env: { PIEUI_CREATE_BUN_BIN: fakeBunPath },
+    })
+
+    assertSucceeded(result, 'create should finish scaffolding with fake bun')
+
+    const commandLog = fs.readFileSync(logPath, 'utf8')
+    assert.match(commandLog, /^create next-app@latest my-create-app --yes/m)
+    assert.match(commandLog, /^install$/m)
+    assert.match(commandLog, /^run dev$/m)
+
+    const appDir = path.join(projectDir, 'my-create-app')
+    assert.ok(fs.existsSync(path.join(appDir, 'piecomponents', 'registry.ts')))
+    assert.ok(fs.existsSync(path.join(appDir, 'app', '_shared', 'page.tsx')))
+    assert.ok(fs.existsSync(path.join(appDir, 'app', 'layout.tsx')))
+    assert.ok(fs.existsSync(path.join(appDir, 'components', 'LoadingScreen.tsx')))
+    assert.ok(fs.existsSync(path.join(appDir, '.env')))
+    assert.equal(
+        fs.existsSync(path.join(appDir, 'app', '_shared', 'simple.tsx')),
+        false
+    )
+    assert.equal(
+        fs.existsSync(path.join(appDir, 'components', 'ErrorToast.tsx')),
+        false
+    )
+})
+
+// Verifies card add route dispatch works and forwards --io/--ajax flags to scaffolder.
+test('card add route creates component with io/ajax fields enabled', () => {
+    const projectDir = makeProjectDir('pieui-cli-card-add-route-')
+    assertSucceeded(runCli({ cwd: projectDir, args: ['init'] }), 'init should succeed')
+
+    const result = runCli({
+        cwd: projectDir,
+        args: ['card', 'add', 'simple', 'LiveCard', '--io', '--ajax'],
+    })
+    assertSucceeded(result, 'card add should succeed')
+    assert.match(result.stdout, /Component type: simple/)
+    assert.match(result.stdout, /IO fields: enabled/)
+    assert.match(result.stdout, /AJAX fields: enabled/)
+
+    const typesFile = fs.readFileSync(
+        path.join(projectDir, 'piecomponents', 'LiveCard', 'types', 'index.ts'),
+        'utf8'
+    )
+    assert.match(typesFile, /useSocketioSupport\?: boolean/)
+    assert.match(typesFile, /pathname\?: string/)
+})
+
+// Verifies page add route normalizes app/ prefix and writes page template inside app directory.
+test('page add route creates normalized page scaffold', () => {
+    const projectDir = makeProjectDir('pieui-cli-page-add-route-')
+    const result = runCli({
+        cwd: projectDir,
+        args: ['page', 'add', 'app/chat/room'],
+    })
+
+    assertSucceeded(result, 'page add should succeed')
+    assert.match(result.stdout, /Page created successfully at app\/chat\/room\/page\.tsx/)
+
+    const pageFile = path.join(projectDir, 'app', 'chat', 'room', 'page.tsx')
+    assert.ok(fs.existsSync(pageFile))
+
+    const pageContent = fs.readFileSync(pageFile, 'utf8')
+    assert.match(pageContent, /export default function ChatRoomPage\(\)/)
+    assert.match(pageContent, /<PiePage \/>/)
+})
+
+// ---------------------------------------------------------------------------
+// Component type templates (complex, simple-container, all four)
+// ---------------------------------------------------------------------------
+
+// Verifies "add complex" generates PieComplexComponentProps in the types file.
+// The UI template provides a minimal scaffold (only `data` destructured) —
+// the developer wires up setUiAjaxConfiguration themselves.
+test('add complex type generates PieComplexComponentProps in types/index.ts', () => {
+    const projectDir = makeProjectDir('pieui-cli-add-complex-')
+    assertSucceeded(
+        runCli({ cwd: projectDir, args: ['init'] }),
+        'init should succeed before add'
+    )
+
+    const addResult = runCli({
+        cwd: projectDir,
+        args: ['add', 'complex', 'ComplexCard'],
+    })
+    assertSucceeded(addResult, 'add complex should succeed')
+    assert.match(addResult.stdout, /Component type: complex/)
+
+    const typesFile = fs.readFileSync(
+        path.join(projectDir, 'piecomponents', 'ComplexCard', 'types', 'index.ts'),
+        'utf8'
+    )
+    assert.match(typesFile, /PieComplexComponentProps/)
+
+    const uiFile = fs.readFileSync(
+        path.join(projectDir, 'piecomponents', 'ComplexCard', 'ui', 'ComplexCard.tsx'),
+        'utf8'
+    )
+    assert.match(uiFile, /PieCard/)
+    assert.match(uiFile, /ComplexCardProps/)
+
+    const registry = fs.readFileSync(
+        path.join(projectDir, 'piecomponents', 'registry.ts'),
+        'utf8'
+    )
+    assert.match(registry, /piecomponents\/ComplexCard/)
+})
+
+// Verifies "add simple-container" generates PieContainerComponentProps in the
+// types file, and that the UI template destructures content and
+// setUiAjaxConfiguration so the developer can render the child UIConfig immediately.
+test('add simple-container generates PieContainerComponentProps and destructures content', () => {
+    const projectDir = makeProjectDir('pieui-cli-add-simple-container-')
+    assertSucceeded(
+        runCli({ cwd: projectDir, args: ['init'] }),
+        'init should succeed before add'
+    )
+
+    const addResult = runCli({
+        cwd: projectDir,
+        args: ['add', 'simple-container', 'WrapCard'],
+    })
+    assertSucceeded(addResult, 'add simple-container should succeed')
+    assert.match(addResult.stdout, /Component type: simple-container/)
+
+    const typesFile = fs.readFileSync(
+        path.join(projectDir, 'piecomponents', 'WrapCard', 'types', 'index.ts'),
+        'utf8'
+    )
+    assert.match(typesFile, /PieContainerComponentProps/)
+
+    const uiFile = fs.readFileSync(
+        path.join(projectDir, 'piecomponents', 'WrapCard', 'ui', 'WrapCard.tsx'),
+        'utf8'
+    )
+    assert.match(uiFile, /content/)
+    assert.match(uiFile, /setUiAjaxConfiguration/)
+
+    const registry = fs.readFileSync(
+        path.join(projectDir, 'piecomponents', 'registry.ts'),
+        'utf8'
+    )
+    assert.match(registry, /piecomponents\/WrapCard/)
+})
+
+// Verifies all four component type arguments produce the correct CLI output
+// label and the expected PieUI base interface in types/index.ts.
+test('add reports correct component type label for all four type arguments', () => {
+    const projectDir = makeProjectDir('pieui-cli-add-all-types-')
+    assertSucceeded(runCli({ cwd: projectDir, args: ['init'] }), 'init')
+
+    const cases = [
+        { type: 'simple',            name: 'AlphaCard',  expectedProp: 'PieSimpleComponentProps' },
+        { type: 'complex',           name: 'BetaCard',   expectedProp: 'PieComplexComponentProps' },
+        { type: 'simple-container',  name: 'GammaCard',  expectedProp: 'PieContainerComponentProps' },
+        { type: 'complex-container', name: 'DeltaCard',  expectedProp: 'PieComplexContainerComponentProps' },
+    ]
+
+    for (const { type, name, expectedProp } of cases) {
+        const result = runCli({ cwd: projectDir, args: ['add', type, name] })
+        assertSucceeded(result, `add ${type} ${name} should succeed`)
+
+        assert.match(
+            result.stdout,
+            new RegExp(`Component type: ${type}`),
+            `stdout should mention type "${type}" for ${name}`
+        )
+
+        const typesContent = fs.readFileSync(
+            path.join(projectDir, 'piecomponents', name, 'types', 'index.ts'),
+            'utf8'
+        )
+        assert.match(
+            typesContent,
+            new RegExp(expectedProp),
+            `types/index.ts should reference ${expectedProp} for type "${type}"`
+        )
+
+        assert.ok(fs.existsSync(path.join(projectDir, 'piecomponents', name, 'index.ts')))
+        assert.ok(fs.existsSync(path.join(projectDir, 'piecomponents', name, 'ui', `${name}.tsx`)))
+    }
+})
+
+// ---------------------------------------------------------------------------
+// list type-filter: fallback behaviour in isolated project dirs
+// ---------------------------------------------------------------------------
+
+// Verifies that `list simple` finds all added components in a temp project,
+// regardless of the type flag used with `add`. When @swarm.ing/pieui is not
+// installed, TypeScript cannot resolve prop types and detectComponentType
+// falls back to "simple" for all scaffolded components.
+test('list simple in a temp project finds all added components due to type-resolution fallback', () => {
+    const projectDir = makeProjectDir('pieui-cli-list-type-fallback-')
+    assertSucceeded(runCli({ cwd: projectDir, args: ['init'] }), 'init')
+    assertSucceeded(
+        runCli({ cwd: projectDir, args: ['add', 'simple', 'OneCard'] }),
+        'add simple'
+    )
+    assertSucceeded(
+        runCli({ cwd: projectDir, args: ['add', 'complex', 'TwoCard'] }),
+        'add complex'
+    )
+    assertSucceeded(
+        runCli({ cwd: projectDir, args: ['add', 'simple-container', 'ThreeCard'] }),
+        'add simple-container'
+    )
+
+    const result = runCli({ cwd: projectDir, args: ['list', 'simple'] })
+    assertSucceeded(result, 'list simple should succeed')
+    assert.match(result.stdout, /OneCard/)
+    assert.match(result.stdout, /TwoCard/)
+    assert.match(result.stdout, /ThreeCard/)
+    assert.match(result.stdout, /\(filtered by: simple\)/)
+})
+
+// ---------------------------------------------------------------------------
+// postbuild --append: functional merge verification
+// ---------------------------------------------------------------------------
+
+// Verifies that "--append" mode adds new entries to an existing manifest
+// without overwriting the ones already present.
+test('postbuild --append merges new component entries into existing manifest', () => {
+    const projectDir = makeProjectDir('pieui-cli-postbuild-append-')
+    const srcDir = path.join(projectDir, 'src')
+    const outDir = path.join(projectDir, 'out')
+
+    writeFile(
+        path.join(srcDir, 'FirstCard.tsx'),
+        `import { registerPieComponent } from '@swarm.ing/pieui'
+
+export interface FirstCardData { label: string }
+
+const FirstCard = (_: { data: FirstCardData }) => null
+
+registerPieComponent({ name: 'FirstCard', component: FirstCard })
+`
+    )
+
+    assertSucceeded(
+        runCli({ cwd: projectDir, args: ['postbuild', '--src-dir', 'src', '--out-dir', 'out'] }),
+        'initial postbuild run should succeed'
+    )
+
+    const manifestPath = path.join(outDir, 'pieui.components.json')
+    const afterFirst = JSON.parse(fs.readFileSync(manifestPath, 'utf8'))
+    assert.equal(afterFirst.length, 1)
+    assert.equal(afterFirst[0].card, 'FirstCard')
+
+    writeFile(
+        path.join(srcDir, 'SecondCard.tsx'),
+        `import { registerPieComponent } from '@swarm.ing/pieui'
+
+export interface SecondCardData { count: number }
+
+const SecondCard = (_: { data: SecondCardData }) => null
+
+registerPieComponent({ name: 'SecondCard', component: SecondCard })
+`
+    )
+
+    const appendRun = runCli({
+        cwd: projectDir,
+        args: ['postbuild', '--src-dir', 'src', '--out-dir', 'out', '--append'],
+    })
+    assertSucceeded(appendRun, 'append postbuild run should succeed')
+    assert.match(appendRun.stdout, /Append mode: true/)
+
+    const afterAppend = JSON.parse(fs.readFileSync(manifestPath, 'utf8'))
+    const names = afterAppend.map((e) => e.card).sort()
+    assert.deepEqual(names, ['FirstCard', 'SecondCard'])
+})
+
+// Verifies that running postbuild a second time WITHOUT --append overwrites
+// the manifest — confirming append is opt-in, not the default.
+test('postbuild without --append overwrites existing manifest on second run', () => {
+    const projectDir = makeProjectDir('pieui-cli-postbuild-overwrite-')
+    const srcDir = path.join(projectDir, 'src')
+    const outDir = path.join(projectDir, 'out')
+
+    writeFile(
+        path.join(srcDir, 'OnlyCard.tsx'),
+        `import { registerPieComponent } from '@swarm.ing/pieui'
+
+export interface OnlyCardData { title: string }
+
+const OnlyCard = (_: { data: OnlyCardData }) => null
+
+registerPieComponent({ name: 'OnlyCard', component: OnlyCard })
+`
+    )
+
+    assertSucceeded(
+        runCli({ cwd: projectDir, args: ['postbuild', '--src-dir', 'src', '--out-dir', 'out'] }),
+        'first postbuild run should succeed'
+    )
+
+    writeFile(
+        path.join(srcDir, 'AnotherCard.tsx'),
+        `import { registerPieComponent } from '@swarm.ing/pieui'
+
+export interface AnotherCardData { subtitle: string }
+
+const AnotherCard = (_: { data: AnotherCardData }) => null
+
+registerPieComponent({ name: 'AnotherCard', component: AnotherCard })
+`
+    )
+
+    const secondRun = runCli({
+        cwd: projectDir,
+        args: ['postbuild', '--src-dir', 'src', '--out-dir', 'out'],
+    })
+    assertSucceeded(secondRun, 'second postbuild run should succeed')
+    assert.match(secondRun.stdout, /Append mode: false/)
+
+    const manifest = JSON.parse(
+        fs.readFileSync(path.join(outDir, 'pieui.components.json'), 'utf8')
+    )
+    const names = manifest.map((e) => e.card).sort()
+    assert.deepEqual(names, ['AnotherCard', 'OnlyCard'])
+})
+
+// ---------------------------------------------------------------------------
+// list-events: multi-card disambiguation
+// ---------------------------------------------------------------------------
+
+// Verifies that list-events returns only the methods for the requested card
+// when multiple PieCard instances exist in the same source file.
+test('list-events returns only the target card methods when multiple PieCard exist in the same file', () => {
+    const projectDir = makeProjectDir('pieui-cli-list-events-multi-card-')
+
+    writeFile(
+        path.join(projectDir, 'src', 'Dashboard.tsx'),
+        `export const Dashboard = () => (
+  <div>
+    <PieCard
+      card="AlertsCard"
+      methods={{
+        notify: (payload) => payload,
+        dismiss() { return true },
+      }}
+    />
+    <PieCard
+      card="MetricsCard"
+      methods={{
+        refresh: (payload) => payload,
+        reset() { return null },
+        update: (data) => data,
+      }}
+    />
+  </div>
+)
+`
+    )
+
+    const alertsResult = runCli({
+        cwd: projectDir,
+        args: ['list-events', 'AlertsCard', '--src-dir', 'src'],
+    })
+    assertSucceeded(alertsResult, 'list-events AlertsCard should succeed')
+    assert.match(alertsResult.stdout, /notify/)
+    assert.match(alertsResult.stdout, /dismiss/)
+    assert.doesNotMatch(alertsResult.stdout, /refresh/)
+    assert.doesNotMatch(alertsResult.stdout, /reset/)
+    assert.doesNotMatch(alertsResult.stdout, /update/)
+    assert.match(alertsResult.stdout, /\[pieui\] Total: 2/)
+
+    const metricsResult = runCli({
+        cwd: projectDir,
+        args: ['list-events', 'MetricsCard', '--src-dir', 'src'],
+    })
+    assertSucceeded(metricsResult, 'list-events MetricsCard should succeed')
+    assert.match(metricsResult.stdout, /refresh/)
+    assert.match(metricsResult.stdout, /reset/)
+    assert.match(metricsResult.stdout, /update/)
+    assert.doesNotMatch(metricsResult.stdout, /notify/)
+    assert.doesNotMatch(metricsResult.stdout, /dismiss/)
+    assert.match(metricsResult.stdout, /\[pieui\] Total: 3/)
+})
+
+// ---------------------------------------------------------------------------
+// init on a pristine project (no framework config files)
+// ---------------------------------------------------------------------------
+
+// Verifies init succeeds on a completely empty project directory —
+// no tailwind.config.js, no next.config.ts — and creates only the registry
+// without crashing or emitting unexpected errors.
+test('init on a bare project with no framework config files creates registry only', () => {
+    const projectDir = makeProjectDir('pieui-cli-init-bare-')
+
+    const result = runCli({ cwd: projectDir, args: ['init'] })
+    assertSucceeded(result, 'init should succeed on a bare project')
+
+    assert.ok(
+        fs.existsSync(path.join(projectDir, 'piecomponents', 'registry.ts')),
+        'registry.ts should be created'
+    )
+    assert.equal(result.stderr, '')
+})

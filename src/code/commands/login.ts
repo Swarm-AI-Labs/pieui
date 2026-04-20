@@ -6,6 +6,8 @@ import path from 'node:path'
 export const CONNECT_BASE = 'https://pieui.swarm.ing/connect'
 export const CREDENTIALS_API =
     'https://api-pieui.swarm.ing/api/external/credentials'
+export const CONNECT_BASE_ENV = 'PIEUI_LOGIN_CONNECT_BASE'
+export const CREDENTIALS_API_ENV = 'PIEUI_LOGIN_CREDENTIALS_API'
 
 const CODE_LENGTH = 32
 
@@ -99,8 +101,10 @@ export async function loginCommand(
         sleepImpl = defaultSleep,
     } = options
 
+    const connectBase = process.env[CONNECT_BASE_ENV] || CONNECT_BASE
+    const credentialsApi = process.env[CREDENTIALS_API_ENV] || CREDENTIALS_API
     const code = generateCode(CODE_LENGTH)
-    const connectUrl = `${CONNECT_BASE}?${new URLSearchParams({ code }).toString()}`
+    const connectUrl = `${connectBase}?${new URLSearchParams({ code }).toString()}`
 
     console.log('Open link in browser:\n')
     console.log(connectUrl)
@@ -114,7 +118,7 @@ export async function loginCommand(
     const pieDir = path.join(cwd, '.pie')
     const configPath = path.join(pieDir, 'config.json')
 
-    const url = `${CREDENTIALS_API}?${new URLSearchParams({ code }).toString()}`
+    const url = `${credentialsApi}?${new URLSearchParams({ code }).toString()}`
     let first = true
 
     while (true) {
