@@ -178,6 +178,20 @@ export const printUsage = () => {
         '  --src-dir <dir>, -s <dir>    Source directory to modify (default: .)'
     )
     console.log('')
+    console.log('Environment for remote commands:')
+    console.log(
+        '  PIEUI_STORAGE_API_KEY          API key sent as x-api-key (falls back to PIEUI_EXTERNAL_API_KEY)'
+    )
+    console.log(
+        '  PIEUI_STORAGE_API_BASE_URL     Storage API base URL (default: https://cdn-pieui.swarm.ing/api)'
+    )
+    console.log(
+        '  PIEUI_STORAGE_USER_ID          Storage user id (default: package scope or OS user)'
+    )
+    console.log(
+        '  PIEUI_STORAGE_PROJECT_SLUG     Storage project slug (default: package name)'
+    )
+    console.log('')
     console.log('Filters for list:')
     console.log('  all                 All components (default)')
     console.log('  simple              Simple components (only data prop)')
