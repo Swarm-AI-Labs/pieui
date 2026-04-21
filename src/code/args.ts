@@ -1,5 +1,6 @@
 import type {
     CardAction,
+    CardRemoteAction,
     ComponentType,
     ListFilter,
     PageAction,
@@ -28,6 +29,9 @@ export const parseArgs = (argv: string[]): ParsedArgs => {
     let cardAction: CardAction | undefined
     let cardAjax = false
     let cardIo = false
+    let cardRemoteAction: CardRemoteAction | undefined
+    let remoteUserId: string | undefined
+    let remoteProjectSlug: string | undefined
     let pageAction: PageAction | undefined
     let pagePath: string | undefined
 
@@ -61,7 +65,7 @@ export const parseArgs = (argv: string[]): ParsedArgs => {
     }
 
     if (command === 'card' && argv[1]) {
-        const validActions: CardAction[] = ['add']
+        const validActions: CardAction[] = ['add', 'remote']
         if (validActions.includes(argv[1] as CardAction)) {
             cardAction = argv[1] as CardAction
         }
@@ -94,6 +98,43 @@ export const parseArgs = (argv: string[]): ParsedArgs => {
         }
     }
 
+    if (command === 'card' && cardAction === 'remote' && argv[2]) {
+        const validRemoteActions: CardRemoteAction[] = [
+            'push',
+            'pull',
+            'list',
+            'remove',
+        ]
+        const action = argv[2] as CardRemoteAction
+        if (validRemoteActions.includes(action)) {
+            cardRemoteAction = action
+            const rest = argv.slice(3)
+            const flagIndexes = new Set<number>()
+            for (let i = 0; i < rest.length; i++) {
+                const tok = rest[i]
+                if (tok === '--user' && rest[i + 1]) {
+                    remoteUserId = rest[i + 1]
+                    flagIndexes.add(i)
+                    flagIndexes.add(i + 1)
+                    i++
+                } else if (tok === '--project' && rest[i + 1]) {
+                    remoteProjectSlug = rest[i + 1]
+                    flagIndexes.add(i)
+                    flagIndexes.add(i + 1)
+                    i++
+                } else if (tok?.startsWith('--user=')) {
+                    remoteUserId = tok.slice('--user='.length)
+                    flagIndexes.add(i)
+                } else if (tok?.startsWith('--project=')) {
+                    remoteProjectSlug = tok.slice('--project='.length)
+                    flagIndexes.add(i)
+                }
+            }
+            const positionals = rest.filter((_, i) => !flagIndexes.has(i))
+            if (positionals[0]) componentName = positionals[0]
+        }
+    }
+
     if (command === 'page' && argv[1]) {
         const validActions: PageAction[] = ['add']
         if (validActions.includes(argv[1] as PageAction)) {
@@ -109,15 +150,6 @@ export const parseArgs = (argv: string[]): ParsedArgs => {
     if (command === 'add-event' && argv[1] && argv[2]) {
         componentName = argv[1]
         eventName = argv[2]
-    }
-
-    if (
-        (command === 'pull' ||
-            command === 'push' ||
-            command === 'remote-remove') &&
-        argv[1]
-    ) {
-        componentName = argv[1]
     }
 
     if (outDirFlag) {
@@ -146,6 +178,9 @@ export const parseArgs = (argv: string[]): ParsedArgs => {
         cardAction,
         cardAjax,
         cardIo,
+        cardRemoteAction,
+        remoteUserId,
+        remoteProjectSlug,
         pageAction,
         pagePath,
     }
@@ -177,13 +212,16 @@ export const printUsage = () => {
         '  page add <path>                         Create app/<path>/page.tsx from the standard Pie page template'
     )
     console.log(
-        '  push <ComponentName>                    Archive piecomponents/<ComponentName> and upload to PieUI server'
+        '  card remote push <ComponentName>         Upload piecomponents/<Name>/ to PieUI storage'
     )
     console.log(
-        '  pull <ComponentName>                    Download archive from PieUI server and extract into piecomponents/<ComponentName>'
+        '  card remote pull <ComponentName>         Download component from PieUI storage into piecomponents/<Name>/'
     )
     console.log(
-        '  remote-remove <ComponentName>           Remove remote component from PieUI server'
+        '  card remote list [--user U] [--project S]  List remote components for the configured or specified user/project'
+    )
+    console.log(
+        '  card remote remove <ComponentName>       Delete component from PieUI storage'
     )
     console.log(
         '  list-events <ComponentName>             List registered methods keys for <PieCard card="ComponentName" ... methods={...} />'
@@ -301,12 +339,15 @@ export const printUsage = () => {
         '  pieui add-event ExchangeAlertsCard alert     # Add methods.alert with default handler'
     )
     console.log(
-        '  pieui push ExchangeAlertsCard                # Upload component folder as zip'
+        '  pieui card remote push ExchangeAlertsCard    # Upload component directory'
     )
     console.log(
-        '  pieui pull ExchangeAlertsCard                # Download & extract component folder'
+        '  pieui card remote pull ExchangeAlertsCard    # Download component directory'
     )
     console.log(
-        '  pieui remote-remove ExchangeAlertsCard       # Delete remote component (and remove from Feed)'
+        '  pieui card remote list                       # List remote components'
+    )
+    console.log(
+        '  pieui card remote remove ExchangeAlertsCard  # Delete remote component'
     )
 }

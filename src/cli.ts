@@ -8,9 +8,10 @@ import { listCommand } from './code/commands/list'
 import { listEventsCommand } from './code/commands/listEvents'
 import { addEventCommand } from './code/commands/addEvent'
 import { postbuildCommand } from './code/commands/postbuild'
-import { pushCommand } from './code/commands/push'
-import { pullCommand } from './code/commands/pull'
-import { remoteRemoveCommand } from './code/commands/remoteRemove'
+import { cardRemotePushCommand } from './code/commands/cardRemote/push'
+import { cardRemotePullCommand } from './code/commands/cardRemote/pull'
+import { cardRemoteListCommand } from './code/commands/cardRemote/list'
+import { cardRemoteRemoveCommand } from './code/commands/cardRemote/remove'
 import { pageAddCommand } from './code/commands/pageAdd'
 import { createCommand } from './code/commands/create'
 import { createPieAppCommand } from './code/commands/createPieApp'
@@ -31,6 +32,9 @@ const main = async () => {
         cardAction,
         cardAjax,
         cardIo,
+        cardRemoteAction,
+        remoteUserId,
+        remoteProjectSlug,
         pageAction,
         pagePath,
     } = parseArgs(process.argv.slice(2))
@@ -65,25 +69,49 @@ const main = async () => {
             return
 
         case 'card':
-            if (cardAction !== 'add') {
-                console.error(
-                    '[pieui] Error: Supported card subcommands: add'
-                )
+            if (cardAction === 'add') {
+                if (!componentName) {
+                    console.error('[pieui] Error: Component name is required for card add command')
+                    printUsage()
+                    process.exit(1)
+                }
+                addCommand(componentName, componentType, { ajax: cardAjax, io: cardIo })
+                return
+            }
+            if (cardAction === 'remote') {
+                if (cardRemoteAction === 'list') {
+                    await cardRemoteListCommand({
+                        userId: remoteUserId,
+                        projectSlug: remoteProjectSlug,
+                    })
+                    return
+                }
+                if (!componentName) {
+                    console.error(
+                        `[pieui] Error: Component name is required for card remote ${cardRemoteAction ?? ''} command`
+                    )
+                    printUsage()
+                    process.exit(1)
+                }
+                if (cardRemoteAction === 'push') {
+                    await cardRemotePushCommand(componentName)
+                    return
+                }
+                if (cardRemoteAction === 'pull') {
+                    await cardRemotePullCommand(componentName)
+                    return
+                }
+                if (cardRemoteAction === 'remove') {
+                    await cardRemoteRemoveCommand(componentName)
+                    return
+                }
+                console.error('[pieui] Error: Supported card remote subcommands: push, pull, list, remove')
                 printUsage()
                 process.exit(1)
             }
-            if (!componentName) {
-                console.error(
-                    '[pieui] Error: Component name is required for card add command'
-                )
-                printUsage()
-                process.exit(1)
-            }
-            addCommand(componentName, componentType, {
-                ajax: cardAjax,
-                io: cardIo,
-            })
-            return
+            console.error('[pieui] Error: Supported card subcommands: add, remote')
+            printUsage()
+            process.exit(1)
 
         case 'add':
             if (!componentName) {
@@ -130,39 +158,6 @@ const main = async () => {
 
         case 'list':
             listCommand(srcDir, listFilter || 'all')
-            return
-
-        case 'push':
-            if (!componentName) {
-                console.error(
-                    '[pieui] Error: Component name is required for push command'
-                )
-                printUsage()
-                process.exit(1)
-            }
-            await pushCommand(componentName)
-            return
-
-        case 'pull':
-            if (!componentName) {
-                console.error(
-                    '[pieui] Error: Component name is required for pull command'
-                )
-                printUsage()
-                process.exit(1)
-            }
-            await pullCommand(componentName)
-            return
-
-        case 'remote-remove':
-            if (!componentName) {
-                console.error(
-                    '[pieui] Error: Component name is required for remote-remove command'
-                )
-                printUsage()
-                process.exit(1)
-            }
-            await remoteRemoveCommand(componentName)
             return
 
         case 'list-events':

@@ -10,7 +10,8 @@ export type ComponentType =
     | 'complex-container'
 
 export type ListFilter = 'all' | ComponentType
-export type CardAction = 'add'
+export type CardAction = 'add' | 'remote'
+export type CardRemoteAction = 'push' | 'pull' | 'list' | 'remove'
 export type PageAction = 'add'
 
 export type ParsedArgs = {
@@ -27,6 +28,9 @@ export type ParsedArgs = {
     cardAction?: CardAction
     cardAjax?: boolean
     cardIo?: boolean
+    cardRemoteAction?: CardRemoteAction
+    remoteUserId?: string
+    remoteProjectSlug?: string
     pageAction?: PageAction
     pagePath?: string
 }
