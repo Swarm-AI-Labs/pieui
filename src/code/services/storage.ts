@@ -259,6 +259,84 @@ export class PieStorageService {
         return objects.map(parseComponentObject)
     }
 
+    async uploadComponentDirectory(args: {
+        componentName: string
+        sourceDir: string
+        userId?: string
+        projectSlug?: string
+    }): Promise<ComponentObject[]> {
+        const fs = await import('node:fs')
+        const path = await import('node:path')
+        const source = path.resolve(args.sourceDir)
+        if (!fs.existsSync(source) || !fs.statSync(source).isDirectory()) {
+            throw new PieStorageError(`component directory not found: ${source}`)
+        }
+        const collected: string[] = []
+        const walk = (dir: string) => {
+            for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+                const abs = path.join(dir, entry.name)
+                if (entry.isDirectory()) walk(abs)
+                else if (entry.isFile()) collected.push(abs)
+            }
+        }
+        walk(source)
+        collected.sort()
+        const files: Array<[string, string]> = collected.map((abs) => [
+            path.relative(source, abs).split(path.sep).join('/'),
+            abs,
+        ])
+        if (files.length === 0) return []
+        return this.uploadLanguageFilesBatch({
+            componentName: args.componentName,
+            files,
+            userId: args.userId,
+            projectSlug: args.projectSlug,
+        })
+    }
+
+    async downloadLanguageFile(args: {
+        componentName: string
+        objectPath: string
+        targetPath: string
+        userId?: string
+        projectSlug?: string
+    }): Promise<string> {
+        const fs = await import('node:fs')
+        const path = await import('node:path')
+        const url = this.languageFileUrl(args)
+        const response = await this.request({ method: 'GET', url })
+        const buf = Buffer.from(await response.arrayBuffer())
+        fs.mkdirSync(path.dirname(args.targetPath), { recursive: true })
+        fs.writeFileSync(args.targetPath, buf)
+        return args.targetPath
+    }
+
+    async downloadComponentDirectory(args: {
+        componentName: string
+        targetDir: string
+        userId?: string
+        projectSlug?: string
+    }): Promise<string[]> {
+        const path = await import('node:path')
+        const tree = await this.listComponent(args)
+        const objects = tree.typescript?.objects ?? []
+        const prefix = `${tree.prefix}${STORAGE_LANGUAGE}/`
+        const downloaded: string[] = []
+        for (const obj of objects) {
+            if (!obj.key.startsWith(prefix)) continue
+            const objectPath = obj.key.slice(prefix.length)
+            const targetPath = path.join(args.targetDir, objectPath)
+            downloaded.push(
+                await this.downloadLanguageFile({
+                    ...args,
+                    objectPath,
+                    targetPath,
+                })
+            )
+        }
+        return downloaded
+    }
+
     private headers(extra?: Record<string, string>): Record<string, string> {
         const base: Record<string, string> = {}
         if (this.settings.apiKey) base['x-api-key'] = this.settings.apiKey

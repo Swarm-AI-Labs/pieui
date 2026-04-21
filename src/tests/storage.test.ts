@@ -357,6 +357,105 @@ const parseMultipart = (
         })
 }
 
+describe('PieStorageService.uploadComponentDirectory', () => {
+    test('walks sourceDir recursively and batches all files', async () => {
+        const tmp = fsNode.mkdtempSync(pathNode.join(osNode.tmpdir(), 'pieui-storage-dir-'))
+        writeTmpFile(tmp, 'index.ts', 'i')
+        writeTmpFile(tmp, 'ui/view.tsx', 'v')
+        writeTmpFile(tmp, 'types/index.ts', 't')
+
+        const mock = await startServer((_req, res) => {
+            res.end(JSON.stringify({ objects: [] }))
+        })
+        try {
+            const service = new PieStorageService(
+                makeSettings({ apiBaseUrl: `${mock.baseUrl}/api` })
+            )
+            await service.uploadComponentDirectory({
+                componentName: 'Card',
+                sourceDir: tmp,
+            })
+            const req = mock.requests[0]!
+            const parts = parseMultipart(req.body, String(req.headers['content-type']))
+            const objectPaths = parts
+                .filter((p) => p.name === 'object_paths')
+                .map((p) => p.value)
+                .sort()
+            expect(objectPaths).toEqual([
+                'index.ts',
+                'types/index.ts',
+                'ui/view.tsx',
+            ])
+        } finally {
+            await mock.close()
+            fsNode.rmSync(tmp, { recursive: true, force: true })
+        }
+    })
+
+    test('throws when sourceDir does not exist', () => {
+        const service = new PieStorageService(makeSettings())
+        expect(
+            service.uploadComponentDirectory({
+                componentName: 'Card',
+                sourceDir: '/no/such/dir-pieui-xxx',
+            })
+        ).rejects.toThrow(/component directory not found/)
+    })
+})
+
+describe('PieStorageService.downloadComponentDirectory', () => {
+    test('lists then downloads each typescript object into target dir', async () => {
+        const tmpOut = fsNode.mkdtempSync(
+            pathNode.join(osNode.tmpdir(), 'pieui-storage-pull-')
+        )
+        const mock = await startServer((req, res) => {
+            if (req.url?.endsWith('/Card')) {
+                res.end(
+                    JSON.stringify({
+                        prefix: 'p/',
+                        typescript: {
+                            objects: [
+                                { key: 'p/typescript/index.ts' },
+                                { key: 'p/typescript/ui/view.tsx' },
+                            ],
+                        },
+                    })
+                )
+                return
+            }
+            if (req.url?.includes('/typescript/index.ts')) {
+                res.end('export {}\n')
+                return
+            }
+            if (req.url?.includes('/typescript/ui/view.tsx')) {
+                res.end('export default null\n')
+                return
+            }
+            res.statusCode = 404
+            res.end()
+        })
+        try {
+            const service = new PieStorageService(
+                makeSettings({ apiBaseUrl: `${mock.baseUrl}/api` })
+            )
+            const downloaded = await service.downloadComponentDirectory({
+                componentName: 'Card',
+                targetDir: tmpOut,
+            })
+            expect(downloaded.length).toBe(2)
+            expect(
+                fsNode.readFileSync(pathNode.join(tmpOut, 'index.ts'), 'utf8')
+            ).toBe('export {}\n')
+            expect(
+                fsNode.readFileSync(pathNode.join(tmpOut, 'ui/view.tsx'), 'utf8')
+            ).toBe('export default null\n')
+        } finally {
+            await mock.close()
+            fsNode.rmSync(tmpOut, { recursive: true, force: true })
+        }
+    })
+})
+
 describe('PieStorageService.uploadLanguageFilesBatch', () => {
     test('PUTs multipart with object_paths + files for each entry', async () => {
         const tmp = fsNode.mkdtempSync(pathNode.join(osNode.tmpdir(), 'pieui-storage-batch-'))
