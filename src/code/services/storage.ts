@@ -1,4 +1,9 @@
 import type { Settings } from './settings'
+import {
+    parseProjectComponentList,
+    type ComponentTree,
+    type ProjectComponentList,
+} from './models'
 
 export const STORAGE_LANGUAGE = 'typescript'
 
@@ -23,6 +28,21 @@ export const normalizeObjectPath = (value: string): string => {
         )
     }
     return parts.map((p) => encodeURIComponent(p)).join('/')
+}
+
+const DEFAULT_TIMEOUT_MS = 30_000
+
+type RequestOptions = {
+    method: string
+    url: string
+    headers?: Record<string, string>
+    body?: BodyInit
+    timeoutMs?: number
+}
+
+const cleanFetchError = (method: string, url: string, error: unknown): Error => {
+    const msg = error instanceof Error ? error.message : String(error)
+    return new PieStorageError(`${method} ${url} failed: ${msg}`)
 }
 
 export class PieStorageService {
@@ -78,5 +98,69 @@ export class PieStorageService {
         projectSlug?: string
     }): string {
         return `${this.componentUrl(args)}/metadata/${encodeURIComponent(args.schemaKind)}`
+    }
+
+    async listProjectComponents(args: {
+        userId: string
+        projectSlug: string
+    }): Promise<ProjectComponentList> {
+        const url = this.projectComponentsUrl(args)
+        const response = await this.request({ method: 'GET', url })
+        return parseProjectComponentList(await response.json())
+    }
+
+    async listComponent(args: {
+        componentName: string
+        userId?: string
+        projectSlug?: string
+    }): Promise<ComponentTree> {
+        const url = this.componentUrl(args)
+        const response = await this.request({ method: 'GET', url })
+        return (await response.json()) as ComponentTree
+    }
+
+    async deleteComponent(args: {
+        componentName: string
+        userId?: string
+        projectSlug?: string
+    }): Promise<void> {
+        const url = this.componentUrl(args)
+        await this.request({ method: 'DELETE', url })
+    }
+
+    private headers(extra?: Record<string, string>): Record<string, string> {
+        const base: Record<string, string> = {}
+        if (this.settings.apiKey) base['x-api-key'] = this.settings.apiKey
+        return { ...base, ...(extra ?? {}) }
+    }
+
+    private async request(opts: RequestOptions): Promise<Response> {
+        const controller = new AbortController()
+        const timer = setTimeout(
+            () => controller.abort(),
+            opts.timeoutMs ?? DEFAULT_TIMEOUT_MS
+        )
+        let response: Response
+        try {
+            response = await fetch(opts.url, {
+                method: opts.method,
+                headers: this.headers(opts.headers),
+                body: opts.body,
+                signal: controller.signal,
+            })
+        } catch (error) {
+            throw cleanFetchError(opts.method, opts.url, error)
+        } finally {
+            clearTimeout(timer)
+        }
+        if (!response.ok) {
+            const body = await response.text().catch(() => '')
+            const detail = body.trim()
+            const message = detail
+                ? `${opts.method} ${opts.url} failed: ${response.status}\n${detail}`
+                : `${opts.method} ${opts.url} failed: ${response.status}`
+            throw new PieStorageError(message)
+        }
+        return response
     }
 }
