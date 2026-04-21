@@ -1,11 +1,31 @@
 import type { Settings } from './settings'
 import {
+    parseComponentObject,
     parseProjectComponentList,
+    type ComponentObject,
     type ComponentTree,
     type ProjectComponentList,
 } from './models'
 
 export const STORAGE_LANGUAGE = 'typescript'
+
+export type SchemaKind = 'jsonSchema' | 'eventSchema' | 'llms.txt'
+
+const METADATA_CONTENT_TYPES: Record<SchemaKind, string> = {
+    jsonSchema: 'application/json',
+    eventSchema: 'application/json',
+    'llms.txt': 'text/plain',
+}
+
+const metadataContentType = (kind: string): string => {
+    if (!(kind in METADATA_CONTENT_TYPES)) {
+        const allowed = Object.keys(METADATA_CONTENT_TYPES).sort().join(', ')
+        throw new PieStorageError(
+            `unknown metadata kind: ${kind}. Use one of: ${allowed}`
+        )
+    }
+    return METADATA_CONTENT_TYPES[kind as SchemaKind]
+}
 
 export class PieStorageError extends Error {
     constructor(message: string) {
@@ -126,6 +146,53 @@ export class PieStorageService {
     }): Promise<void> {
         const url = this.componentUrl(args)
         await this.request({ method: 'DELETE', url })
+    }
+
+    async uploadMetadataContent(args: {
+        componentName: string
+        schemaKind: SchemaKind
+        content: Uint8Array
+        userId?: string
+        projectSlug?: string
+    }): Promise<ComponentObject> {
+        const contentType = metadataContentType(args.schemaKind)
+        const url = this.metadataUrl(args)
+        const body = new Uint8Array(args.content) // copy into plain ArrayBuffer-backed view
+        const response = await this.request({
+            method: 'PUT',
+            url,
+            headers: { 'content-type': contentType },
+            body,
+        })
+        return parseComponentObject(await response.json())
+    }
+
+    async downloadMetadata(args: {
+        componentName: string
+        schemaKind: SchemaKind
+        targetPath: string
+        userId?: string
+        projectSlug?: string
+    }): Promise<string> {
+        metadataContentType(args.schemaKind)
+        const url = this.metadataUrl(args)
+        const response = await this.request({ method: 'GET', url })
+        const buf = Buffer.from(await response.arrayBuffer())
+        const fs = await import('node:fs')
+        const path = await import('node:path')
+        fs.mkdirSync(path.dirname(args.targetPath), { recursive: true })
+        fs.writeFileSync(args.targetPath, buf)
+        return args.targetPath
+    }
+
+    async deleteMetadata(args: {
+        componentName: string
+        schemaKind: SchemaKind
+        userId?: string
+        projectSlug?: string
+    }): Promise<void> {
+        metadataContentType(args.schemaKind)
+        await this.request({ method: 'DELETE', url: this.metadataUrl(args) })
     }
 
     private headers(extra?: Record<string, string>): Record<string, string> {

@@ -253,3 +253,66 @@ describe('PieStorageService.deleteComponent', () => {
         }
     })
 })
+
+describe('PieStorageService metadata', () => {
+    test('uploadMetadataContent PUTs with correct content-type and body', async () => {
+        const mock = await startServer((_req, res) => {
+            res.end(
+                JSON.stringify({
+                    key: 'users/u/projects/s/components/Card/metadata/eventSchema',
+                })
+            )
+        })
+        try {
+            const service = new PieStorageService(
+                makeSettings({ apiBaseUrl: `${mock.baseUrl}/api` })
+            )
+            const payload = new TextEncoder().encode('{"a":1}\n')
+            const result = await service.uploadMetadataContent({
+                componentName: 'Card',
+                schemaKind: 'eventSchema',
+                content: payload,
+            })
+            expect(result.key).toContain('metadata/eventSchema')
+            const req = mock.requests[0]
+            expect(req?.method).toBe('PUT')
+            expect(req?.headers['content-type']).toBe('application/json')
+            expect(req?.body.equals(Buffer.from(payload))).toBe(true)
+        } finally {
+            await mock.close()
+        }
+    })
+
+    test('uploadMetadataContent rejects unknown schemaKind', () => {
+        const service = new PieStorageService(makeSettings())
+        expect(
+            service.uploadMetadataContent({
+                componentName: 'Card',
+                schemaKind: 'nope' as unknown as 'eventSchema',
+                content: new Uint8Array(),
+            })
+        ).rejects.toThrow(/unknown metadata kind/)
+    })
+
+    test('deleteMetadata DELETEs the metadata URL', async () => {
+        const mock = await startServer((_req, res) => {
+            res.statusCode = 204
+            res.end()
+        })
+        try {
+            const service = new PieStorageService(
+                makeSettings({ apiBaseUrl: `${mock.baseUrl}/api` })
+            )
+            await service.deleteMetadata({
+                componentName: 'Card',
+                schemaKind: 'eventSchema',
+            })
+            expect(mock.requests[0]?.method).toBe('DELETE')
+            expect(mock.requests[0]?.url).toBe(
+                '/api/components/demo-user/demo-proj/Card/metadata/eventSchema'
+            )
+        } finally {
+            await mock.close()
+        }
+    })
+})
