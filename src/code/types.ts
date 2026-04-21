@@ -30,7 +30,7 @@ export type ParsedArgs = {
     cardIo?: boolean
     cardRemoteAction?: CardRemoteAction
     remoteUserId?: string
-    remoteProjectSlug?: string
+    remoteProject?: string
     pageAction?: PageAction
     pagePath?: string
 }

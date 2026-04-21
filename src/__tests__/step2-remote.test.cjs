@@ -119,7 +119,13 @@ test('card remote push uploads all files + eventSchema metadata', async () => {
         'export default null\n'
     )
     writeFile(
-        path.join(projectDir, 'piecomponents', 'AlertsCard', 'types', 'index.ts'),
+        path.join(
+            projectDir,
+            'piecomponents',
+            'AlertsCard',
+            'types',
+            'index.ts'
+        ),
         'export interface AlertsCardData { pathname?: string; depsNames: string[]; kwargs: Record<string,string> }\n'
     )
 
@@ -132,7 +138,11 @@ test('card remote push uploads all files + eventSchema metadata', async () => {
             body,
         })
         if (req.url?.endsWith('/batch/typescript')) {
-            res.end(JSON.stringify({ objects: [{ key: 'k1' }, { key: 'k2' }, { key: 'k3' }] }))
+            res.end(
+                JSON.stringify({
+                    objects: [{ key: 'k1' }, { key: 'k2' }, { key: 'k3' }],
+                })
+            )
         } else {
             res.end(JSON.stringify({ key: 'meta-key' }))
         }
@@ -154,15 +164,24 @@ test('card remote push uploads all files + eventSchema metadata', async () => {
 
         const batch = requests[0]
         assert.equal(batch.method, 'PUT')
-        assert.equal(batch.url, '/api/components/u1/proj/AlertsCard/batch/typescript')
+        assert.equal(
+            batch.url,
+            '/api/components/u1/proj/AlertsCard/batch/typescript'
+        )
         assert.equal(batch.headers['x-api-key'], 'k')
         const parts = parseMultipart(batch.body, batch.headers['content-type'])
-        const paths = parts.filter((p) => p.name === 'object_paths').map((p) => p.value).sort()
+        const paths = parts
+            .filter((p) => p.name === 'object_paths')
+            .map((p) => p.value)
+            .sort()
         assert.deepEqual(paths, ['index.ts', 'types/index.ts', 'ui/view.tsx'])
 
         const meta = requests[1]
         assert.equal(meta.method, 'PUT')
-        assert.equal(meta.url, '/api/components/u1/proj/AlertsCard/metadata/eventSchema')
+        assert.equal(
+            meta.url,
+            '/api/components/u1/proj/AlertsCard/metadata/eventSchema'
+        )
         assert.equal(meta.headers['content-type'], 'application/json')
         const metaObj = JSON.parse(meta.body.toString('utf8').trim())
         assert.equal(metaObj.component, 'AlertsCard')
@@ -203,7 +222,10 @@ test('card remote push fails when PIE_USER_ID not set', async () => {
 
 test('card remote pull downloads dir and swaps atomically', async () => {
     const projectDir = mkTempDir('pieui-cr-pull-')
-    writeFile(path.join(projectDir, 'piecomponents', 'SyncCard', 'old.txt'), 'old\n')
+    writeFile(
+        path.join(projectDir, 'piecomponents', 'SyncCard', 'old.txt'),
+        'old\n'
+    )
 
     const { server, baseUrl } = await startServer((req, res) => {
         if (req.url?.endsWith('/SyncCard')) {
@@ -244,7 +266,9 @@ test('card remote pull downloads dir and swaps atomically', async () => {
         })
         assertOk(result, 'pull should succeed')
         assert.equal(
-            fs.existsSync(path.join(projectDir, 'piecomponents', 'SyncCard', 'old.txt')),
+            fs.existsSync(
+                path.join(projectDir, 'piecomponents', 'SyncCard', 'old.txt')
+            ),
             false
         )
         assert.equal(
@@ -256,7 +280,13 @@ test('card remote pull downloads dir and swaps atomically', async () => {
         )
         assert.equal(
             fs.readFileSync(
-                path.join(projectDir, 'piecomponents', 'SyncCard', 'ui', 'view.tsx'),
+                path.join(
+                    projectDir,
+                    'piecomponents',
+                    'SyncCard',
+                    'ui',
+                    'view.tsx'
+                ),
                 'utf8'
             ),
             'export default null\n'
@@ -295,7 +325,11 @@ test('card remote list prints sorted component names', async () => {
             JSON.stringify({
                 user_id: 'u',
                 project_slug: 's',
-                components: [{ name: 'Bravo' }, { name: 'alpha' }, { name: 'Charlie' }],
+                components: [
+                    { name: 'Bravo' },
+                    { name: 'alpha' },
+                    { name: 'Charlie' },
+                ],
             })
         )
     })
@@ -325,20 +359,14 @@ test('card remote list respects --user / --project overrides', async () => {
     let capturedUrl
     const { server, baseUrl } = await startServer((req, res) => {
         capturedUrl = req.url
-        res.end(JSON.stringify({ user_id: 'X', project_slug: 'Y', components: [] }))
+        res.end(
+            JSON.stringify({ user_id: 'X', project_slug: 'Y', components: [] })
+        )
     })
     try {
         const result = await runCli({
             cwd: projectDir,
-            args: [
-                'card',
-                'remote',
-                'list',
-                '--user',
-                'X',
-                '--project',
-                'Y',
-            ],
+            args: ['card', 'remote', 'list', '--user', 'X', '--project', 'Y'],
             env: {
                 PIE_API_BASE_URL: `${baseUrl}/api`,
                 PIE_USER_ID: '',

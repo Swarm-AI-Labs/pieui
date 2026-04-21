@@ -23,7 +23,12 @@ export const extractCardMetadata = (
     source: string | undefined
 ): CardMetadata => {
     if (!source) {
-        return { component: componentName, input: false, ajax: false, io: false }
+        return {
+            component: componentName,
+            input: false,
+            ajax: false,
+            io: false,
+        }
     }
     return {
         component: componentName,

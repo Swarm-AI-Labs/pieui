@@ -57,10 +57,7 @@ export const pageAddCommand = (pagePath: string) => {
     const targetFile = path.join(appDir, normalizedPath, 'page.tsx')
     const relativeTarget = path.relative(appDir, targetFile)
 
-    if (
-        relativeTarget.startsWith('..') ||
-        path.isAbsolute(relativeTarget)
-    ) {
+    if (relativeTarget.startsWith('..') || path.isAbsolute(relativeTarget)) {
         throw new Error('Page path must stay inside the app directory')
     }
 

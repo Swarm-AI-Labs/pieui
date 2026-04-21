@@ -7,11 +7,7 @@ import { registerCallTemplate } from './registerCall'
 import { rootLayoutTemplate } from './rootLayout'
 import { sharedPageTemplate } from './sharedPage'
 import { nextConfigTemplate, REQUIRED_NEXT_CONFIG_ENV_KEYS } from './nextConfig'
-import {
-    baseInterfaceFor,
-    componentTemplateFor,
-    pageTemplate,
-} from './pages'
+import { baseInterfaceFor, componentTemplateFor, pageTemplate } from './pages'
 
 export {
     baseInterfaceFor,

@@ -68,9 +68,7 @@ const appendPieCredentialsToEnv = (cwd: string, config: unknown): void => {
     }
 
     const envPath = path.join(cwd, '.env')
-    let content = fs.existsSync(envPath)
-        ? fs.readFileSync(envPath, 'utf8')
-        : ''
+    let content = fs.existsSync(envPath) ? fs.readFileSync(envPath, 'utf8') : ''
     if (content.length > 0 && !content.endsWith('\n')) {
         content += '\n'
     }

@@ -58,10 +58,9 @@ export const loadSettings = (cwd: string = process.cwd()): Settings => {
     const componentsDir = path.isAbsolute(componentsDirRaw)
         ? componentsDirRaw
         : path.join(cwd, componentsDirRaw)
-    const apiBaseUrl = (pick('PIE_API_BASE_URL') || DEFAULT_API_BASE_URL).replace(
-        /\/+$/,
-        ''
-    )
+    const apiBaseUrl = (
+        pick('PIE_API_BASE_URL') || DEFAULT_API_BASE_URL
+    ).replace(/\/+$/, '')
 
     return {
         userId,

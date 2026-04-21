@@ -1,5 +1,8 @@
 import { describe, test, expect } from 'bun:test'
-import { extractCardMetadata, serializeCardMetadata } from '../code/cardMetadata'
+import {
+    extractCardMetadata,
+    serializeCardMetadata,
+} from '../code/cardMetadata'
 
 describe('extractCardMetadata', () => {
     test('plain scaffold → ajax=false, io=false', () => {
@@ -74,6 +77,8 @@ describe('serializeCardMetadata', () => {
             io: false,
         })
         const text = new TextDecoder().decode(bytes)
-        expect(text).toBe('{"ajax":true,"component":"B","input":false,"io":false}\n')
+        expect(text).toBe(
+            '{"ajax":true,"component":"B","input":false,"io":false}\n'
+        )
     })
 })

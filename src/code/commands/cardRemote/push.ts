@@ -1,9 +1,6 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import {
-    extractCardMetadata,
-    serializeCardMetadata,
-} from '../../cardMetadata'
+import { extractCardMetadata, serializeCardMetadata } from '../../cardMetadata'
 import { loadSettings } from '../../services/settings'
 import { PieStorageService } from '../../services/storage'
 
@@ -23,7 +20,10 @@ export const cardRemotePushCommand = async (
     }
 
     const componentDir = path.join(settings.componentsDir, componentName)
-    if (!fs.existsSync(componentDir) || !fs.statSync(componentDir).isDirectory()) {
+    if (
+        !fs.existsSync(componentDir) ||
+        !fs.statSync(componentDir).isDirectory()
+    ) {
         throw new Error(`Component directory not found: ${componentDir}`)
     }
 

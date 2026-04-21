@@ -454,8 +454,9 @@ test('init supports --out-dir and does not duplicate tailwind content path', () 
         path.join(appDir, 'tailwind.config.js'),
         'utf8'
     )
-    const matchCount = (tailwind.match(/@swarm\.ing\/pieui\/dist\/\*\*\//g) || [])
-        .length
+    const matchCount = (
+        tailwind.match(/@swarm\.ing\/pieui\/dist\/\*\*\//g) || []
+    ).length
     assert.equal(matchCount, 1)
 })
 
@@ -869,19 +870,24 @@ EOF
         'simple.tsx'
     )
     assert.ok(fs.existsSync(fallbackSharedFile))
-    assert.match(
-        fs.readFileSync(fallbackSharedFile, 'utf8'),
-        /PieTelegramRoot/
-    )
+    assert.match(fs.readFileSync(fallbackSharedFile, 'utf8'), /PieTelegramRoot/)
 })
 
 // Verifies create-pieui command alias maps to create-pie-app behavior.
 test('create-pieui alias scaffolds app template', () => {
     const projectDir = makeProjectDir('pieui-cli-create-alias-')
     const fakeBunPath = path.join(projectDir, 'fake-bun.sh')
-    const sharedSourceDir = path.join(projectDir, 'ai-exchange-web', 'app', '_shared')
+    const sharedSourceDir = path.join(
+        projectDir,
+        'ai-exchange-web',
+        'app',
+        '_shared'
+    )
 
-    writeFile(path.join(sharedSourceDir, 'simple.tsx'), 'export default function Simple() { return null }\n')
+    writeFile(
+        path.join(sharedSourceDir, 'simple.tsx'),
+        'export default function Simple() { return null }\n'
+    )
     writeFile(
         fakeBunPath,
         `#!/bin/sh
@@ -922,7 +928,9 @@ EOF
 
     assertSucceeded(result, 'create-pieui alias should scaffold app')
     assert.ok(
-        fs.existsSync(path.join(projectDir, 'my-pie-app', '_shared', 'simple.tsx'))
+        fs.existsSync(
+            path.join(projectDir, 'my-pie-app', '_shared', 'simple.tsx')
+        )
     )
 })
 
@@ -998,7 +1006,9 @@ exit 3
     assert.ok(fs.existsSync(path.join(appDir, 'piecomponents', 'registry.ts')))
     assert.ok(fs.existsSync(path.join(appDir, 'app', '_shared', 'page.tsx')))
     assert.ok(fs.existsSync(path.join(appDir, 'app', 'layout.tsx')))
-    assert.ok(fs.existsSync(path.join(appDir, 'components', 'LoadingScreen.tsx')))
+    assert.ok(
+        fs.existsSync(path.join(appDir, 'components', 'LoadingScreen.tsx'))
+    )
     assert.ok(fs.existsSync(path.join(appDir, '.env')))
     assert.equal(
         fs.existsSync(path.join(appDir, 'app', '_shared', 'simple.tsx')),
@@ -1013,7 +1023,10 @@ exit 3
 // Verifies card add route dispatch works and forwards --io/--ajax flags to scaffolder.
 test('card add route creates component with io/ajax fields enabled', () => {
     const projectDir = makeProjectDir('pieui-cli-card-add-route-')
-    assertSucceeded(runCli({ cwd: projectDir, args: ['init'] }), 'init should succeed')
+    assertSucceeded(
+        runCli({ cwd: projectDir, args: ['init'] }),
+        'init should succeed'
+    )
 
     const result = runCli({
         cwd: projectDir,
@@ -1041,7 +1054,10 @@ test('page add route creates normalized page scaffold', () => {
     })
 
     assertSucceeded(result, 'page add should succeed')
-    assert.match(result.stdout, /Page created successfully at app\/chat\/room\/page\.tsx/)
+    assert.match(
+        result.stdout,
+        /Page created successfully at app\/chat\/room\/page\.tsx/
+    )
 
     const pageFile = path.join(projectDir, 'app', 'chat', 'room', 'page.tsx')
     assert.ok(fs.existsSync(pageFile))
@@ -1073,13 +1089,25 @@ test('add complex type generates PieComplexComponentProps in types/index.ts', ()
     assert.match(addResult.stdout, /Component type: complex/)
 
     const typesFile = fs.readFileSync(
-        path.join(projectDir, 'piecomponents', 'ComplexCard', 'types', 'index.ts'),
+        path.join(
+            projectDir,
+            'piecomponents',
+            'ComplexCard',
+            'types',
+            'index.ts'
+        ),
         'utf8'
     )
     assert.match(typesFile, /PieComplexComponentProps/)
 
     const uiFile = fs.readFileSync(
-        path.join(projectDir, 'piecomponents', 'ComplexCard', 'ui', 'ComplexCard.tsx'),
+        path.join(
+            projectDir,
+            'piecomponents',
+            'ComplexCard',
+            'ui',
+            'ComplexCard.tsx'
+        ),
         'utf8'
     )
     assert.match(uiFile, /PieCard/)
@@ -1116,7 +1144,13 @@ test('add simple-container generates PieContainerComponentProps and destructures
     assert.match(typesFile, /PieContainerComponentProps/)
 
     const uiFile = fs.readFileSync(
-        path.join(projectDir, 'piecomponents', 'WrapCard', 'ui', 'WrapCard.tsx'),
+        path.join(
+            projectDir,
+            'piecomponents',
+            'WrapCard',
+            'ui',
+            'WrapCard.tsx'
+        ),
         'utf8'
     )
     assert.match(uiFile, /content/)
@@ -1136,10 +1170,26 @@ test('add reports correct component type label for all four type arguments', () 
     assertSucceeded(runCli({ cwd: projectDir, args: ['init'] }), 'init')
 
     const cases = [
-        { type: 'simple',            name: 'AlphaCard',  expectedProp: 'PieSimpleComponentProps' },
-        { type: 'complex',           name: 'BetaCard',   expectedProp: 'PieComplexComponentProps' },
-        { type: 'simple-container',  name: 'GammaCard',  expectedProp: 'PieContainerComponentProps' },
-        { type: 'complex-container', name: 'DeltaCard',  expectedProp: 'PieComplexContainerComponentProps' },
+        {
+            type: 'simple',
+            name: 'AlphaCard',
+            expectedProp: 'PieSimpleComponentProps',
+        },
+        {
+            type: 'complex',
+            name: 'BetaCard',
+            expectedProp: 'PieComplexComponentProps',
+        },
+        {
+            type: 'simple-container',
+            name: 'GammaCard',
+            expectedProp: 'PieContainerComponentProps',
+        },
+        {
+            type: 'complex-container',
+            name: 'DeltaCard',
+            expectedProp: 'PieComplexContainerComponentProps',
+        },
     ]
 
     for (const { type, name, expectedProp } of cases) {
@@ -1162,8 +1212,22 @@ test('add reports correct component type label for all four type arguments', () 
             `types/index.ts should reference ${expectedProp} for type "${type}"`
         )
 
-        assert.ok(fs.existsSync(path.join(projectDir, 'piecomponents', name, 'index.ts')))
-        assert.ok(fs.existsSync(path.join(projectDir, 'piecomponents', name, 'ui', `${name}.tsx`)))
+        assert.ok(
+            fs.existsSync(
+                path.join(projectDir, 'piecomponents', name, 'index.ts')
+            )
+        )
+        assert.ok(
+            fs.existsSync(
+                path.join(
+                    projectDir,
+                    'piecomponents',
+                    name,
+                    'ui',
+                    `${name}.tsx`
+                )
+            )
+        )
     }
 })
 
@@ -1187,7 +1251,10 @@ test('list simple in a temp project finds all added components due to type-resol
         'add complex'
     )
     assertSucceeded(
-        runCli({ cwd: projectDir, args: ['add', 'simple-container', 'ThreeCard'] }),
+        runCli({
+            cwd: projectDir,
+            args: ['add', 'simple-container', 'ThreeCard'],
+        }),
         'add simple-container'
     )
 
@@ -1223,7 +1290,10 @@ registerPieComponent({ name: 'FirstCard', component: FirstCard })
     )
 
     assertSucceeded(
-        runCli({ cwd: projectDir, args: ['postbuild', '--src-dir', 'src', '--out-dir', 'out'] }),
+        runCli({
+            cwd: projectDir,
+            args: ['postbuild', '--src-dir', 'src', '--out-dir', 'out'],
+        }),
         'initial postbuild run should succeed'
     )
 
@@ -1276,7 +1346,10 @@ registerPieComponent({ name: 'OnlyCard', component: OnlyCard })
     )
 
     assertSucceeded(
-        runCli({ cwd: projectDir, args: ['postbuild', '--src-dir', 'src', '--out-dir', 'out'] }),
+        runCli({
+            cwd: projectDir,
+            args: ['postbuild', '--src-dir', 'src', '--out-dir', 'out'],
+        }),
         'first postbuild run should succeed'
     )
 

@@ -137,18 +137,18 @@ bunx pieui page add chat
 This command writes `app/chat/page.tsx` with the standard Suspense-wrapped Pie page shell:
 
 ```tsx
-"use client";
+'use client'
 
-import PiePage from "@/app/_shared/simple";
-import { Suspense } from "react";
-import LoadingScreen from "@/components/LoadingScreen";
+import PiePage from '@/app/_shared/simple'
+import { Suspense } from 'react'
+import LoadingScreen from '@/components/LoadingScreen'
 
 export default function ChatPage() {
-  return (
-    <Suspense fallback={<LoadingScreen />}>
-      <PiePage />
-    </Suspense>
-  );
+    return (
+        <Suspense fallback={<LoadingScreen />}>
+            <PiePage />
+        </Suspense>
+    )
 }
 ```
 

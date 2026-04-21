@@ -31,7 +31,7 @@ export const parseArgs = (argv: string[]): ParsedArgs => {
     let cardIo = false
     let cardRemoteAction: CardRemoteAction | undefined
     let remoteUserId: string | undefined
-    let remoteProjectSlug: string | undefined
+    let remoteProject: string | undefined
     let pageAction: PageAction | undefined
     let pagePath: string | undefined
 
@@ -118,7 +118,7 @@ export const parseArgs = (argv: string[]): ParsedArgs => {
                     flagIndexes.add(i + 1)
                     i++
                 } else if (tok === '--project' && rest[i + 1]) {
-                    remoteProjectSlug = rest[i + 1]
+                    remoteProject = rest[i + 1]
                     flagIndexes.add(i)
                     flagIndexes.add(i + 1)
                     i++
@@ -126,7 +126,7 @@ export const parseArgs = (argv: string[]): ParsedArgs => {
                     remoteUserId = tok.slice('--user='.length)
                     flagIndexes.add(i)
                 } else if (tok?.startsWith('--project=')) {
-                    remoteProjectSlug = tok.slice('--project='.length)
+                    remoteProject = tok.slice('--project='.length)
                     flagIndexes.add(i)
                 }
             }
@@ -180,7 +180,7 @@ export const parseArgs = (argv: string[]): ParsedArgs => {
         cardIo,
         cardRemoteAction,
         remoteUserId,
-        remoteProjectSlug,
+        remoteProject,
         pageAction,
         pagePath,
     }

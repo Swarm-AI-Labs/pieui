@@ -7,15 +7,17 @@ describe('parseDotenv', () => {
     })
 
     test('strips matching double and single quotes', () => {
-        expect(
-            parseDotenv(`A="hello world"\nB='x y'\n`)
-        ).toEqual({ A: 'hello world', B: 'x y' })
+        expect(parseDotenv(`A="hello world"\nB='x y'\n`)).toEqual({
+            A: 'hello world',
+            B: 'x y',
+        })
     })
 
     test('ignores blank lines and # comments', () => {
-        expect(
-            parseDotenv(`# comment\n\nA=1\n# another\nB=2\n`)
-        ).toEqual({ A: '1', B: '2' })
+        expect(parseDotenv(`# comment\n\nA=1\n# another\nB=2\n`)).toEqual({
+            A: '1',
+            B: '2',
+        })
     })
 
     test('ignores malformed lines without =', () => {
@@ -35,7 +37,10 @@ import { loadSettings } from '../code/services/settings'
 const mkTempDir = (prefix: string) =>
     fs.mkdtempSync(path.join(os.tmpdir(), prefix))
 
-const runWithEnv = <T>(env: Record<string, string | undefined>, fn: () => T): T => {
+const runWithEnv = <T>(
+    env: Record<string, string | undefined>,
+    fn: () => T
+): T => {
     const prev: Record<string, string | undefined> = {}
     for (const [k, v] of Object.entries(env)) {
         prev[k] = process.env[k]
@@ -78,7 +83,11 @@ describe('loadSettings', () => {
         const cwd = path.join(base, 'my-pieui-app')
         fs.mkdirSync(cwd, { recursive: true })
         const settings = runWithEnv(
-            { PIE_USER_ID: 'u', PIE_PROJECT: undefined, PIE_PROJECT_SLUG: undefined },
+            {
+                PIE_USER_ID: 'u',
+                PIE_PROJECT: undefined,
+                PIE_PROJECT_SLUG: undefined,
+            },
             () => loadSettings(cwd)
         )
         expect(settings.project).toBe('my-pieui-app')

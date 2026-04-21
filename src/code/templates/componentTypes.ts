@@ -14,7 +14,10 @@ export const componentTypesTemplate = (
     baseInterface: string,
     options: CardScaffoldOptions = {}
 ): string => {
-    const extraSections = [options.io ? ioFields : '', options.ajax ? ajaxFields : '']
+    const extraSections = [
+        options.io ? ioFields : '',
+        options.ajax ? ajaxFields : '',
+    ]
         .filter(Boolean)
         .join('\n\n')
     const extraFields = extraSections ? `\n\n${extraSections}` : ''

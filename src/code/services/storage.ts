@@ -80,7 +80,11 @@ type RequestOptions = {
     timeoutMs?: number
 }
 
-const cleanFetchError = (method: string, url: string, error: unknown): Error => {
+const cleanFetchError = (
+    method: string,
+    url: string,
+    error: unknown
+): Error => {
     const msg = error instanceof Error ? error.message : String(error)
     return new PieStorageError(`${method} ${url} failed: ${msg}`)
 }
@@ -228,7 +232,10 @@ export class PieStorageService {
             filePath: path.resolve(filePath),
         }))
         for (const item of items) {
-            if (!fs.existsSync(item.filePath) || !fs.statSync(item.filePath).isFile()) {
+            if (
+                !fs.existsSync(item.filePath) ||
+                !fs.statSync(item.filePath).isFile()
+            ) {
                 throw new PieStorageError(`file not found: ${item.filePath}`)
             }
         }
@@ -269,7 +276,9 @@ export class PieStorageService {
         const path = await import('node:path')
         const source = path.resolve(args.sourceDir)
         if (!fs.existsSync(source) || !fs.statSync(source).isDirectory()) {
-            throw new PieStorageError(`component directory not found: ${source}`)
+            throw new PieStorageError(
+                `component directory not found: ${source}`
+            )
         }
         const collected: string[] = []
         const walk = (dir: string) => {

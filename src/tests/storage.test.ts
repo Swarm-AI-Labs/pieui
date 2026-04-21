@@ -28,7 +28,9 @@ describe('normalizeObjectPath', () => {
         expect(normalizeObjectPath('ui\\view.tsx')).toBe('ui/view.tsx')
     })
     test('rejects absolute paths', () => {
-        expect(() => normalizeObjectPath('/etc/passwd')).toThrow(PieStorageError)
+        expect(() => normalizeObjectPath('/etc/passwd')).toThrow(
+            PieStorageError
+        )
     })
     test('rejects .. segments', () => {
         expect(() => normalizeObjectPath('../escape')).toThrow(PieStorageError)
@@ -37,7 +39,9 @@ describe('normalizeObjectPath', () => {
         expect(() => normalizeObjectPath('./ok')).toThrow(PieStorageError)
     })
     test('rejects empty segments', () => {
-        expect(() => normalizeObjectPath('ui//view.tsx')).toThrow(PieStorageError)
+        expect(() => normalizeObjectPath('ui//view.tsx')).toThrow(
+            PieStorageError
+        )
     })
     test('url-encodes spaces and special chars in segments', () => {
         expect(normalizeObjectPath('ui/my file.tsx')).toBe('ui/my%20file.tsx')
@@ -70,9 +74,7 @@ describe('PieStorageService URL construction', () => {
     })
 
     test('componentUrl throws when no user_id configured', () => {
-        const s = new PieStorageService(
-            makeSettings({ userId: undefined })
-        )
+        const s = new PieStorageService(makeSettings({ userId: undefined }))
         expect(() => s.componentUrl({ componentName: 'Card' })).toThrow(
             PieStorageError
         )
@@ -97,7 +99,10 @@ describe('PieStorageService URL construction', () => {
 
     test('metadataUrl encodes schema kind', () => {
         expect(
-            service.metadataUrl({ componentName: 'Card', schemaKind: 'eventSchema' })
+            service.metadataUrl({
+                componentName: 'Card',
+                schemaKind: 'eventSchema',
+            })
         ).toBe(
             'https://example.test/api/components/demo-user/demo-proj/Card/metadata/eventSchema'
         )
@@ -112,8 +117,16 @@ type Recorded = {
 }
 
 const startServer = async (
-    handler: (req: http.IncomingMessage, res: http.ServerResponse, body: Buffer) => void
-): Promise<{ baseUrl: string; close: () => Promise<void>; requests: Recorded[] }> => {
+    handler: (
+        req: http.IncomingMessage,
+        res: http.ServerResponse,
+        body: Buffer
+    ) => void
+): Promise<{
+    baseUrl: string
+    close: () => Promise<void>
+    requests: Recorded[]
+}> => {
     const requests: Recorded[] = []
     const server = http.createServer((req, res) => {
         const chunks: Buffer[] = []
@@ -191,7 +204,13 @@ describe('PieStorageService.listProjectComponents', () => {
 
     test('omits x-api-key when settings.apiKey is absent', async () => {
         const mock = await startServer((_req, res) => {
-            res.end(JSON.stringify({ user_id: 'u', project_slug: 's', components: [] }))
+            res.end(
+                JSON.stringify({
+                    user_id: 'u',
+                    project_slug: 's',
+                    components: [],
+                })
+            )
         })
         try {
             const service = new PieStorageService(
@@ -216,7 +235,9 @@ describe('PieStorageService.listComponent', () => {
                     prefix: 'users/u/projects/s/components/Card/',
                     typescript: {
                         objects: [
-                            { key: 'users/u/projects/s/components/Card/typescript/ui/view.tsx' },
+                            {
+                                key: 'users/u/projects/s/components/Card/typescript/ui/view.tsx',
+                            },
                         ],
                     },
                 })
@@ -358,7 +379,9 @@ const parseMultipart = (
 
 describe('PieStorageService.uploadComponentDirectory', () => {
     test('walks sourceDir recursively and batches all files', async () => {
-        const tmp = fsNode.mkdtempSync(pathNode.join(osNode.tmpdir(), 'pieui-storage-dir-'))
+        const tmp = fsNode.mkdtempSync(
+            pathNode.join(osNode.tmpdir(), 'pieui-storage-dir-')
+        )
         writeTmpFile(tmp, 'index.ts', 'i')
         writeTmpFile(tmp, 'ui/view.tsx', 'v')
         writeTmpFile(tmp, 'types/index.ts', 't')
@@ -375,7 +398,10 @@ describe('PieStorageService.uploadComponentDirectory', () => {
                 sourceDir: tmp,
             })
             const req = mock.requests[0]!
-            const parts = parseMultipart(req.body, String(req.headers['content-type']))
+            const parts = parseMultipart(
+                req.body,
+                String(req.headers['content-type'])
+            )
             const objectPaths = parts
                 .filter((p) => p.name === 'object_paths')
                 .map((p) => p.value)
@@ -446,7 +472,10 @@ describe('PieStorageService.downloadComponentDirectory', () => {
                 fsNode.readFileSync(pathNode.join(tmpOut, 'index.ts'), 'utf8')
             ).toBe('export {}\n')
             expect(
-                fsNode.readFileSync(pathNode.join(tmpOut, 'ui/view.tsx'), 'utf8')
+                fsNode.readFileSync(
+                    pathNode.join(tmpOut, 'ui/view.tsx'),
+                    'utf8'
+                )
             ).toBe('export default null\n')
         } finally {
             await mock.close()
@@ -457,7 +486,9 @@ describe('PieStorageService.downloadComponentDirectory', () => {
 
 describe('PieStorageService.uploadLanguageFilesBatch', () => {
     test('PUTs multipart with object_paths + files for each entry', async () => {
-        const tmp = fsNode.mkdtempSync(pathNode.join(osNode.tmpdir(), 'pieui-storage-batch-'))
+        const tmp = fsNode.mkdtempSync(
+            pathNode.join(osNode.tmpdir(), 'pieui-storage-batch-')
+        )
         const aFile = writeTmpFile(tmp, 'index.ts', 'export {}\n')
         const bFile = writeTmpFile(tmp, 'ui/view.tsx', 'export default null\n')
 
@@ -491,9 +522,16 @@ describe('PieStorageService.uploadLanguageFilesBatch', () => {
             expect(req.url).toBe(
                 '/api/components/demo-user/demo-proj/Card/batch/typescript'
             )
-            const parts = parseMultipart(req.body, String(req.headers['content-type']))
-            const objectPaths = parts.filter((p) => p.name === 'object_paths').map((p) => p.value)
-            const files = parts.filter((p) => p.name === 'files').map((p) => p.value)
+            const parts = parseMultipart(
+                req.body,
+                String(req.headers['content-type'])
+            )
+            const objectPaths = parts
+                .filter((p) => p.name === 'object_paths')
+                .map((p) => p.value)
+            const files = parts
+                .filter((p) => p.name === 'files')
+                .map((p) => p.value)
             expect(objectPaths).toEqual(['index.ts', 'ui/view.tsx'])
             expect(files).toEqual(['export {}\n', 'export default null\n'])
         } finally {

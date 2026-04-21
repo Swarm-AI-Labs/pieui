@@ -30,13 +30,13 @@ pieui card remote remove <Name>
 
 Config resolution (first wins):
 
-| Setting          | Env var(s)                                          | Fallback                  |
-|------------------|-----------------------------------------------------|---------------------------|
-| `user_id`        | `PIE_USER_ID`                                       | error if not set          |
-| `project`        | `PIE_PROJECT`, `PIE_PROJECT_SLUG`                   | `path.basename(cwd)`      |
-| `api_key`        | `PIE_API_KEY`                                       | no `x-api-key` header     |
-| `components_dir` | `PIE_COMPONENTS_DIR`                                | `piecomponents`           |
-| `api_base_url`   | `PIE_API_BASE_URL`                                  | `https://cdn-pieui.swarm.ing/api` |
+| Setting          | Env var(s)                        | Fallback                          |
+| ---------------- | --------------------------------- | --------------------------------- |
+| `user_id`        | `PIE_USER_ID`                     | error if not set                  |
+| `project`        | `PIE_PROJECT`, `PIE_PROJECT_SLUG` | `path.basename(cwd)`              |
+| `api_key`        | `PIE_API_KEY`                     | no `x-api-key` header             |
+| `components_dir` | `PIE_COMPONENTS_DIR`              | `piecomponents`                   |
+| `api_base_url`   | `PIE_API_BASE_URL`                | `https://cdn-pieui.swarm.ing/api` |
 
 `.env` in cwd is loaded automatically at command time. `list` accepts `--user`
 and `--project` to override, matching Python's `pie card remote list` flags.
@@ -94,9 +94,9 @@ export type Settings = {
     userId?: string
     apiKey?: string
     project: string
-    projectSlug: string          // alias for project
-    componentsDir: string        // absolute path
-    apiBaseUrl: string           // no trailing slash
+    projectSlug: string // alias for project
+    componentsDir: string // absolute path
+    apiBaseUrl: string // no trailing slash
 }
 
 export function loadSettings(cwd?: string): Settings
@@ -116,25 +116,86 @@ export class PieStorageError extends Error {}
 export class PieStorageService {
     constructor(settings: Settings)
 
-    listProjectComponents(args: { userId: string; projectSlug: string }): Promise<ProjectComponentList>
-    listComponent(args: { componentName: string; userId?: string; projectSlug?: string }): Promise<ComponentTree>
-    deleteComponent(args: { componentName: string; userId?: string; projectSlug?: string }): Promise<void>
+    listProjectComponents(args: {
+        userId: string
+        projectSlug: string
+    }): Promise<ProjectComponentList>
+    listComponent(args: {
+        componentName: string
+        userId?: string
+        projectSlug?: string
+    }): Promise<ComponentTree>
+    deleteComponent(args: {
+        componentName: string
+        userId?: string
+        projectSlug?: string
+    }): Promise<void>
 
-    uploadComponentDirectory(args: { componentName: string; sourceDir: string; userId?: string; projectSlug?: string }): Promise<ComponentObject[]>
-    uploadLanguageFilesBatch(args: { componentName: string; files: Array<[string, string]>; userId?: string; projectSlug?: string }): Promise<ComponentObject[]>
-    uploadLanguageFile(args: { componentName: string; objectPath: string; filePath: string; userId?: string; projectSlug?: string }): Promise<ComponentObject>
+    uploadComponentDirectory(args: {
+        componentName: string
+        sourceDir: string
+        userId?: string
+        projectSlug?: string
+    }): Promise<ComponentObject[]>
+    uploadLanguageFilesBatch(args: {
+        componentName: string
+        files: Array<[string, string]>
+        userId?: string
+        projectSlug?: string
+    }): Promise<ComponentObject[]>
+    uploadLanguageFile(args: {
+        componentName: string
+        objectPath: string
+        filePath: string
+        userId?: string
+        projectSlug?: string
+    }): Promise<ComponentObject>
 
-    downloadComponentDirectory(args: { componentName: string; targetDir: string; userId?: string; projectSlug?: string }): Promise<string[]>
-    downloadLanguageFile(args: { componentName: string; objectPath: string; targetPath: string; userId?: string; projectSlug?: string }): Promise<string>
-    deleteLanguageFile(args: { componentName: string; objectPath: string; userId?: string; projectSlug?: string }): Promise<void>
+    downloadComponentDirectory(args: {
+        componentName: string
+        targetDir: string
+        userId?: string
+        projectSlug?: string
+    }): Promise<string[]>
+    downloadLanguageFile(args: {
+        componentName: string
+        objectPath: string
+        targetPath: string
+        userId?: string
+        projectSlug?: string
+    }): Promise<string>
+    deleteLanguageFile(args: {
+        componentName: string
+        objectPath: string
+        userId?: string
+        projectSlug?: string
+    }): Promise<void>
 
-    uploadMetadataContent(args: { componentName: string; schemaKind: 'jsonSchema' | 'eventSchema' | 'llms.txt'; content: Uint8Array; userId?: string; projectSlug?: string }): Promise<ComponentObject>
-    downloadMetadata(args: { componentName: string; schemaKind: string; targetPath: string; userId?: string; projectSlug?: string }): Promise<string>
-    deleteMetadata(args: { componentName: string; schemaKind: string; userId?: string; projectSlug?: string }): Promise<void>
+    uploadMetadataContent(args: {
+        componentName: string
+        schemaKind: 'jsonSchema' | 'eventSchema' | 'llms.txt'
+        content: Uint8Array
+        userId?: string
+        projectSlug?: string
+    }): Promise<ComponentObject>
+    downloadMetadata(args: {
+        componentName: string
+        schemaKind: string
+        targetPath: string
+        userId?: string
+        projectSlug?: string
+    }): Promise<string>
+    deleteMetadata(args: {
+        componentName: string
+        schemaKind: string
+        userId?: string
+        projectSlug?: string
+    }): Promise<void>
 }
 ```
 
 Constants:
+
 ```ts
 const STORAGE_LANGUAGE = 'typescript'
 const METADATA_CONTENT_TYPES = {
@@ -146,6 +207,7 @@ const DEFAULT_TIMEOUT_MS = 30_000
 ```
 
 URL construction mirrors Python 1:1:
+
 - `GET /components/{user}/{slug}` → `listProjectComponents`
 - `GET/DELETE /components/{user}/{slug}/{name}` → `listComponent` / `deleteComponent`
 - `PUT /components/{user}/{slug}/{name}/batch/typescript` (multipart) → `uploadLanguageFilesBatch`
@@ -162,6 +224,7 @@ Path safety: `_normalize_object_path` rejects `.` / `..` / empty segments /
 leading `/` — identical rules to Python.
 
 Multipart upload for batch PUT:
+
 - One `object_paths` field per file (plain-text, relative POSIX path)
 - One `files` field per file with the corresponding file body + guessed content-type
 - `object_paths[i]` corresponds to `files[i]`
@@ -172,7 +235,7 @@ Multipart upload for batch PUT:
 ```ts
 export type CardMetadata = {
     component: string
-    input: false          // always false for pieui
+    input: false // always false for pieui
     ajax: boolean
     io: boolean
 }
@@ -201,6 +264,7 @@ Metadata is serialized exactly like Python for byte-compatible payloads:
 ### 5. Command handlers
 
 **`commands/cardRemote/push.ts`**
+
 1. `settings = loadSettings()`; require `userId` and validate `componentName` shape (`/^[A-Z][A-Za-z0-9]+$/`)
 2. `componentDir = path.join(settings.componentsDir, componentName)`; error if missing
 3. `service.uploadComponentDirectory({ componentName, sourceDir: componentDir })` — all files posted relative to `componentDir`
@@ -209,6 +273,7 @@ Metadata is serialized exactly like Python for byte-compatible payloads:
 6. Log: uploaded file count, remote prefix, metadata key, and the ajax/io flags
 
 **`commands/cardRemote/pull.ts`**
+
 1. Require `userId` and `project`
 2. Create `componentDir.pieui-tmp-<pid>-<ts>/`
 3. `service.downloadComponentDirectory({ componentName, targetDir: tmpDir })` — writes each file under the language prefix
@@ -216,11 +281,13 @@ Metadata is serialized exactly like Python for byte-compatible payloads:
 5. If tmp is empty: clean up tmp, throw "no typescript files found for remote component"
 
 **`commands/cardRemote/list.ts`**
+
 1. Resolve `userId = cliUser || settings.userId`, `slug = cliProject || settings.project`
 2. `service.listProjectComponents({ userId, projectSlug: slug })`
 3. Print header, then sorted names one per line
 
 **`commands/cardRemote/remove.ts`**
+
 1. Require `userId` and `project`
 2. `service.deleteComponent({ componentName })`
 3. Log success
@@ -228,27 +295,32 @@ Metadata is serialized exactly like Python for byte-compatible payloads:
 ## CLI wiring changes
 
 `src/code/types.ts`:
+
 - Add `CardRemoteAction = 'push' | 'pull' | 'list' | 'remove'`
 - Extend `CardAction` to `'add' | 'remote'`
 - Add `cardRemoteAction?`, `remoteUserId?`, `remoteProjectSlug?` to `ParsedArgs`
 
 `src/code/args.ts`:
+
 - In the `command === 'card'` branch, detect `argv[1] === 'remote'` and parse
   the next token as `cardRemoteAction`, then positional component name and the
   `--user` / `--project` flags
 - Remove the old `pull` / `push` / `remote-remove` parsing branches
 
 `src/cli.ts`:
+
 - In the `'card'` case: if `cardAction === 'remote'`, dispatch to the four new
   handlers based on `cardRemoteAction`
 - Delete the top-level `'push'` / `'pull'` / `'remote-remove'` cases
 - Delete `pushCommand` / `pullCommand` / `remoteRemoveCommand` imports
 
 `printUsage()`:
+
 - Drop `push <Name>` / `pull <Name>` / `remote-remove <Name>` lines
 - Add `card remote push|pull|list|remove <Name>` and examples
 
 Files to delete:
+
 - `src/code/commands/push.ts`
 - `src/code/commands/pull.ts`
 - `src/code/commands/remoteRemove.ts`
@@ -261,34 +333,35 @@ helpers. Each test spins up a mock server on an ephemeral port and sets
 `PIE_API_BASE_URL` in the child env.
 
 Covered cases (minimum):
+
 - `card remote push AlertsCard`
-  - walks `piecomponents/AlertsCard/` recursively
-  - sends **PUT** to `/components/demo-user/demo/AlertsCard/batch/typescript`
-  - multipart body has one `object_paths` per file + one `files` per file, paths are POSIX-relative (incl. nested `ui/view.tsx`)
-  - sends follow-up **PUT** to `/components/.../metadata/eventSchema` with content-type `application/json` and body matching `{component, input, ajax, io}` with sorted keys
-  - sends `x-api-key` when `PIE_API_KEY` is set; omits when not
-  - surfaces 5xx with server body
+    - walks `piecomponents/AlertsCard/` recursively
+    - sends **PUT** to `/components/demo-user/demo/AlertsCard/batch/typescript`
+    - multipart body has one `object_paths` per file + one `files` per file, paths are POSIX-relative (incl. nested `ui/view.tsx`)
+    - sends follow-up **PUT** to `/components/.../metadata/eventSchema` with content-type `application/json` and body matching `{component, input, ajax, io}` with sorted keys
+    - sends `x-api-key` when `PIE_API_KEY` is set; omits when not
+    - surfaces 5xx with server body
 - `card remote push` fails when component dir missing, when `PIE_USER_ID` unset
 - `card remote pull SyncCard`
-  - **GET** `/components/.../SyncCard`, then **GET** per-file under the typescript prefix
-  - writes into a temp dir and swaps into `piecomponents/SyncCard/` atomically
-  - overwrites existing dir contents
-  - rejects unsafe object paths
-  - 4xx / connection-refused → clean error (no stack trace)
+    - **GET** `/components/.../SyncCard`, then **GET** per-file under the typescript prefix
+    - writes into a temp dir and swaps into `piecomponents/SyncCard/` atomically
+    - overwrites existing dir contents
+    - rejects unsafe object paths
+    - 4xx / connection-refused → clean error (no stack trace)
 - `card remote list`
-  - **GET** `/components/demo-user/demo`
-  - prints sorted `components[].name`
-  - `--user` / `--project` override env settings
-  - error when neither env nor flag provides user/project
+    - **GET** `/components/demo-user/demo`
+    - prints sorted `components[].name`
+    - `--user` / `--project` override env settings
+    - error when neither env nor flag provides user/project
 - `card remote remove`
-  - **DELETE** `/components/demo-user/demo/LegacyCard`
-  - surfaces 404 with server body
+    - **DELETE** `/components/demo-user/demo/LegacyCard`
+    - surfaces 404 with server body
 - Unit tests for `extractCardMetadata`:
-  - `--ajax` template → `{ ajax: true, io: false }`
-  - `--io` template → `{ ajax: false, io: true }`
-  - `--ajax --io` → both true
-  - bare template → both false
-  - missing file → both false, no throw
+    - `--ajax` template → `{ ajax: true, io: false }`
+    - `--io` template → `{ ajax: false, io: true }`
+    - `--ajax --io` → both true
+    - bare template → both false
+    - missing file → both false, no throw
 - Args required: `card remote push`, `pull`, `remove` without a name → exit 1
 - Legacy `push` / `pull` / `remote-remove` commands no longer accepted (exit 1 with usage)
 

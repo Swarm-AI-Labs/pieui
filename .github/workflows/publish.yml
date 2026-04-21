@@ -28,8 +28,8 @@ jobs:
             - name: Build package
               run: bun run build
 
-#            - name: Run step4 build/export checks
-#              run: bun run test:step4
+            #            - name: Run step4 build/export checks
+            #              run: bun run test:step4
 
             - name: Setup Node.js for npm publishing
               uses: actions/setup-node@v4

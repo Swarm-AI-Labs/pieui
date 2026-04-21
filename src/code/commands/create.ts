@@ -47,7 +47,10 @@ const resolveTemplatePublicDir = () => {
 const scaffoldCreateAppFiles = (appDir: string) => {
     clearDirectory(path.join(appDir, 'public'))
 
-    writeFile(path.join(appDir, 'app', '_shared', 'page.tsx'), sharedPageTemplate)
+    writeFile(
+        path.join(appDir, 'app', '_shared', 'page.tsx'),
+        sharedPageTemplate
+    )
     writeFile(path.join(appDir, 'app', 'page.tsx'), homePageTemplate)
     writeFile(path.join(appDir, 'app', 'layout.tsx'), rootLayoutTemplate)
     fs.rmSync(path.join(appDir, 'app', '_shared', 'simple.tsx'), {
@@ -59,7 +62,9 @@ const scaffoldCreateAppFiles = (appDir: string) => {
         path.join(appDir, 'components', 'LoadingScreen.tsx'),
         loadingScreenTemplate
     )
-    fs.rmSync(path.join(appDir, 'components', 'ErrorToast.tsx'), { force: true })
+    fs.rmSync(path.join(appDir, 'components', 'ErrorToast.tsx'), {
+        force: true,
+    })
     fs.cpSync(resolveTemplatePublicDir(), path.join(appDir, 'public'), {
         recursive: true,
         force: true,

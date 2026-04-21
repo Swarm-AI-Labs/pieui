@@ -1,4 +1,6 @@
-export const pageTemplate = (pageComponentName: string): string => `"use client";
+export const pageTemplate = (
+    pageComponentName: string
+): string => `"use client";
 
 import PiePage from "@/app/_shared/page";
 import { Suspense } from "react";

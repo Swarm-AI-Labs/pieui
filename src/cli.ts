@@ -34,7 +34,7 @@ const main = async () => {
         cardIo,
         cardRemoteAction,
         remoteUserId,
-        remoteProjectSlug,
+        remoteProject,
         pageAction,
         pagePath,
     } = parseArgs(process.argv.slice(2))
@@ -71,18 +71,23 @@ const main = async () => {
         case 'card':
             if (cardAction === 'add') {
                 if (!componentName) {
-                    console.error('[pieui] Error: Component name is required for card add command')
+                    console.error(
+                        '[pieui] Error: Component name is required for card add command'
+                    )
                     printUsage()
                     process.exit(1)
                 }
-                addCommand(componentName, componentType, { ajax: cardAjax, io: cardIo })
+                addCommand(componentName, componentType, {
+                    ajax: cardAjax,
+                    io: cardIo,
+                })
                 return
             }
             if (cardAction === 'remote') {
                 if (cardRemoteAction === 'list') {
                     await cardRemoteListCommand({
                         userId: remoteUserId,
-                        projectSlug: remoteProjectSlug,
+                        project: remoteProjectSlug,
                     })
                     return
                 }
@@ -105,11 +110,15 @@ const main = async () => {
                     await cardRemoteRemoveCommand(componentName)
                     return
                 }
-                console.error('[pieui] Error: Supported card remote subcommands: push, pull, list, remove')
+                console.error(
+                    '[pieui] Error: Supported card remote subcommands: push, pull, list, remove'
+                )
                 printUsage()
                 process.exit(1)
             }
-            console.error('[pieui] Error: Supported card subcommands: add, remote')
+            console.error(
+                '[pieui] Error: Supported card subcommands: add, remote'
+            )
             printUsage()
             process.exit(1)
 
@@ -129,9 +138,7 @@ const main = async () => {
 
         case 'page':
             if (pageAction !== 'add') {
-                console.error(
-                    '[pieui] Error: Supported page subcommands: add'
-                )
+                console.error('[pieui] Error: Supported page subcommands: add')
                 printUsage()
                 process.exit(1)
             }

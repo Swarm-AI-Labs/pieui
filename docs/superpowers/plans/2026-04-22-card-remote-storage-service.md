@@ -15,6 +15,7 @@
 ## File structure (created/modified/deleted)
 
 **Created:**
+
 - `src/code/services/models.ts` — request/response types
 - `src/code/services/settings.ts` — `Settings`, `loadSettings()`, `parseDotenv()`
 - `src/code/services/storage.ts` — `PieStorageService`, `PieStorageError`
@@ -28,12 +29,14 @@
 - `src/tests/cardMetadata.test.ts` — unit tests for metadata extractor
 
 **Modified:**
+
 - `src/code/types.ts` — add `CardRemoteAction`, extend `CardAction`, new `ParsedArgs` fields
 - `src/code/args.ts` — parse `card remote <action>` + `--user` / `--project`; drop legacy branches
 - `src/cli.ts` — dispatch `card remote`; drop legacy top-level push/pull/remote-remove cases
 - `src/__tests__/step2-remote.test.cjs` — rewritten against new command surface
 
 **Deleted:**
+
 - `src/code/commands/push.ts`
 - `src/code/commands/pull.ts`
 - `src/code/commands/remoteRemove.ts`
@@ -51,6 +54,7 @@
 ### Task 1: Scaffold `services/` dir + empty module placeholders
 
 **Files:**
+
 - Create: `src/code/services/models.ts`
 - Create: `src/code/services/settings.ts`
 - Create: `src/code/services/storage.ts`
@@ -58,18 +62,21 @@
 - [ ] **Step 1: Create empty modules so subsequent imports compile**
 
 `src/code/services/models.ts`:
+
 ```ts
 // filled in Task 4
 export {}
 ```
 
 `src/code/services/settings.ts`:
+
 ```ts
 // filled in Task 3
 export {}
 ```
 
 `src/code/services/storage.ts`:
+
 ```ts
 // filled in Task 5+
 export {}
@@ -92,12 +99,14 @@ git commit -m "chore: scaffold services/ modules for card remote"
 ### Task 2: `.env` parser (TDD)
 
 **Files:**
+
 - Create: `src/tests/settings.test.ts`
 - Modify: `src/code/services/settings.ts`
 
 - [ ] **Step 1: Write the failing test**
 
 `src/tests/settings.test.ts`:
+
 ```ts
 import { describe, test, expect } from 'bun:test'
 import { parseDotenv } from '../code/services/settings'
@@ -108,15 +117,17 @@ describe('parseDotenv', () => {
     })
 
     test('strips matching double and single quotes', () => {
-        expect(
-            parseDotenv(`A="hello world"\nB='x y'\n`)
-        ).toEqual({ A: 'hello world', B: 'x y' })
+        expect(parseDotenv(`A="hello world"\nB='x y'\n`)).toEqual({
+            A: 'hello world',
+            B: 'x y',
+        })
     })
 
     test('ignores blank lines and # comments', () => {
-        expect(
-            parseDotenv(`# comment\n\nA=1\n# another\nB=2\n`)
-        ).toEqual({ A: '1', B: '2' })
+        expect(parseDotenv(`# comment\n\nA=1\n# another\nB=2\n`)).toEqual({
+            A: '1',
+            B: '2',
+        })
     })
 
     test('ignores malformed lines without =', () => {
@@ -137,6 +148,7 @@ Expected: FAIL — `parseDotenv is not a function`.
 - [ ] **Step 3: Implement `parseDotenv`**
 
 Replace `src/code/services/settings.ts` contents with:
+
 ```ts
 export const parseDotenv = (content: string): Record<string, string> => {
     const out: Record<string, string> = {}
@@ -178,12 +190,14 @@ git commit -m "feat(services): parseDotenv for card remote settings"
 ### Task 3: `loadSettings()` (TDD)
 
 **Files:**
+
 - Modify: `src/code/services/settings.ts`
 - Modify: `src/tests/settings.test.ts`
 
 - [ ] **Step 1: Add failing tests for `loadSettings`**
 
 Append to `src/tests/settings.test.ts`:
+
 ```ts
 import fs from 'node:fs'
 import os from 'node:os'
@@ -193,7 +207,10 @@ import { loadSettings } from '../code/services/settings'
 const mkTempDir = (prefix: string) =>
     fs.mkdtempSync(path.join(os.tmpdir(), prefix))
 
-const runWithEnv = <T>(env: Record<string, string | undefined>, fn: () => T): T => {
+const runWithEnv = <T>(
+    env: Record<string, string | undefined>,
+    fn: () => T
+): T => {
     const prev: Record<string, string | undefined> = {}
     for (const [k, v] of Object.entries(env)) {
         prev[k] = process.env[k]
@@ -237,7 +254,11 @@ describe('loadSettings', () => {
         const cwd = path.join(base, 'my-pieui-app')
         fs.mkdirSync(cwd, { recursive: true })
         const settings = runWithEnv(
-            { PIE_USER_ID: 'u', PIE_PROJECT: undefined, PIE_PROJECT_SLUG: undefined },
+            {
+                PIE_USER_ID: 'u',
+                PIE_PROJECT: undefined,
+                PIE_PROJECT_SLUG: undefined,
+            },
             () => loadSettings(cwd)
         )
         expect(settings.project).toBe('my-pieui-app')
@@ -302,6 +323,7 @@ Expected: FAIL — `loadSettings is not a function`.
 - [ ] **Step 3: Implement `loadSettings`**
 
 Replace `src/code/services/settings.ts` with:
+
 ```ts
 import fs from 'node:fs'
 import path from 'node:path'
@@ -364,10 +386,9 @@ export const loadSettings = (cwd: string = process.cwd()): Settings => {
     const componentsDir = path.isAbsolute(componentsDirRaw)
         ? componentsDirRaw
         : path.join(cwd, componentsDirRaw)
-    const apiBaseUrl = (pick('PIE_API_BASE_URL') || DEFAULT_API_BASE_URL).replace(
-        /\/+$/,
-        ''
-    )
+    const apiBaseUrl = (
+        pick('PIE_API_BASE_URL') || DEFAULT_API_BASE_URL
+    ).replace(/\/+$/, '')
 
     return {
         userId,
@@ -397,11 +418,13 @@ git commit -m "feat(services): loadSettings reads PIE_* env + .env fallback"
 ### Task 4: Service response models
 
 **Files:**
+
 - Modify: `src/code/services/models.ts`
 
 - [ ] **Step 1: Replace `models.ts` with real types**
 
 `src/code/services/models.ts`:
+
 ```ts
 export type ComponentObject = {
     key: string
@@ -492,12 +515,14 @@ git commit -m "feat(services): component response models + snake_case parsers"
 ### Task 5: `PieStorageService` — URL helpers + path safety (TDD)
 
 **Files:**
+
 - Create: `src/tests/storage.test.ts`
 - Modify: `src/code/services/storage.ts`
 
 - [ ] **Step 1: Add failing unit tests for URL and path helpers**
 
 `src/tests/storage.test.ts`:
+
 ```ts
 import { describe, test, expect } from 'bun:test'
 import {
@@ -525,7 +550,9 @@ describe('normalizeObjectPath', () => {
         expect(normalizeObjectPath('ui\\view.tsx')).toBe('ui/view.tsx')
     })
     test('rejects absolute paths', () => {
-        expect(() => normalizeObjectPath('/etc/passwd')).toThrow(PieStorageError)
+        expect(() => normalizeObjectPath('/etc/passwd')).toThrow(
+            PieStorageError
+        )
     })
     test('rejects .. segments', () => {
         expect(() => normalizeObjectPath('../escape')).toThrow(PieStorageError)
@@ -534,7 +561,9 @@ describe('normalizeObjectPath', () => {
         expect(() => normalizeObjectPath('./ok')).toThrow(PieStorageError)
     })
     test('rejects empty segments', () => {
-        expect(() => normalizeObjectPath('ui//view.tsx')).toThrow(PieStorageError)
+        expect(() => normalizeObjectPath('ui//view.tsx')).toThrow(
+            PieStorageError
+        )
     })
     test('url-encodes spaces and special chars in segments', () => {
         expect(normalizeObjectPath('ui/my file.tsx')).toBe('ui/my%20file.tsx')
@@ -567,9 +596,7 @@ describe('PieStorageService URL construction', () => {
     })
 
     test('componentUrl throws when no user_id configured', () => {
-        const s = new PieStorageService(
-            makeSettings({ userId: undefined })
-        )
+        const s = new PieStorageService(makeSettings({ userId: undefined }))
         expect(() => s.componentUrl({ componentName: 'Card' })).toThrow(
             PieStorageError
         )
@@ -594,7 +621,10 @@ describe('PieStorageService URL construction', () => {
 
     test('metadataUrl encodes schema kind', () => {
         expect(
-            service.metadataUrl({ componentName: 'Card', schemaKind: 'eventSchema' })
+            service.metadataUrl({
+                componentName: 'Card',
+                schemaKind: 'eventSchema',
+            })
         ).toBe(
             'https://example.test/api/components/demo-user/demo-proj/Card/metadata/eventSchema'
         )
@@ -610,6 +640,7 @@ Expected: FAIL — module exports missing.
 - [ ] **Step 3: Implement URL helpers in `storage.ts`**
 
 Replace `src/code/services/storage.ts` with:
+
 ```ts
 import type { Settings } from './settings'
 
@@ -647,7 +678,10 @@ export class PieStorageService {
         this.baseUrl = settings.apiBaseUrl.replace(/\/+$/, '')
     }
 
-    projectComponentsUrl(args: { userId: string; projectSlug: string }): string {
+    projectComponentsUrl(args: {
+        userId: string
+        projectSlug: string
+    }): string {
         return `${this.baseUrl}/components/${pathPart(args.userId)}/${pathPart(args.projectSlug)}`
     }
 
@@ -712,12 +746,14 @@ git commit -m "feat(services): PieStorageService URL helpers + path safety"
 ### Task 6: Storage — `listProjectComponents`, `listComponent`, `deleteComponent` (TDD)
 
 **Files:**
+
 - Modify: `src/tests/storage.test.ts`
 - Modify: `src/code/services/storage.ts`
 
 - [ ] **Step 1: Add failing tests using a local HTTP server**
 
 Append to `src/tests/storage.test.ts`:
+
 ```ts
 import http from 'node:http'
 import type { AddressInfo } from 'node:net'
@@ -730,8 +766,16 @@ type Recorded = {
 }
 
 const startServer = async (
-    handler: (req: http.IncomingMessage, res: http.ServerResponse, body: Buffer) => void
-): Promise<{ baseUrl: string; close: () => Promise<void>; requests: Recorded[] }> => {
+    handler: (
+        req: http.IncomingMessage,
+        res: http.ServerResponse,
+        body: Buffer
+    ) => void
+): Promise<{
+    baseUrl: string
+    close: () => Promise<void>
+    requests: Recorded[]
+}> => {
     const requests: Recorded[] = []
     const server = http.createServer((req, res) => {
         const chunks: Buffer[] = []
@@ -809,7 +853,13 @@ describe('PieStorageService.listProjectComponents', () => {
 
     test('omits x-api-key when settings.apiKey is absent', async () => {
         const mock = await startServer((_req, res) => {
-            res.end(JSON.stringify({ user_id: 'u', project_slug: 's', components: [] }))
+            res.end(
+                JSON.stringify({
+                    user_id: 'u',
+                    project_slug: 's',
+                    components: [],
+                })
+            )
         })
         try {
             const service = new PieStorageService(
@@ -818,7 +868,10 @@ describe('PieStorageService.listProjectComponents', () => {
                     apiKey: undefined,
                 })
             )
-            await service.listProjectComponents({ userId: 'u', projectSlug: 's' })
+            await service.listProjectComponents({
+                userId: 'u',
+                projectSlug: 's',
+            })
             expect(mock.requests[0]?.headers['x-api-key']).toBeUndefined()
         } finally {
             await mock.close()
@@ -834,7 +887,9 @@ describe('PieStorageService.listComponent', () => {
                     prefix: 'users/u/projects/s/components/Card/',
                     typescript: {
                         objects: [
-                            { key: 'users/u/projects/s/components/Card/typescript/ui/view.tsx' },
+                            {
+                                key: 'users/u/projects/s/components/Card/typescript/ui/view.tsx',
+                            },
                         ],
                     },
                 })
@@ -883,6 +938,7 @@ Expected: FAIL — methods missing.
 - [ ] **Step 3: Extend `storage.ts` with list/delete + shared request helpers**
 
 Append to `src/code/services/storage.ts`:
+
 ```ts
 import {
     parseComponentObject,
@@ -902,7 +958,11 @@ type RequestOptions = {
     timeoutMs?: number
 }
 
-const cleanFetchError = (method: string, url: string, error: unknown): Error => {
+const cleanFetchError = (
+    method: string,
+    url: string,
+    error: unknown
+): Error => {
     const msg = error instanceof Error ? error.message : String(error)
     return new PieStorageError(`${method} ${url} failed: ${msg}`)
 }
@@ -913,6 +973,7 @@ declare module './storage' {
 ```
 
 Then extend the `PieStorageService` class (modify the existing class body) by appending these members **inside the class** (after `metadataUrl`):
+
 ```ts
     async listProjectComponents(args: {
         userId: string
@@ -998,12 +1059,14 @@ git commit -m "feat(services): list/delete component endpoints"
 ### Task 7: Storage — metadata PUT/GET/DELETE (TDD)
 
 **Files:**
+
 - Modify: `src/tests/storage.test.ts`
 - Modify: `src/code/services/storage.ts`
 
 - [ ] **Step 1: Add failing tests**
 
 Append to `src/tests/storage.test.ts`:
+
 ```ts
 describe('PieStorageService metadata', () => {
     test('uploadMetadataContent PUTs with correct content-type and body', async () => {
@@ -1077,6 +1140,7 @@ Expected: FAIL — methods missing.
 - [ ] **Step 3: Add metadata methods to `PieStorageService`**
 
 Add constant near the top of `storage.ts` (next to `STORAGE_LANGUAGE`):
+
 ```ts
 export type SchemaKind = 'jsonSchema' | 'eventSchema' | 'llms.txt'
 
@@ -1098,6 +1162,7 @@ const metadataContentType = (kind: string): string => {
 ```
 
 Append these methods inside the `PieStorageService` class:
+
 ```ts
     async uploadMetadataContent(args: {
         componentName: string
@@ -1164,12 +1229,14 @@ git commit -m "feat(services): metadata upload/download/delete"
 ### Task 8: Storage — batch language upload (TDD)
 
 **Files:**
+
 - Modify: `src/tests/storage.test.ts`
 - Modify: `src/code/services/storage.ts`
 
 - [ ] **Step 1: Add failing tests**
 
 Append to `src/tests/storage.test.ts`:
+
 ```ts
 import fsNode from 'node:fs'
 import osNode from 'node:os'
@@ -1214,7 +1281,9 @@ const parseMultipart = (
 
 describe('PieStorageService.uploadLanguageFilesBatch', () => {
     test('PUTs multipart with object_paths + files for each entry', async () => {
-        const tmp = fsNode.mkdtempSync(pathNode.join(osNode.tmpdir(), 'pieui-storage-batch-'))
+        const tmp = fsNode.mkdtempSync(
+            pathNode.join(osNode.tmpdir(), 'pieui-storage-batch-')
+        )
         const aFile = writeTmpFile(tmp, 'index.ts', 'export {}\n')
         const bFile = writeTmpFile(tmp, 'ui/view.tsx', 'export default null\n')
 
@@ -1248,9 +1317,16 @@ describe('PieStorageService.uploadLanguageFilesBatch', () => {
             expect(req.url).toBe(
                 '/api/components/demo-user/demo-proj/Card/batch/typescript'
             )
-            const parts = parseMultipart(req.body, String(req.headers['content-type']))
-            const objectPaths = parts.filter((p) => p.name === 'object_paths').map((p) => p.value)
-            const files = parts.filter((p) => p.name === 'files').map((p) => p.value)
+            const parts = parseMultipart(
+                req.body,
+                String(req.headers['content-type'])
+            )
+            const objectPaths = parts
+                .filter((p) => p.name === 'object_paths')
+                .map((p) => p.value)
+            const files = parts
+                .filter((p) => p.name === 'files')
+                .map((p) => p.value)
             expect(objectPaths).toEqual(['index.ts', 'ui/view.tsx'])
             expect(files).toEqual(['export {}\n', 'export default null\n'])
         } finally {
@@ -1296,6 +1372,7 @@ Expected: FAIL — `uploadLanguageFilesBatch` missing.
 - [ ] **Step 3: Implement batch upload**
 
 Add these helpers above the class in `storage.ts`:
+
 ```ts
 const MIME_BY_EXT: Record<string, string> = {
     '.ts': 'application/typescript',
@@ -1319,6 +1396,7 @@ const guessMime = (filename: string): string => {
 ```
 
 Add method inside `PieStorageService`:
+
 ```ts
     async uploadLanguageFilesBatch(args: {
         componentName: string
@@ -1392,16 +1470,20 @@ git commit -m "feat(services): batch language file upload"
 ### Task 9: Storage — directory upload & download (TDD)
 
 **Files:**
+
 - Modify: `src/tests/storage.test.ts`
 - Modify: `src/code/services/storage.ts`
 
 - [ ] **Step 1: Add failing tests**
 
 Append to `src/tests/storage.test.ts`:
+
 ```ts
 describe('PieStorageService.uploadComponentDirectory', () => {
     test('walks sourceDir recursively and batches all files', async () => {
-        const tmp = fsNode.mkdtempSync(pathNode.join(osNode.tmpdir(), 'pieui-storage-dir-'))
+        const tmp = fsNode.mkdtempSync(
+            pathNode.join(osNode.tmpdir(), 'pieui-storage-dir-')
+        )
         writeTmpFile(tmp, 'index.ts', 'i')
         writeTmpFile(tmp, 'ui/view.tsx', 'v')
         writeTmpFile(tmp, 'types/index.ts', 't')
@@ -1418,7 +1500,10 @@ describe('PieStorageService.uploadComponentDirectory', () => {
                 sourceDir: tmp,
             })
             const req = mock.requests[0]!
-            const parts = parseMultipart(req.body, String(req.headers['content-type']))
+            const parts = parseMultipart(
+                req.body,
+                String(req.headers['content-type'])
+            )
             const objectPaths = parts
                 .filter((p) => p.name === 'object_paths')
                 .map((p) => p.value)
@@ -1489,7 +1574,10 @@ describe('PieStorageService.downloadComponentDirectory', () => {
                 fsNode.readFileSync(pathNode.join(tmpOut, 'index.ts'), 'utf8')
             ).toBe('export {}\n')
             expect(
-                fsNode.readFileSync(pathNode.join(tmpOut, 'ui/view.tsx'), 'utf8')
+                fsNode.readFileSync(
+                    pathNode.join(tmpOut, 'ui/view.tsx'),
+                    'utf8'
+                )
             ).toBe('export default null\n')
         } finally {
             await mock.close()
@@ -1507,6 +1595,7 @@ Expected: FAIL — missing methods.
 - [ ] **Step 3: Implement directory upload + per-file download + directory download**
 
 Add to `PieStorageService`:
+
 ```ts
     async uploadComponentDirectory(args: {
         componentName: string
@@ -1604,15 +1693,20 @@ git commit -m "feat(services): component directory upload/download"
 ### Task 10: `extractCardMetadata` (TDD)
 
 **Files:**
+
 - Create: `src/tests/cardMetadata.test.ts`
 - Create: `src/code/cardMetadata.ts`
 
 - [ ] **Step 1: Write failing tests**
 
 `src/tests/cardMetadata.test.ts`:
+
 ```ts
 import { describe, test, expect } from 'bun:test'
-import { extractCardMetadata, serializeCardMetadata } from '../code/cardMetadata'
+import {
+    extractCardMetadata,
+    serializeCardMetadata,
+} from '../code/cardMetadata'
 
 describe('extractCardMetadata', () => {
     test('plain scaffold → ajax=false, io=false', () => {
@@ -1687,7 +1781,9 @@ describe('serializeCardMetadata', () => {
             io: false,
         })
         const text = new TextDecoder().decode(bytes)
-        expect(text).toBe('{"ajax":true,"component":"B","input":false,"io":false}\n')
+        expect(text).toBe(
+            '{"ajax":true,"component":"B","input":false,"io":false}\n'
+        )
     })
 })
 ```
@@ -1700,6 +1796,7 @@ Expected: FAIL.
 - [ ] **Step 3: Implement `cardMetadata.ts`**
 
 `src/code/cardMetadata.ts`:
+
 ```ts
 export type CardMetadata = {
     component: string
@@ -1726,7 +1823,12 @@ export const extractCardMetadata = (
     source: string | undefined
 ): CardMetadata => {
     if (!source) {
-        return { component: componentName, input: false, ajax: false, io: false }
+        return {
+            component: componentName,
+            input: false,
+            ajax: false,
+            io: false,
+        }
     }
     return {
         component: componentName,
@@ -1762,6 +1864,7 @@ git commit -m "feat(cli): extractCardMetadata for card remote push"
 ### Task 11: CLI args — parse `card remote <action>` + deprecate legacy
 
 **Files:**
+
 - Modify: `src/code/types.ts`
 - Modify: `src/code/args.ts`
 - Delete: `src/code/commands/push.ts`, `src/code/commands/pull.ts`, `src/code/commands/remoteRemove.ts`
@@ -1770,86 +1873,91 @@ git commit -m "feat(cli): extractCardMetadata for card remote push"
 - [ ] **Step 1: Update types**
 
 Modify `src/code/types.ts`:
+
 - Change `export type CardAction = 'add'` to `export type CardAction = 'add' | 'remote'`
 - Add after `CardAction`: `export type CardRemoteAction = 'push' | 'pull' | 'list' | 'remove'`
 - Add to `ParsedArgs`:
-  ```ts
-      cardRemoteAction?: CardRemoteAction
-      remoteUserId?: string
-      remoteProjectSlug?: string
-  ```
+
+    ```ts
+        cardRemoteAction?: CardRemoteAction
+        remoteUserId?: string
+        remoteProjectSlug?: string
+    ```
 
 - [ ] **Step 2: Update `args.ts`**
 
 Replace the `card` parsing block in `src/code/args.ts` with:
+
 ```ts
-    if (command === 'card' && argv[1]) {
-        const validActions: CardAction[] = ['add', 'remote']
-        if (validActions.includes(argv[1] as CardAction)) {
-            cardAction = argv[1] as CardAction
-        }
+if (command === 'card' && argv[1]) {
+    const validActions: CardAction[] = ['add', 'remote']
+    if (validActions.includes(argv[1] as CardAction)) {
+        cardAction = argv[1] as CardAction
     }
+}
 ```
 
 Then after the existing `card add` parsing block, add a `card remote` parsing block:
+
 ```ts
-    if (command === 'card' && cardAction === 'remote' && argv[2]) {
-        const validRemoteActions: CardRemoteAction[] = [
-            'push',
-            'pull',
-            'list',
-            'remove',
-        ]
-        const action = argv[2] as CardRemoteAction
-        if (validRemoteActions.includes(action)) {
-            cardRemoteAction = action
-            const rest = argv.slice(3)
-            const flagIndexes = new Set<number>()
-            for (let i = 0; i < rest.length; i++) {
-                const tok = rest[i]
-                if (tok === '--user' && rest[i + 1]) {
-                    remoteUserId = rest[i + 1]
-                    flagIndexes.add(i)
-                    flagIndexes.add(i + 1)
-                    i++
-                } else if (tok === '--project' && rest[i + 1]) {
-                    remoteProjectSlug = rest[i + 1]
-                    flagIndexes.add(i)
-                    flagIndexes.add(i + 1)
-                    i++
-                } else if (tok?.startsWith('--user=')) {
-                    remoteUserId = tok.slice('--user='.length)
-                    flagIndexes.add(i)
-                } else if (tok?.startsWith('--project=')) {
-                    remoteProjectSlug = tok.slice('--project='.length)
-                    flagIndexes.add(i)
-                }
+if (command === 'card' && cardAction === 'remote' && argv[2]) {
+    const validRemoteActions: CardRemoteAction[] = [
+        'push',
+        'pull',
+        'list',
+        'remove',
+    ]
+    const action = argv[2] as CardRemoteAction
+    if (validRemoteActions.includes(action)) {
+        cardRemoteAction = action
+        const rest = argv.slice(3)
+        const flagIndexes = new Set<number>()
+        for (let i = 0; i < rest.length; i++) {
+            const tok = rest[i]
+            if (tok === '--user' && rest[i + 1]) {
+                remoteUserId = rest[i + 1]
+                flagIndexes.add(i)
+                flagIndexes.add(i + 1)
+                i++
+            } else if (tok === '--project' && rest[i + 1]) {
+                remoteProjectSlug = rest[i + 1]
+                flagIndexes.add(i)
+                flagIndexes.add(i + 1)
+                i++
+            } else if (tok?.startsWith('--user=')) {
+                remoteUserId = tok.slice('--user='.length)
+                flagIndexes.add(i)
+            } else if (tok?.startsWith('--project=')) {
+                remoteProjectSlug = tok.slice('--project='.length)
+                flagIndexes.add(i)
             }
-            const positionals = rest.filter((_, i) => !flagIndexes.has(i))
-            if (positionals[0]) componentName = positionals[0]
         }
+        const positionals = rest.filter((_, i) => !flagIndexes.has(i))
+        if (positionals[0]) componentName = positionals[0]
     }
+}
 ```
 
 Add the new imports/locals at the top of `parseArgs`:
+
 - `let cardRemoteAction: CardRemoteAction | undefined`
 - `let remoteUserId: string | undefined`
 - `let remoteProjectSlug: string | undefined`
 - `import type { ... CardRemoteAction }` alongside the existing imports.
 
 And remove the legacy parse block:
+
 ```ts
-    if (
-        (command === 'pull' ||
-            command === 'push' ||
-            command === 'remote-remove') &&
-        argv[1]
-    ) {
-        componentName = argv[1]
-    }
+if (
+    (command === 'pull' || command === 'push' || command === 'remote-remove') &&
+    argv[1]
+) {
+    componentName = argv[1]
+}
 ```
 
 Extend the return object to include the new fields:
+
 ```ts
         cardRemoteAction,
         remoteUserId,
@@ -1857,104 +1965,106 @@ Extend the return object to include the new fields:
 ```
 
 Update `printUsage`:
+
 - Delete the three lines documenting top-level `push`, `pull`, `remote-remove`
 - Add:
-  ```ts
-      console.log(
-          '  card remote push <ComponentName>         Upload piecomponents/<Name>/ to PieUI storage'
-      )
-      console.log(
-          '  card remote pull <ComponentName>         Download component from PieUI storage into piecomponents/<Name>/'
-      )
-      console.log(
-          '  card remote list [--user U] [--project S]  List remote components for the configured or specified user/project'
-      )
-      console.log(
-          '  card remote remove <ComponentName>       Delete component from PieUI storage'
-      )
-  ```
+    ```ts
+    console.log(
+        '  card remote push <ComponentName>         Upload piecomponents/<Name>/ to PieUI storage'
+    )
+    console.log(
+        '  card remote pull <ComponentName>         Download component from PieUI storage into piecomponents/<Name>/'
+    )
+    console.log(
+        '  card remote list [--user U] [--project S]  List remote components for the configured or specified user/project'
+    )
+    console.log(
+        '  card remote remove <ComponentName>       Delete component from PieUI storage'
+    )
+    ```
 - Replace the three trailing `push/pull/remote-remove` example lines with:
-  ```ts
-      console.log(
-          '  pieui card remote push ExchangeAlertsCard    # Upload component directory'
-      )
-      console.log(
-          '  pieui card remote pull ExchangeAlertsCard    # Download component directory'
-      )
-      console.log(
-          '  pieui card remote list                       # List remote components'
-      )
-      console.log(
-          '  pieui card remote remove ExchangeAlertsCard  # Delete remote component'
-      )
-  ```
+
+    ```ts
+    console.log(
+        '  pieui card remote push ExchangeAlertsCard    # Upload component directory'
+    )
+    console.log(
+        '  pieui card remote pull ExchangeAlertsCard    # Download component directory'
+    )
+    console.log(
+        '  pieui card remote list                       # List remote components'
+    )
+    console.log(
+        '  pieui card remote remove ExchangeAlertsCard  # Delete remote component'
+    )
+    ```
 
 - [ ] **Step 3: Update `src/cli.ts`**
 
 - Remove imports of `pushCommand`, `pullCommand`, `remoteRemoveCommand`.
 - Add imports:
-  ```ts
-  import { cardRemotePushCommand } from './code/commands/cardRemote/push'
-  import { cardRemotePullCommand } from './code/commands/cardRemote/pull'
-  import { cardRemoteListCommand } from './code/commands/cardRemote/list'
-  import { cardRemoteRemoveCommand } from './code/commands/cardRemote/remove'
-  ```
+    ```ts
+    import { cardRemotePushCommand } from './code/commands/cardRemote/push'
+    import { cardRemotePullCommand } from './code/commands/cardRemote/pull'
+    import { cardRemoteListCommand } from './code/commands/cardRemote/list'
+    import { cardRemoteRemoveCommand } from './code/commands/cardRemote/remove'
+    ```
 - Destructure new fields from `parseArgs`:
-  ```ts
-  const {
-      ...,
-      cardRemoteAction,
-      remoteUserId,
-      remoteProjectSlug,
-  } = parseArgs(process.argv.slice(2))
-  ```
+    ```ts
+    const {
+        ...,
+        cardRemoteAction,
+        remoteUserId,
+        remoteProjectSlug,
+    } = parseArgs(process.argv.slice(2))
+    ```
 - Replace the existing `card` case body with:
-  ```ts
-  case 'card':
-      if (cardAction === 'add') {
-          if (!componentName) {
-              console.error('[pieui] Error: Component name is required for card add command')
-              printUsage()
-              process.exit(1)
-          }
-          addCommand(componentName, componentType, { ajax: cardAjax, io: cardIo })
-          return
-      }
-      if (cardAction === 'remote') {
-          if (cardRemoteAction === 'list') {
-              await cardRemoteListCommand({
-                  userId: remoteUserId,
-                  projectSlug: remoteProjectSlug,
-              })
-              return
-          }
-          if (!componentName) {
-              console.error(
-                  `[pieui] Error: Component name is required for card remote ${cardRemoteAction ?? ''} command`
-              )
-              printUsage()
-              process.exit(1)
-          }
-          if (cardRemoteAction === 'push') {
-              await cardRemotePushCommand(componentName)
-              return
-          }
-          if (cardRemoteAction === 'pull') {
-              await cardRemotePullCommand(componentName)
-              return
-          }
-          if (cardRemoteAction === 'remove') {
-              await cardRemoteRemoveCommand(componentName)
-              return
-          }
-          console.error('[pieui] Error: Supported card remote subcommands: push, pull, list, remove')
-          printUsage()
-          process.exit(1)
-      }
-      console.error('[pieui] Error: Supported card subcommands: add, remote')
-      printUsage()
-      process.exit(1)
-  ```
+    ```ts
+    case 'card':
+        if (cardAction === 'add') {
+            if (!componentName) {
+                console.error('[pieui] Error: Component name is required for card add command')
+                printUsage()
+                process.exit(1)
+            }
+            addCommand(componentName, componentType, { ajax: cardAjax, io: cardIo })
+            return
+        }
+        if (cardAction === 'remote') {
+            if (cardRemoteAction === 'list') {
+                await cardRemoteListCommand({
+                    userId: remoteUserId,
+                    projectSlug: remoteProjectSlug,
+                })
+                return
+            }
+            if (!componentName) {
+                console.error(
+                    `[pieui] Error: Component name is required for card remote ${cardRemoteAction ?? ''} command`
+                )
+                printUsage()
+                process.exit(1)
+            }
+            if (cardRemoteAction === 'push') {
+                await cardRemotePushCommand(componentName)
+                return
+            }
+            if (cardRemoteAction === 'pull') {
+                await cardRemotePullCommand(componentName)
+                return
+            }
+            if (cardRemoteAction === 'remove') {
+                await cardRemoteRemoveCommand(componentName)
+                return
+            }
+            console.error('[pieui] Error: Supported card remote subcommands: push, pull, list, remove')
+            printUsage()
+            process.exit(1)
+        }
+        console.error('[pieui] Error: Supported card subcommands: add, remote')
+        printUsage()
+        process.exit(1)
+    ```
 - Delete the `case 'push':`, `case 'pull':`, `case 'remote-remove':` blocks.
 
 - [ ] **Step 4: Delete legacy files**
@@ -1968,31 +2078,42 @@ rm src/code/commands/push.ts src/code/commands/pull.ts src/code/commands/remoteR
 Create the four command files as stubs (filled in Tasks 12–15):
 
 `src/code/commands/cardRemote/push.ts`:
-```ts
-export const cardRemotePushCommand = async (_componentName: string): Promise<void> => {
-    throw new Error('not implemented')
-}
-```
 
-`src/code/commands/cardRemote/pull.ts`:
 ```ts
-export const cardRemotePullCommand = async (_componentName: string): Promise<void> => {
-    throw new Error('not implemented')
-}
-```
-
-`src/code/commands/cardRemote/list.ts`:
-```ts
-export const cardRemoteListCommand = async (
-    _options: { userId?: string; projectSlug?: string }
+export const cardRemotePushCommand = async (
+    _componentName: string
 ): Promise<void> => {
     throw new Error('not implemented')
 }
 ```
 
-`src/code/commands/cardRemote/remove.ts`:
+`src/code/commands/cardRemote/pull.ts`:
+
 ```ts
-export const cardRemoteRemoveCommand = async (_componentName: string): Promise<void> => {
+export const cardRemotePullCommand = async (
+    _componentName: string
+): Promise<void> => {
+    throw new Error('not implemented')
+}
+```
+
+`src/code/commands/cardRemote/list.ts`:
+
+```ts
+export const cardRemoteListCommand = async (_options: {
+    userId?: string
+    projectSlug?: string
+}): Promise<void> => {
+    throw new Error('not implemented')
+}
+```
+
+`src/code/commands/cardRemote/remove.ts`:
+
+```ts
+export const cardRemoteRemoveCommand = async (
+    _componentName: string
+): Promise<void> => {
     throw new Error('not implemented')
 }
 ```
@@ -2014,11 +2135,13 @@ git commit -m "feat(cli): parse card remote subcommands; drop legacy push/pull/r
 ### Task 12: `card remote list` command
 
 **Files:**
+
 - Modify: `src/code/commands/cardRemote/list.ts`
 
 - [ ] **Step 1: Implement the command**
 
 Replace `src/code/commands/cardRemote/list.ts` with:
+
 ```ts
 import { loadSettings } from '../../services/settings'
 import { PieStorageService } from '../../services/storage'
@@ -2071,18 +2194,17 @@ git commit -m "feat(cli): card remote list"
 ### Task 13: `card remote push` command
 
 **Files:**
+
 - Modify: `src/code/commands/cardRemote/push.ts`
 
 - [ ] **Step 1: Implement**
 
 Replace `src/code/commands/cardRemote/push.ts` with:
+
 ```ts
 import fs from 'node:fs'
 import path from 'node:path'
-import {
-    extractCardMetadata,
-    serializeCardMetadata,
-} from '../../cardMetadata'
+import { extractCardMetadata, serializeCardMetadata } from '../../cardMetadata'
 import { loadSettings } from '../../services/settings'
 import { PieStorageService } from '../../services/storage'
 
@@ -2102,7 +2224,10 @@ export const cardRemotePushCommand = async (
     }
 
     const componentDir = path.join(settings.componentsDir, componentName)
-    if (!fs.existsSync(componentDir) || !fs.statSync(componentDir).isDirectory()) {
+    if (
+        !fs.existsSync(componentDir) ||
+        !fs.statSync(componentDir).isDirectory()
+    ) {
         throw new Error(`Component directory not found: ${componentDir}`)
     }
 
@@ -2155,11 +2280,13 @@ git commit -m "feat(cli): card remote push uploads directory + eventSchema"
 ### Task 14: `card remote pull` command
 
 **Files:**
+
 - Modify: `src/code/commands/cardRemote/pull.ts`
 
 - [ ] **Step 1: Implement**
 
 Replace `src/code/commands/cardRemote/pull.ts` with:
+
 ```ts
 import fs from 'node:fs'
 import path from 'node:path'
@@ -2237,11 +2364,13 @@ git commit -m "feat(cli): card remote pull with atomic directory swap"
 ### Task 15: `card remote remove` command
 
 **Files:**
+
 - Modify: `src/code/commands/cardRemote/remove.ts`
 
 - [ ] **Step 1: Implement**
 
 Replace `src/code/commands/cardRemote/remove.ts` with:
+
 ```ts
 import { loadSettings } from '../../services/settings'
 import { PieStorageService } from '../../services/storage'
@@ -2282,11 +2411,13 @@ git commit -m "feat(cli): card remote remove"
 ### Task 16: Rewrite integration tests (`step2-remote.test.cjs`)
 
 **Files:**
+
 - Modify: `src/__tests__/step2-remote.test.cjs`
 
 - [ ] **Step 1: Replace the file with tests targeting the new CLI surface**
 
 Replace **all** contents of `src/__tests__/step2-remote.test.cjs` with:
+
 ```js
 const { test } = require('bun:test')
 const assert = require('node:assert/strict')
@@ -2409,7 +2540,13 @@ test('card remote push uploads all files + eventSchema metadata', async () => {
         'export default null\n'
     )
     writeFile(
-        path.join(projectDir, 'piecomponents', 'AlertsCard', 'types', 'index.ts'),
+        path.join(
+            projectDir,
+            'piecomponents',
+            'AlertsCard',
+            'types',
+            'index.ts'
+        ),
         'export interface AlertsCardData { pathname?: string; depsNames: string[]; kwargs: Record<string,string> }\n'
     )
 
@@ -2422,7 +2559,11 @@ test('card remote push uploads all files + eventSchema metadata', async () => {
             body,
         })
         if (req.url?.endsWith('/batch/typescript')) {
-            res.end(JSON.stringify({ objects: [{ key: 'k1' }, { key: 'k2' }, { key: 'k3' }] }))
+            res.end(
+                JSON.stringify({
+                    objects: [{ key: 'k1' }, { key: 'k2' }, { key: 'k3' }],
+                })
+            )
         } else {
             res.end(JSON.stringify({ key: 'meta-key' }))
         }
@@ -2444,15 +2585,24 @@ test('card remote push uploads all files + eventSchema metadata', async () => {
 
         const batch = requests[0]
         assert.equal(batch.method, 'PUT')
-        assert.equal(batch.url, '/api/components/u1/proj/AlertsCard/batch/typescript')
+        assert.equal(
+            batch.url,
+            '/api/components/u1/proj/AlertsCard/batch/typescript'
+        )
         assert.equal(batch.headers['x-api-key'], 'k')
         const parts = parseMultipart(batch.body, batch.headers['content-type'])
-        const paths = parts.filter((p) => p.name === 'object_paths').map((p) => p.value).sort()
+        const paths = parts
+            .filter((p) => p.name === 'object_paths')
+            .map((p) => p.value)
+            .sort()
         assert.deepEqual(paths, ['index.ts', 'types/index.ts', 'ui/view.tsx'])
 
         const meta = requests[1]
         assert.equal(meta.method, 'PUT')
-        assert.equal(meta.url, '/api/components/u1/proj/AlertsCard/metadata/eventSchema')
+        assert.equal(
+            meta.url,
+            '/api/components/u1/proj/AlertsCard/metadata/eventSchema'
+        )
         assert.equal(meta.headers['content-type'], 'application/json')
         const metaObj = JSON.parse(meta.body.toString('utf8').trim())
         assert.equal(metaObj.component, 'AlertsCard')
@@ -2493,7 +2643,10 @@ test('card remote push fails when PIE_USER_ID not set', async () => {
 
 test('card remote pull downloads dir and swaps atomically', async () => {
     const projectDir = mkTempDir('pieui-cr-pull-')
-    writeFile(path.join(projectDir, 'piecomponents', 'SyncCard', 'old.txt'), 'old\n')
+    writeFile(
+        path.join(projectDir, 'piecomponents', 'SyncCard', 'old.txt'),
+        'old\n'
+    )
 
     const { server, baseUrl } = await startServer((req, res) => {
         if (req.url?.endsWith('/SyncCard')) {
@@ -2534,7 +2687,9 @@ test('card remote pull downloads dir and swaps atomically', async () => {
         })
         assertOk(result, 'pull should succeed')
         assert.equal(
-            fs.existsSync(path.join(projectDir, 'piecomponents', 'SyncCard', 'old.txt')),
+            fs.existsSync(
+                path.join(projectDir, 'piecomponents', 'SyncCard', 'old.txt')
+            ),
             false
         )
         assert.equal(
@@ -2546,7 +2701,13 @@ test('card remote pull downloads dir and swaps atomically', async () => {
         )
         assert.equal(
             fs.readFileSync(
-                path.join(projectDir, 'piecomponents', 'SyncCard', 'ui', 'view.tsx'),
+                path.join(
+                    projectDir,
+                    'piecomponents',
+                    'SyncCard',
+                    'ui',
+                    'view.tsx'
+                ),
                 'utf8'
             ),
             'export default null\n'
@@ -2585,7 +2746,11 @@ test('card remote list prints sorted component names', async () => {
             JSON.stringify({
                 user_id: 'u',
                 project_slug: 's',
-                components: [{ name: 'Bravo' }, { name: 'alpha' }, { name: 'Charlie' }],
+                components: [
+                    { name: 'Bravo' },
+                    { name: 'alpha' },
+                    { name: 'Charlie' },
+                ],
             })
         )
     })
@@ -2615,20 +2780,14 @@ test('card remote list respects --user / --project overrides', async () => {
     let capturedUrl
     const { server, baseUrl } = await startServer((req, res) => {
         capturedUrl = req.url
-        res.end(JSON.stringify({ user_id: 'X', project_slug: 'Y', components: [] }))
+        res.end(
+            JSON.stringify({ user_id: 'X', project_slug: 'Y', components: [] })
+        )
     })
     try {
         const result = await runCli({
             cwd: projectDir,
-            args: [
-                'card',
-                'remote',
-                'list',
-                '--user',
-                'X',
-                '--project',
-                'Y',
-            ],
+            args: ['card', 'remote', 'list', '--user', 'X', '--project', 'Y'],
             env: {
                 PIE_API_BASE_URL: `${baseUrl}/api`,
                 PIE_USER_ID: '',
@@ -2751,6 +2910,7 @@ git commit -m "test(cli): rewrite step2-remote suite for card remote subcommands
 ### Task 17: Final build smoke + CHANGELOG note
 
 **Files:**
+
 - Modify: (optional) `README.md` or `AGENTS.md` if they mention old commands
 
 - [ ] **Step 1: Build the CLI and confirm usage text is correct**
@@ -2779,13 +2939,13 @@ git commit -m "docs: point to pieui card remote in readme/agents" || true
 ## Self-review checklist
 
 - [x] **Spec coverage** — every spec section maps to tasks:
-  - Storage service port → Tasks 5–9
-  - Settings loader → Tasks 2–3
-  - `card remote push/pull/list/remove` → Tasks 12–15
-  - Metadata detector → Task 10
-  - CLI wiring + legacy removal → Task 11
-  - Tests (unit + integration) → Tasks 2, 3, 5–10, 16
-  - `printUsage` update → Task 11
+    - Storage service port → Tasks 5–9
+    - Settings loader → Tasks 2–3
+    - `card remote push/pull/list/remove` → Tasks 12–15
+    - Metadata detector → Task 10
+    - CLI wiring + legacy removal → Task 11
+    - Tests (unit + integration) → Tasks 2, 3, 5–10, 16
+    - `printUsage` update → Task 11
 - [x] **No placeholders** — every step has concrete code or exact commands.
 - [x] **Type consistency** — `Settings.userId`/`apiKey`/`project`/`projectSlug`/`componentsDir`/`apiBaseUrl` used identically across settings, storage, and commands. `ComponentObject` / `ComponentTree` / `ProjectComponentList` shapes match the helpers exported from `models.ts`. `cardRemoteAction` / `remoteUserId` / `remoteProjectSlug` names match between `types.ts`, `args.ts`, `cli.ts`.
 - [x] **Commit cadence** — every task ends with a commit; no batched commits.
