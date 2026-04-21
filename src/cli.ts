@@ -87,7 +87,7 @@ const main = async () => {
                 if (cardRemoteAction === 'list') {
                     await cardRemoteListCommand({
                         userId: remoteUserId,
-                        project: remoteProjectSlug,
+                        project: remoteProject,
                     })
                     return
                 }

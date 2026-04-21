@@ -103,6 +103,7 @@
     },
     "dependencies": {
         "@openai/agents": "^0.4.5",
+        "@swarm.ing/pieui": "^2.0.17",
         "@tanstack/react-query": "^5.90.20",
         "@telegram-apps/sdk": "^3.11.8",
         "annyang": "^2.6.1",
