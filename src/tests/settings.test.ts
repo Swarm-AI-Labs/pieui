@@ -68,7 +68,6 @@ describe('loadSettings', () => {
         )
         expect(settings.userId).toBe('u1')
         expect(settings.project).toBe('proj')
-        expect(settings.projectSlug).toBe('proj')
         expect(settings.apiKey).toBe('k1')
         expect(settings.componentsDir).toBe(path.join(cwd, 'piecomponents'))
         expect(settings.apiBaseUrl).toBe('https://cdn-pieui.swarm.ing/api')
@@ -83,7 +82,6 @@ describe('loadSettings', () => {
             () => loadSettings(cwd)
         )
         expect(settings.project).toBe('my-pieui-app')
-        expect(settings.projectSlug).toBe('my-pieui-app')
     })
 
     test('reads values from .env in cwd when env var absent', () => {

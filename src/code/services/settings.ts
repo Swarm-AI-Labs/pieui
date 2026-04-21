@@ -27,7 +27,6 @@ export type Settings = {
     userId?: string
     apiKey?: string
     project: string
-    projectSlug: string
     componentsDir: string
     apiBaseUrl: string
 }
@@ -68,7 +67,6 @@ export const loadSettings = (cwd: string = process.cwd()): Settings => {
         userId,
         apiKey,
         project,
-        projectSlug: project,
         componentsDir,
         apiBaseUrl,
     }

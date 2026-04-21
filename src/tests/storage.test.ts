@@ -15,7 +15,6 @@ const makeSettings = (overrides: Partial<Settings> = {}): Settings => ({
     userId: 'demo-user',
     apiKey: 'demo-key',
     project: 'demo-proj',
-    projectSlug: 'demo-proj',
     componentsDir: '/tmp/pc',
     apiBaseUrl: 'https://example.test/api',
     ...overrides,
@@ -50,7 +49,7 @@ describe('PieStorageService URL construction', () => {
 
     test('projectComponentsUrl', () => {
         expect(
-            service.projectComponentsUrl({ userId: 'u', projectSlug: 's' })
+            service.projectComponentsUrl({ userId: 'u', project: 's' })
         ).toBe('https://example.test/api/components/u/s')
     })
 
@@ -65,7 +64,7 @@ describe('PieStorageService URL construction', () => {
             service.componentUrl({
                 componentName: 'Card',
                 userId: 'u2',
-                projectSlug: 's2',
+                project: 's2',
             })
         ).toBe('https://example.test/api/components/u2/s2/Card')
     })
@@ -160,10 +159,10 @@ describe('PieStorageService.listProjectComponents', () => {
             )
             const result = await service.listProjectComponents({
                 userId: 'u',
-                projectSlug: 's',
+                project: 's',
             })
             expect(result.userId).toBe('u')
-            expect(result.projectSlug).toBe('s')
+            expect(result.project).toBe('s')
             expect(result.components.map((c) => c.name)).toEqual(['B', 'a'])
             expect(mock.requests[0]?.method).toBe('GET')
             expect(mock.requests[0]?.url).toBe('/api/components/u/s')
@@ -183,7 +182,7 @@ describe('PieStorageService.listProjectComponents', () => {
                 makeSettings({ apiBaseUrl: `${mock.baseUrl}/api` })
             )
             await expect(
-                service.listProjectComponents({ userId: 'u', projectSlug: 's' })
+                service.listProjectComponents({ userId: 'u', project: 's' })
             ).rejects.toThrow(/failed: 404/)
         } finally {
             await mock.close()
@@ -201,7 +200,7 @@ describe('PieStorageService.listProjectComponents', () => {
                     apiKey: undefined,
                 })
             )
-            await service.listProjectComponents({ userId: 'u', projectSlug: 's' })
+            await service.listProjectComponents({ userId: 'u', project: 's' })
             expect(mock.requests[0]?.headers['x-api-key']).toBeUndefined()
         } finally {
             await mock.close()

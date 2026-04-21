@@ -94,17 +94,17 @@ export class PieStorageService {
         this.baseUrl = settings.apiBaseUrl.replace(/\/+$/, '')
     }
 
-    projectComponentsUrl(args: { userId: string; projectSlug: string }): string {
-        return `${this.baseUrl}/components/${pathPart(args.userId)}/${pathPart(args.projectSlug)}`
+    projectComponentsUrl(args: { userId: string; project: string }): string {
+        return `${this.baseUrl}/components/${pathPart(args.userId)}/${pathPart(args.project)}`
     }
 
     componentUrl(args: {
         componentName: string
         userId?: string
-        projectSlug?: string
+        project?: string
     }): string {
         const userId = args.userId ?? this.settings.userId
-        const slug = args.projectSlug ?? this.settings.projectSlug
+        const slug = args.project ?? this.settings.project
         if (!userId) {
             throw new PieStorageError(
                 'user_id is required (configure PIE_USER_ID or pass user_id)'
@@ -117,7 +117,7 @@ export class PieStorageService {
         componentName: string
         objectPath: string
         userId?: string
-        projectSlug?: string
+        project?: string
     }): string {
         const base = this.componentUrl(args)
         return `${base}/${STORAGE_LANGUAGE}/${normalizeObjectPath(args.objectPath)}`
@@ -126,7 +126,7 @@ export class PieStorageService {
     languageBatchUrl(args: {
         componentName: string
         userId?: string
-        projectSlug?: string
+        project?: string
     }): string {
         return `${this.componentUrl(args)}/batch/${STORAGE_LANGUAGE}`
     }
@@ -135,14 +135,14 @@ export class PieStorageService {
         componentName: string
         schemaKind: string
         userId?: string
-        projectSlug?: string
+        project?: string
     }): string {
         return `${this.componentUrl(args)}/metadata/${encodeURIComponent(args.schemaKind)}`
     }
 
     async listProjectComponents(args: {
         userId: string
-        projectSlug: string
+        project: string
     }): Promise<ProjectComponentList> {
         const url = this.projectComponentsUrl(args)
         const response = await this.request({ method: 'GET', url })
@@ -152,7 +152,7 @@ export class PieStorageService {
     async listComponent(args: {
         componentName: string
         userId?: string
-        projectSlug?: string
+        project?: string
     }): Promise<ComponentTree> {
         const url = this.componentUrl(args)
         const response = await this.request({ method: 'GET', url })
@@ -162,7 +162,7 @@ export class PieStorageService {
     async deleteComponent(args: {
         componentName: string
         userId?: string
-        projectSlug?: string
+        project?: string
     }): Promise<void> {
         const url = this.componentUrl(args)
         await this.request({ method: 'DELETE', url })
@@ -173,7 +173,7 @@ export class PieStorageService {
         schemaKind: SchemaKind
         content: Uint8Array
         userId?: string
-        projectSlug?: string
+        project?: string
     }): Promise<ComponentObject> {
         const contentType = metadataContentType(args.schemaKind)
         const url = this.metadataUrl(args)
@@ -192,7 +192,7 @@ export class PieStorageService {
         schemaKind: SchemaKind
         targetPath: string
         userId?: string
-        projectSlug?: string
+        project?: string
     }): Promise<string> {
         metadataContentType(args.schemaKind)
         const url = this.metadataUrl(args)
@@ -209,7 +209,7 @@ export class PieStorageService {
         componentName: string
         schemaKind: SchemaKind
         userId?: string
-        projectSlug?: string
+        project?: string
     }): Promise<void> {
         metadataContentType(args.schemaKind)
         await this.request({ method: 'DELETE', url: this.metadataUrl(args) })
@@ -219,7 +219,7 @@ export class PieStorageService {
         componentName: string
         files: Array<[string, string]>
         userId?: string
-        projectSlug?: string
+        project?: string
     }): Promise<ComponentObject[]> {
         const fs = await import('node:fs')
         const path = await import('node:path')
@@ -263,7 +263,7 @@ export class PieStorageService {
         componentName: string
         sourceDir: string
         userId?: string
-        projectSlug?: string
+        project?: string
     }): Promise<ComponentObject[]> {
         const fs = await import('node:fs')
         const path = await import('node:path')
@@ -290,7 +290,7 @@ export class PieStorageService {
             componentName: args.componentName,
             files,
             userId: args.userId,
-            projectSlug: args.projectSlug,
+            project: args.project,
         })
     }
 
@@ -299,7 +299,7 @@ export class PieStorageService {
         objectPath: string
         targetPath: string
         userId?: string
-        projectSlug?: string
+        project?: string
     }): Promise<string> {
         const fs = await import('node:fs')
         const path = await import('node:path')
@@ -315,7 +315,7 @@ export class PieStorageService {
         componentName: string
         targetDir: string
         userId?: string
-        projectSlug?: string
+        project?: string
     }): Promise<string[]> {
         const path = await import('node:path')
         const tree = await this.listComponent(args)

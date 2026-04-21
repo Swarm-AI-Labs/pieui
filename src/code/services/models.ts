@@ -18,7 +18,7 @@ export type ProjectComponentEntry = { name: string }
 
 export type ProjectComponentList = {
     userId: string
-    projectSlug: string
+    project: string
     components: ProjectComponentEntry[]
 }
 
@@ -53,7 +53,7 @@ export const parseProjectComponentList = (
             : typeof obj.userId === 'string'
               ? obj.userId
               : ''
-    const projectSlug =
+    const project =
         typeof obj.project_slug === 'string'
             ? obj.project_slug
             : typeof obj.projectSlug === 'string'
@@ -66,5 +66,5 @@ export const parseProjectComponentList = (
             return typeof e.name === 'string' ? { name: e.name } : null
         })
         .filter((e): e is ProjectComponentEntry => e !== null)
-    return { userId, projectSlug, components }
+    return { userId, project, components }
 }
