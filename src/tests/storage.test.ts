@@ -7,6 +7,9 @@ import {
 import type { Settings } from '../code/services/settings'
 import http from 'node:http'
 import type { AddressInfo } from 'node:net'
+import fsNode from 'node:fs'
+import osNode from 'node:os'
+import pathNode from 'node:path'
 
 const makeSettings = (overrides: Partial<Settings> = {}): Settings => ({
     userId: 'demo-user',
@@ -311,6 +314,118 @@ describe('PieStorageService metadata', () => {
             expect(mock.requests[0]?.url).toBe(
                 '/api/components/demo-user/demo-proj/Card/metadata/eventSchema'
             )
+        } finally {
+            await mock.close()
+        }
+    })
+})
+
+const writeTmpFile = (dir: string, rel: string, content: string): string => {
+    const abs = pathNode.join(dir, rel)
+    fsNode.mkdirSync(pathNode.dirname(abs), { recursive: true })
+    fsNode.writeFileSync(abs, content, 'utf8')
+    return abs
+}
+
+const parseMultipart = (
+    body: Buffer,
+    contentType: string
+): Array<{ name?: string; filename?: string; value: string }> => {
+    const m = /boundary=(?:"([^"]+)"|([^;]+))/i.exec(contentType || '')
+    if (!m) throw new Error('no boundary')
+    const boundary = m[1] || m[2]
+    const raw = body.toString('latin1')
+    return raw
+        .split(`--${boundary}`)
+        .slice(1, -1)
+        .map((block) => block.replace(/^\r\n/, '').replace(/\r\n$/, ''))
+        .map((block) => {
+            const [headerText, ...bodyParts] = block.split('\r\n\r\n')
+            const headers: Record<string, string> = {}
+            for (const line of headerText.split('\r\n')) {
+                const idx = line.indexOf(':')
+                if (idx === -1) continue
+                headers[line.slice(0, idx).trim().toLowerCase()] = line
+                    .slice(idx + 1)
+                    .trim()
+            }
+            const disposition = headers['content-disposition'] || ''
+            const name = /name="([^"]+)"/.exec(disposition)?.[1]
+            const filename = /filename="([^"]+)"/.exec(disposition)?.[1]
+            const value = bodyParts.join('\r\n\r\n').replace(/\r\n$/, '')
+            return { name, filename, value }
+        })
+}
+
+describe('PieStorageService.uploadLanguageFilesBatch', () => {
+    test('PUTs multipart with object_paths + files for each entry', async () => {
+        const tmp = fsNode.mkdtempSync(pathNode.join(osNode.tmpdir(), 'pieui-storage-batch-'))
+        const aFile = writeTmpFile(tmp, 'index.ts', 'export {}\n')
+        const bFile = writeTmpFile(tmp, 'ui/view.tsx', 'export default null\n')
+
+        const mock = await startServer((_req, res) => {
+            res.end(
+                JSON.stringify({
+                    objects: [
+                        { key: '…/Card/typescript/index.ts' },
+                        { key: '…/Card/typescript/ui/view.tsx' },
+                    ],
+                })
+            )
+        })
+        try {
+            const service = new PieStorageService(
+                makeSettings({ apiBaseUrl: `${mock.baseUrl}/api` })
+            )
+            const results = await service.uploadLanguageFilesBatch({
+                componentName: 'Card',
+                files: [
+                    ['index.ts', aFile],
+                    ['ui/view.tsx', bFile],
+                ],
+            })
+            expect(results.map((r) => r.key)).toEqual([
+                '…/Card/typescript/index.ts',
+                '…/Card/typescript/ui/view.tsx',
+            ])
+            const req = mock.requests[0]!
+            expect(req.method).toBe('PUT')
+            expect(req.url).toBe(
+                '/api/components/demo-user/demo-proj/Card/batch/typescript'
+            )
+            const parts = parseMultipart(req.body, String(req.headers['content-type']))
+            const objectPaths = parts.filter((p) => p.name === 'object_paths').map((p) => p.value)
+            const files = parts.filter((p) => p.name === 'files').map((p) => p.value)
+            expect(objectPaths).toEqual(['index.ts', 'ui/view.tsx'])
+            expect(files).toEqual(['export {}\n', 'export default null\n'])
+        } finally {
+            await mock.close()
+            fsNode.rmSync(tmp, { recursive: true, force: true })
+        }
+    })
+
+    test('throws when source file missing', () => {
+        const service = new PieStorageService(makeSettings())
+        expect(
+            service.uploadLanguageFilesBatch({
+                componentName: 'Card',
+                files: [['index.ts', '/does/not/exist.ts']],
+            })
+        ).rejects.toThrow(/file not found/)
+    })
+
+    test('returns [] when file list empty without issuing request', async () => {
+        const mock = await startServer((_req, res) => res.end('{}'))
+        try {
+            const service = new PieStorageService(
+                makeSettings({ apiBaseUrl: `${mock.baseUrl}/api` })
+            )
+            const result = await service.uploadLanguageFilesBatch({
+                componentName: 'Card',
+                files: [],
+            })
+            expect(result).toEqual([])
+            expect(mock.requests.length).toBe(0)
         } finally {
             await mock.close()
         }

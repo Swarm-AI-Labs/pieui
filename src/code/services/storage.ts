@@ -9,6 +9,26 @@ import {
 
 export const STORAGE_LANGUAGE = 'typescript'
 
+const MIME_BY_EXT: Record<string, string> = {
+    '.ts': 'application/typescript',
+    '.tsx': 'application/typescript',
+    '.js': 'application/javascript',
+    '.jsx': 'application/javascript',
+    '.json': 'application/json',
+    '.md': 'text/markdown',
+    '.txt': 'text/plain',
+    '.css': 'text/css',
+    '.html': 'text/html',
+    '.svg': 'image/svg+xml',
+}
+
+const guessMime = (filename: string): string => {
+    const lower = filename.toLowerCase()
+    const dot = lower.lastIndexOf('.')
+    if (dot === -1) return 'application/octet-stream'
+    return MIME_BY_EXT[lower.slice(dot)] || 'application/octet-stream'
+}
+
 export type SchemaKind = 'jsonSchema' | 'eventSchema' | 'llms.txt'
 
 const METADATA_CONTENT_TYPES: Record<SchemaKind, string> = {
@@ -193,6 +213,50 @@ export class PieStorageService {
     }): Promise<void> {
         metadataContentType(args.schemaKind)
         await this.request({ method: 'DELETE', url: this.metadataUrl(args) })
+    }
+
+    async uploadLanguageFilesBatch(args: {
+        componentName: string
+        files: Array<[string, string]>
+        userId?: string
+        projectSlug?: string
+    }): Promise<ComponentObject[]> {
+        const fs = await import('node:fs')
+        const path = await import('node:path')
+        const items = args.files.map(([objectPath, filePath]) => ({
+            objectPath: normalizeObjectPath(objectPath),
+            filePath: path.resolve(filePath),
+        }))
+        for (const item of items) {
+            if (!fs.existsSync(item.filePath) || !fs.statSync(item.filePath).isFile()) {
+                throw new PieStorageError(`file not found: ${item.filePath}`)
+            }
+        }
+        if (items.length === 0) return []
+
+        const form = new FormData()
+        for (const item of items) {
+            form.append('object_paths', item.objectPath)
+        }
+        for (const item of items) {
+            const buf = fs.readFileSync(item.filePath)
+            const copy = new Uint8Array(buf.byteLength)
+            copy.set(buf)
+            const filename = path.basename(item.filePath)
+            form.append(
+                'files',
+                new File([copy], filename, { type: guessMime(filename) })
+            )
+        }
+
+        const response = await this.request({
+            method: 'PUT',
+            url: this.languageBatchUrl(args),
+            body: form,
+        })
+        const data = (await response.json()) as { objects?: unknown[] }
+        const objects = Array.isArray(data.objects) ? data.objects : []
+        return objects.map(parseComponentObject)
     }
 
     private headers(extra?: Record<string, string>): Record<string, string> {
