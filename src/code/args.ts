@@ -212,10 +212,10 @@ export const printUsage = () => {
         '  page add <path>                         Create app/<path>/page.tsx from the standard Pie page template'
     )
     console.log(
-        '  card remote push <ComponentName>         Upload piecomponents/<Name>/ to PieUI storage'
+        '  card remote push <ComponentName>         Upload piecomponents/<Name>/ to PieUI storage (prints new revision)'
     )
     console.log(
-        '  card remote pull <ComponentName>         Download component from PieUI storage into piecomponents/<Name>/'
+        '  card remote pull <ComponentName>[@rev]   Download component from PieUI storage into piecomponents/<Name>/ (optional @<revision>)'
     )
     console.log(
         '  card remote list [--user U] [--project S]  List remote components for the configured or specified user/project'
@@ -339,10 +339,13 @@ export const printUsage = () => {
         '  pieui add-event ExchangeAlertsCard alert     # Add methods.alert with default handler'
     )
     console.log(
-        '  pieui card remote push ExchangeAlertsCard    # Upload component directory'
+        '  pieui card remote push ExchangeAlertsCard    # Upload component directory (server assigns new revision)'
     )
     console.log(
-        '  pieui card remote pull ExchangeAlertsCard    # Download component directory'
+        '  pieui card remote pull ExchangeAlertsCard    # Download latest revision'
+    )
+    console.log(
+        '  pieui card remote pull ExchangeAlertsCard@7  # Download revision 7 snapshot'
     )
     console.log(
         '  pieui card remote list                       # List remote components'

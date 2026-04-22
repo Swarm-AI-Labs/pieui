@@ -2,11 +2,16 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { extractCardMetadata, serializeCardMetadata } from '../../cardMetadata'
 import { loadSettings } from '../../services/settings'
-import { PieStorageService } from '../../services/storage'
+import { PieStorageError, PieStorageService } from '../../services/storage'
+import { parseCardRef } from './cardRef'
 
 export const cardRemotePushCommand = async (
-    componentName: string
+    cardRef: string
 ): Promise<void> => {
+    const { componentName, revision } = parseCardRef(cardRef)
+    if (revision !== undefined) {
+        throw new Error('push does not accept a revision suffix')
+    }
     if (!/^[A-Z][A-Za-z0-9]+$/.test(componentName)) {
         throw new Error(
             'Component name must start with uppercase letter and contain only letters and numbers'
@@ -48,12 +53,34 @@ export const cardRemotePushCommand = async (
         content: serializeCardMetadata(metadata),
     })
 
+    const latestRevision = await latestRevisionNumber(service, componentName)
+
     console.log(`[pieui] Uploaded card: ${componentName}`)
     console.log(`[pieui] Path: ${componentDir}`)
     console.log(`[pieui] Files uploaded: ${uploaded.length}`)
     console.log(`[pieui] Metadata key: ${metadataResult.key}`)
+    if (latestRevision !== undefined) {
+        console.log(`[pieui] Revision: ${componentName}@${latestRevision}`)
+    }
     console.log(
         `[pieui] Metadata: Input=${metadata.input ? 'Yes' : 'No'}, ` +
             `Ajax=${metadata.ajax ? 'Yes' : 'No'}, IO=${metadata.io ? 'Yes' : 'No'}`
     )
+}
+
+const latestRevisionNumber = async (
+    service: PieStorageService,
+    componentName: string
+): Promise<number | undefined> => {
+    try {
+        const list = await service.listRevisions({ componentName })
+        if (list.revisions.length === 0) return undefined
+        return list.revisions.reduce(
+            (max, entry) => (entry.revision > max ? entry.revision : max),
+            0
+        )
+    } catch (error) {
+        if (error instanceof PieStorageError) return undefined
+        throw error
+    }
 }

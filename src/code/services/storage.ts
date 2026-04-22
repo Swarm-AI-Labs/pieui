@@ -1,8 +1,10 @@
 import type { Settings } from './settings'
 import {
     parseComponentObject,
+    parseComponentRevisionList,
     parseProjectComponentList,
     type ComponentObject,
+    type ComponentRevisionList,
     type ComponentTree,
     type ProjectComponentList,
 } from './models'
@@ -122,9 +124,35 @@ export class PieStorageService {
         objectPath: string
         userId?: string
         project?: string
+        revision?: number
     }): string {
         const base = this.componentUrl(args)
-        return `${base}/${STORAGE_LANGUAGE}/${normalizeObjectPath(args.objectPath)}`
+        const encodedPath = normalizeObjectPath(args.objectPath)
+        if (args.revision !== undefined) {
+            return `${base}/revisions/${args.revision}/${STORAGE_LANGUAGE}/${encodedPath}`
+        }
+        return `${base}/${STORAGE_LANGUAGE}/${encodedPath}`
+    }
+
+    componentTreeUrl(args: {
+        componentName: string
+        userId?: string
+        project?: string
+        revision?: number
+    }): string {
+        const base = this.componentUrl(args)
+        if (args.revision !== undefined) {
+            return `${base}/revisions/${args.revision}`
+        }
+        return base
+    }
+
+    revisionsUrl(args: {
+        componentName: string
+        userId?: string
+        project?: string
+    }): string {
+        return `${this.componentUrl(args)}/revisions`
     }
 
     languageBatchUrl(args: {
@@ -157,10 +185,26 @@ export class PieStorageService {
         componentName: string
         userId?: string
         project?: string
+        revision?: number
     }): Promise<ComponentTree> {
-        const url = this.componentUrl(args)
+        const url = this.componentTreeUrl(args)
         const response = await this.request({ method: 'GET', url })
-        return (await response.json()) as ComponentTree
+        const payload = (await response.json()) as Record<string, unknown>
+        if (args.revision !== undefined) {
+            const inner = (payload as { tree?: ComponentTree }).tree
+            if (inner !== undefined) return inner
+        }
+        return payload as ComponentTree
+    }
+
+    async listRevisions(args: {
+        componentName: string
+        userId?: string
+        project?: string
+    }): Promise<ComponentRevisionList> {
+        const url = this.revisionsUrl(args)
+        const response = await this.request({ method: 'GET', url })
+        return parseComponentRevisionList(await response.json())
     }
 
     async deleteComponent(args: {
@@ -309,6 +353,7 @@ export class PieStorageService {
         targetPath: string
         userId?: string
         project?: string
+        revision?: number
     }): Promise<string> {
         const fs = await import('node:fs')
         const path = await import('node:path')
@@ -325,6 +370,7 @@ export class PieStorageService {
         targetDir: string
         userId?: string
         project?: string
+        revision?: number
     }): Promise<string[]> {
         const path = await import('node:path')
         const tree = await this.listComponent(args)
