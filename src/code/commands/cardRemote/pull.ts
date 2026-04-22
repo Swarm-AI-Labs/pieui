@@ -2,10 +2,10 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { loadSettings } from '../../services/settings'
 import { PieStorageService } from '../../services/storage'
+import { parseCardRef } from './cardRef'
 
-export const cardRemotePullCommand = async (
-    componentName: string
-): Promise<void> => {
+export const cardRemotePullCommand = async (cardRef: string): Promise<void> => {
+    const { componentName, revision } = parseCardRef(cardRef)
     const settings = loadSettings()
     if (!settings.userId) {
         throw new Error(
@@ -31,6 +31,7 @@ export const cardRemotePullCommand = async (
         downloaded = await service.downloadComponentDirectory({
             componentName,
             targetDir: tempDir,
+            revision,
         })
     } catch (error) {
         fs.rmSync(tempDir, { recursive: true, force: true })
@@ -39,8 +40,9 @@ export const cardRemotePullCommand = async (
 
     if (downloaded.length === 0) {
         fs.rmSync(tempDir, { recursive: true, force: true })
+        const suffix = revision !== undefined ? `@${revision}` : ''
         throw new Error(
-            `No typescript files found for remote component ${componentName} (user_id=${settings.userId}, project=${settings.project})`
+            `No typescript files found for remote component ${componentName}${suffix} (user_id=${settings.userId}, project=${settings.project})`
         )
     }
 
@@ -49,7 +51,8 @@ export const cardRemotePullCommand = async (
     }
     fs.renameSync(tempDir, componentDir)
 
-    console.log(`[pieui] Pulled card: ${componentName}`)
+    const suffix = revision !== undefined ? `@${revision}` : ''
+    console.log(`[pieui] Pulled card: ${componentName}${suffix}`)
     for (const p of downloaded) {
         const relative = path.relative(tempDir, p)
         console.log(`[pieui] Path: ${path.join(componentDir, relative)}`)

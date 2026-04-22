@@ -143,6 +143,26 @@ test('card remote push uploads all files + eventSchema metadata', async () => {
                     objects: [{ key: 'k1' }, { key: 'k2' }, { key: 'k3' }],
                 })
             )
+        } else if (req.url?.endsWith('/revisions')) {
+            res.end(
+                JSON.stringify({
+                    user_id: 'u1',
+                    project_slug: 'proj',
+                    component_name: 'AlertsCard',
+                    revisions: [
+                        {
+                            revision: 7,
+                            created_at: '2026-04-22T10:00:00Z',
+                            mutation: 'write_metadata',
+                        },
+                        {
+                            revision: 6,
+                            created_at: '2026-04-22T09:59:59Z',
+                            mutation: 'write_language_files_batch',
+                        },
+                    ],
+                })
+            )
         } else {
             res.end(JSON.stringify({ key: 'meta-key' }))
         }
@@ -160,7 +180,8 @@ test('card remote push uploads all files + eventSchema metadata', async () => {
             },
         })
         assertOk(result, 'push should succeed')
-        assert.equal(requests.length, 2)
+        assert.equal(requests.length, 3)
+        assert.match(result.stdout, /Revision: AlertsCard@7/)
 
         const batch = requests[0]
         assert.equal(batch.method, 'PUT')
