@@ -5,14 +5,20 @@ import { PieStorageService } from '../../services/storage'
 import { parseCardRef } from './cardRef'
 
 export const cardRemotePullCommand = async (cardRef: string): Promise<void> => {
-    const { componentName, revision } = parseCardRef(cardRef)
+    const ref = parseCardRef(cardRef)
+    const { componentName, revision, isPublic } = ref
     const settings = loadSettings()
-    if (!settings.userId) {
+
+    const effectiveUserId = ref.userId ?? settings.userId
+    if (!effectiveUserId) {
         throw new Error(
             'user_id is required (set PIE_USER_ID in env or .env; run `pieui login`)'
         )
     }
-    if (!settings.project) {
+    const effectiveProject = isPublic
+        ? undefined
+        : (ref.project ?? settings.project)
+    if (!isPublic && !effectiveProject) {
         throw new Error(
             'project is required (set PIE_PROJECT or PIE_PROJECT_SLUG in env or .env)'
         )
@@ -32,17 +38,29 @@ export const cardRemotePullCommand = async (cardRef: string): Promise<void> => {
             componentName,
             targetDir: tempDir,
             revision,
+            userId: effectiveUserId,
+            project: effectiveProject,
+            isPublic,
         })
     } catch (error) {
         fs.rmSync(tempDir, { recursive: true, force: true })
         throw error
     }
 
+    const sourceLabel = isPublic
+        ? `r/${effectiveUserId}/${componentName}`
+        : ref.project
+          ? `${effectiveProject}/${componentName}`
+          : componentName
+    const suffix = revision !== undefined ? `@${revision}` : ''
+
     if (downloaded.length === 0) {
         fs.rmSync(tempDir, { recursive: true, force: true })
-        const suffix = revision !== undefined ? `@${revision}` : ''
+        const where = isPublic
+            ? `user_id=${effectiveUserId} (public)`
+            : `user_id=${effectiveUserId}, project=${effectiveProject}`
         throw new Error(
-            `No typescript files found for remote component ${componentName}${suffix} (user_id=${settings.userId}, project=${settings.project})`
+            `No typescript files found for remote component ${sourceLabel}${suffix} (${where})`
         )
     }
 
@@ -51,8 +69,7 @@ export const cardRemotePullCommand = async (cardRef: string): Promise<void> => {
     }
     fs.renameSync(tempDir, componentDir)
 
-    const suffix = revision !== undefined ? `@${revision}` : ''
-    console.log(`[pieui] Pulled card: ${componentName}${suffix}`)
+    console.log(`[pieui] Pulled card: ${sourceLabel}${suffix}`)
     for (const p of downloaded) {
         const relative = path.relative(tempDir, p)
         console.log(`[pieui] Path: ${path.join(componentDir, relative)}`)
