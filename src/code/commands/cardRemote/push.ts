@@ -8,10 +8,19 @@ import { parseCardRef } from './cardRef'
 export const cardRemotePushCommand = async (
     cardRef: string
 ): Promise<void> => {
-    const { componentName, revision } = parseCardRef(cardRef)
-    if (revision !== undefined) {
+    const ref = parseCardRef(cardRef)
+    if (ref.revision !== undefined) {
         throw new Error('push does not accept a revision suffix')
     }
+    if (ref.isPublic) {
+        throw new Error('push does not accept public refs (r/...)')
+    }
+    if (ref.project || ref.userId) {
+        throw new Error(
+            'push does not accept project/user override; pass just <ComponentName>'
+        )
+    }
+    const { componentName } = ref
     if (!/^[A-Z][A-Za-z0-9]+$/.test(componentName)) {
         throw new Error(
             'Component name must start with uppercase letter and contain only letters and numbers'

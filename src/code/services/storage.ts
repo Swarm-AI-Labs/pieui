@@ -80,6 +80,7 @@ type RequestOptions = {
     headers?: Record<string, string>
     body?: BodyInit
     timeoutMs?: number
+    noAuth?: boolean
 }
 
 const cleanFetchError = (
@@ -108,14 +109,18 @@ export class PieStorageService {
         componentName: string
         userId?: string
         project?: string
+        isPublic?: boolean
     }): string {
         const userId = args.userId ?? this.settings.userId
-        const slug = args.project ?? this.settings.project
         if (!userId) {
             throw new PieStorageError(
                 'user_id is required (configure PIE_USER_ID or pass user_id)'
             )
         }
+        if (args.isPublic) {
+            return `${this.baseUrl}/public-components/${pathPart(userId)}/${pathPart(args.componentName)}`
+        }
+        const slug = args.project ?? this.settings.project
         return `${this.baseUrl}/components/${pathPart(userId)}/${pathPart(slug)}/${pathPart(args.componentName)}`
     }
 
@@ -125,10 +130,16 @@ export class PieStorageService {
         userId?: string
         project?: string
         revision?: number
+        isPublic?: boolean
     }): string {
         const base = this.componentUrl(args)
         const encodedPath = normalizeObjectPath(args.objectPath)
         if (args.revision !== undefined) {
+            if (args.isPublic) {
+                throw new PieStorageError(
+                    'revision is not supported for public components'
+                )
+            }
             return `${base}/revisions/${args.revision}/${STORAGE_LANGUAGE}/${encodedPath}`
         }
         return `${base}/${STORAGE_LANGUAGE}/${encodedPath}`
@@ -139,9 +150,15 @@ export class PieStorageService {
         userId?: string
         project?: string
         revision?: number
+        isPublic?: boolean
     }): string {
         const base = this.componentUrl(args)
         if (args.revision !== undefined) {
+            if (args.isPublic) {
+                throw new PieStorageError(
+                    'revision is not supported for public components'
+                )
+            }
             return `${base}/revisions/${args.revision}`
         }
         return base
@@ -186,9 +203,14 @@ export class PieStorageService {
         userId?: string
         project?: string
         revision?: number
+        isPublic?: boolean
     }): Promise<ComponentTree> {
         const url = this.componentTreeUrl(args)
-        const response = await this.request({ method: 'GET', url })
+        const response = await this.request({
+            method: 'GET',
+            url,
+            noAuth: args.isPublic,
+        })
         const payload = (await response.json()) as Record<string, unknown>
         if (args.revision !== undefined) {
             const inner = (payload as { tree?: ComponentTree }).tree
@@ -354,11 +376,16 @@ export class PieStorageService {
         userId?: string
         project?: string
         revision?: number
+        isPublic?: boolean
     }): Promise<string> {
         const fs = await import('node:fs')
         const path = await import('node:path')
         const url = this.languageFileUrl(args)
-        const response = await this.request({ method: 'GET', url })
+        const response = await this.request({
+            method: 'GET',
+            url,
+            noAuth: args.isPublic,
+        })
         const buf = Buffer.from(await response.arrayBuffer())
         fs.mkdirSync(path.dirname(args.targetPath), { recursive: true })
         fs.writeFileSync(args.targetPath, buf)
@@ -371,6 +398,7 @@ export class PieStorageService {
         userId?: string
         project?: string
         revision?: number
+        isPublic?: boolean
     }): Promise<string[]> {
         const path = await import('node:path')
         const tree = await this.listComponent(args)
@@ -392,9 +420,13 @@ export class PieStorageService {
         return downloaded
     }
 
-    private headers(extra?: Record<string, string>): Record<string, string> {
+    private headers(
+        extra?: Record<string, string>,
+        noAuth?: boolean
+    ): Record<string, string> {
         const base: Record<string, string> = {}
-        if (this.settings.apiKey) base['x-api-key'] = this.settings.apiKey
+        if (!noAuth && this.settings.apiKey)
+            base['x-api-key'] = this.settings.apiKey
         return { ...base, ...(extra ?? {}) }
     }
 
@@ -408,7 +440,7 @@ export class PieStorageService {
         try {
             response = await fetch(opts.url, {
                 method: opts.method,
-                headers: this.headers(opts.headers),
+                headers: this.headers(opts.headers, opts.noAuth),
                 body: opts.body,
                 signal: controller.signal,
             })

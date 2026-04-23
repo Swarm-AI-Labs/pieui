@@ -215,7 +215,13 @@ export const printUsage = () => {
         '  card remote push <ComponentName>         Upload piecomponents/<Name>/ to PieUI storage (prints new revision)'
     )
     console.log(
-        '  card remote pull <ComponentName>[@rev]   Download component from PieUI storage into piecomponents/<Name>/ (optional @<revision>)'
+        '  card remote pull <ComponentName>[@rev]   Download component from current project (optional @<revision>)'
+    )
+    console.log(
+        '  card remote pull <project>/<ComponentName>[@rev]  Pull from a different project of the current user'
+    )
+    console.log(
+        '  card remote pull r/<user>/<ComponentName>         Pull a public component by another user'
     )
     console.log(
         '  card remote list [--user U] [--project S]  List remote components for the configured or specified user/project'
@@ -342,10 +348,16 @@ export const printUsage = () => {
         '  pieui card remote push ExchangeAlertsCard    # Upload component directory (server assigns new revision)'
     )
     console.log(
-        '  pieui card remote pull ExchangeAlertsCard    # Download latest revision'
+        '  pieui card remote pull ExchangeAlertsCard    # Download latest revision from current project'
     )
     console.log(
         '  pieui card remote pull ExchangeAlertsCard@7  # Download revision 7 snapshot'
+    )
+    console.log(
+        '  pieui card remote pull other-proj/AlertsCard # Pull from another of your projects'
+    )
+    console.log(
+        '  pieui card remote pull r/delta37/YetAnotherCard  # Pull a public component by user delta37'
     )
     console.log(
         '  pieui card remote list                       # List remote components'

@@ -486,7 +486,7 @@ test('usage output includes key command entries', () => {
     assert.match(result.stdout, /add \[type\] <ComponentName>/)
     assert.match(result.stdout, /postbuild/)
     assert.match(result.stdout, /list-events <ComponentName>/)
-    assert.match(result.stdout, /remote-remove <ComponentName>/)
+    assert.match(result.stdout, /card remote remove <ComponentName>/)
 })
 
 // Verifies add parser fallback behavior when first positional token is not a known type.
