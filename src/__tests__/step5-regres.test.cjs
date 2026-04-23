@@ -5,7 +5,6 @@ const os = require('node:os')
 const path = require('node:path')
 const http = require('node:http')
 const { spawn, spawnSync } = require('node:child_process')
-const JSZip = require('jszip')
 
 const repoRoot = path.resolve(__dirname, '../..')
 
@@ -106,15 +105,6 @@ const stopServer = async (server) => {
     await new Promise((resolve) => server.close(resolve))
 }
 
-const makeZipBuffer = async (entries) => {
-    const zip = new JSZip()
-    for (const [name, content] of Object.entries(entries)) {
-        zip.file(name, content)
-    }
-    const uint8 = await zip.generateAsync({ type: 'uint8array' })
-    return Buffer.from(uint8)
-}
-
 // Verifies add fails cleanly when registry file is missing and does not leave partial component files.
 test('add without registry exits cleanly and rolls back created component directory', async () => {
     const projectDir = makeProjectDir('pieui-step5-add-no-registry-')
@@ -135,8 +125,8 @@ test('add without registry exits cleanly and rolls back created component direct
     assert.equal(fs.existsSync(componentDir), false)
 })
 
-// Verifies pull does not delete existing local component when archive extraction fails (unsafe path entry).
-test('pull keeps existing component when archive contains unsafe path', async () => {
+// Verifies pull does not delete existing local component when the remote tree includes an unsafe object path.
+test('pull keeps existing component when remote tree contains unsafe object path', async () => {
     const projectDir = makeProjectDir('pieui-step5-pull-rollback-')
     const existingPath = path.join(
         projectDir,
@@ -146,26 +136,39 @@ test('pull keeps existing component when archive contains unsafe path', async ()
     )
     writeFile(existingPath, 'export const stable = true\n')
 
-    const zipBuffer = await makeZipBuffer({
-        '../escape.ts': 'bad',
-        'index.ts': 'export const overwritten = true\n',
-    })
-
     const { server, baseUrl } = await startServer(async (_req, res) => {
         res.statusCode = 200
-        res.setHeader('content-type', 'application/zip')
-        res.end(zipBuffer)
+        res.setHeader('content-type', 'application/json')
+        res.end(
+            JSON.stringify({
+                prefix: 'demo/proj/SafeCard/',
+                typescript: {
+                    objects: [
+                        {
+                            key: 'demo/proj/SafeCard/typescript/../escape.ts',
+                        },
+                    ],
+                },
+            })
+        )
     })
 
     try {
         const result = await runCli({
             cwd: projectDir,
-            args: ['pull', 'SafeCard'],
-            env: { PIEUI_EXTERNAL_PULL_URL: `${baseUrl}/pull` },
+            args: ['card', 'remote', 'pull', 'SafeCard'],
+            env: {
+                PIE_API_BASE_URL: baseUrl,
+                PIE_USER_ID: 'demo',
+                PIE_PROJECT: 'proj',
+            },
         })
 
         assert.equal(result.status, 1)
-        assert.match(result.stderr, /unsafe path in archive/)
+        assert.match(
+            result.stderr,
+            /object path must be relative and must not contain/
+        )
 
         const kept = fs.readFileSync(existingPath, 'utf8')
         assert.match(kept, /stable = true/)
@@ -178,13 +181,9 @@ test('pull keeps existing component when archive contains unsafe path', async ()
     }
 })
 
-// Verifies async command failures (push/pull/remote-remove) are formatted consistently without stack traces.
+// Verifies async card-remote command failures are surfaced with a clean top-level error (no stack traces).
 test('async command errors are surfaced with stable top-level error formatting', async () => {
     const projectDir = makeProjectDir('pieui-step5-cli-errors-')
-    writeFile(
-        path.join(projectDir, 'package.json'),
-        JSON.stringify({ name: 'demo' })
-    )
     writeFile(
         path.join(projectDir, 'piecomponents', 'ErrCard', 'index.ts'),
         'export {}\n'
@@ -197,24 +196,23 @@ test('async command errors are surfaced with stable top-level error formatting',
     })
 
     try {
+        const env = {
+            PIE_API_BASE_URL: baseUrl,
+            PIE_USER_ID: 'demo',
+            PIE_PROJECT: 'proj',
+        }
         const checks = [
             {
-                args: ['push', 'ErrCard'],
-                env: { PIEUI_EXTERNAL_PUSH_URL: `${baseUrl}/push` },
-                expected:
-                    /\[pieui\] Error: push failed: 500 Internal Server Error/,
+                args: ['card', 'remote', 'push', 'ErrCard'],
+                expected: /\[pieui\] Error: PUT .+ failed: 500/,
             },
             {
-                args: ['pull', 'ErrCard'],
-                env: { PIEUI_EXTERNAL_PULL_URL: `${baseUrl}/pull` },
-                expected:
-                    /\[pieui\] Error: pull failed: 500 Internal Server Error/,
+                args: ['card', 'remote', 'pull', 'ErrCard'],
+                expected: /\[pieui\] Error: GET .+ failed: 500/,
             },
             {
-                args: ['remote-remove', 'ErrCard'],
-                env: { PIEUI_EXTERNAL_REMOVE_URL: `${baseUrl}/remove` },
-                expected:
-                    /\[pieui\] Error: remote-remove failed: 500 Internal Server Error/,
+                args: ['card', 'remote', 'remove', 'ErrCard'],
+                expected: /\[pieui\] Error: DELETE .+ failed: 500/,
             },
         ]
 
@@ -222,7 +220,7 @@ test('async command errors are surfaced with stable top-level error formatting',
             const result = await runCli({
                 cwd: projectDir,
                 args: check.args,
-                env: check.env,
+                env,
             })
 
             assert.equal(result.status, 1)
