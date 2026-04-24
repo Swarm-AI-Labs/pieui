@@ -11,7 +11,12 @@ export type ComponentType =
 
 export type ListFilter = 'all' | ComponentType
 export type CardAction = 'add' | 'remote'
-export type CardRemoteAction = 'push' | 'pull' | 'list' | 'remove'
+export type CardRemoteAction =
+    | 'push'
+    | 'pull'
+    | 'list'
+    | 'remove'
+    | 'history'
 export type PageAction = 'add'
 
 export type ParsedArgs = {
@@ -33,6 +38,10 @@ export type ParsedArgs = {
     remoteProject?: string
     pageAction?: PageAction
     pagePath?: string
+    historyPage?: number
+    historyPerPage?: number
+    historyFrom?: number
+    historyTo?: number
 }
 
 export type CardScaffoldOptions = {
