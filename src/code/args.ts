@@ -110,6 +110,8 @@ export const parseArgs = (argv: string[]): ParsedArgs => {
             'list',
             'remove',
             'history',
+            'public',
+            'private',
         ]
         const action = argv[2] as CardRemoteAction
         if (validRemoteActions.includes(action)) {
@@ -298,6 +300,12 @@ export const printUsage = () => {
         '  card remote history <ComponentName> [--page N] [--per-page N] [--from R] [--to R]  Show revision history with per-file diff stats'
     )
     console.log(
+        '  card remote public <ComponentName>       Mark a component public (readable without API key as r/<user>/<Name>)'
+    )
+    console.log(
+        '  card remote private <ComponentName>      Make a public component private again'
+    )
+    console.log(
         '  list-events <ComponentName>             List registered methods keys for <PieCard card="ComponentName" ... methods={...} />'
     )
     console.log(
@@ -441,5 +449,11 @@ export const printUsage = () => {
     )
     console.log(
         '  pieui card remote history ExchangeAlertsCard --from 12 --to 14    # Revision range'
+    )
+    console.log(
+        '  pieui card remote public ExchangeAlertsCard  # Make this component public'
+    )
+    console.log(
+        '  pieui card remote private ExchangeAlertsCard # Revert to private'
     )
 }

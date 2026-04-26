@@ -101,6 +101,43 @@ export const parseComponentObject = (raw: unknown): ComponentObject => {
     }
 }
 
+export type PublicComponentState = {
+    userId: string
+    project: string
+    componentName: string
+    isPublic: boolean
+    publicRegistryName: string | null
+}
+
+export const parsePublicComponentState = (
+    raw: unknown
+): PublicComponentState => {
+    const obj = (raw ?? {}) as Record<string, unknown>
+    const pickStr = (...keys: string[]): string => {
+        for (const k of keys) {
+            const v = obj[k]
+            if (typeof v === 'string') return v
+        }
+        return ''
+    }
+    const registry =
+        typeof obj.public_registry_name === 'string'
+            ? obj.public_registry_name
+            : typeof (obj as { publicRegistryName?: unknown })
+                    .publicRegistryName === 'string'
+              ? (obj as { publicRegistryName: string }).publicRegistryName
+              : null
+    return {
+        userId: pickStr('user_id', 'userId'),
+        project: pickStr('project_slug', 'projectSlug'),
+        componentName: pickStr('component_name', 'componentName'),
+        isPublic:
+            obj.is_public === true ||
+            (obj as { isPublic?: unknown }).isPublic === true,
+        publicRegistryName: registry,
+    }
+}
+
 export type HistoryFileStatus = 'added' | 'modified' | 'deleted'
 
 export type HistoryFileEntry = {

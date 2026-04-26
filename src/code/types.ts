@@ -17,6 +17,8 @@ export type CardRemoteAction =
     | 'list'
     | 'remove'
     | 'history'
+    | 'public'
+    | 'private'
 export type PageAction = 'add'
 
 export type ParsedArgs = {

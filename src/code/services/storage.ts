@@ -4,11 +4,13 @@ import {
     parseComponentObject,
     parseComponentRevisionList,
     parseProjectComponentList,
+    parsePublicComponentState,
     type ComponentHistory,
     type ComponentObject,
     type ComponentRevisionList,
     type ComponentTree,
     type ProjectComponentList,
+    type PublicComponentState,
 } from './models'
 
 export const STORAGE_LANGUAGE = 'typescript'
@@ -174,6 +176,14 @@ export class PieStorageService {
         return `${this.componentUrl(args)}/revisions`
     }
 
+    publicMarkUrl(args: {
+        componentName: string
+        userId?: string
+        project?: string
+    }): string {
+        return `${this.componentUrl(args)}/public`
+    }
+
     historyUrl(args: {
         componentName: string
         userId?: string
@@ -248,6 +258,26 @@ export class PieStorageService {
         const url = this.revisionsUrl(args)
         const response = await this.request({ method: 'GET', url })
         return parseComponentRevisionList(await response.json())
+    }
+
+    async markComponentPublic(args: {
+        componentName: string
+        userId?: string
+        project?: string
+    }): Promise<PublicComponentState> {
+        const url = this.publicMarkUrl(args)
+        const response = await this.request({ method: 'PUT', url })
+        return parsePublicComponentState(await response.json())
+    }
+
+    async markComponentPrivate(args: {
+        componentName: string
+        userId?: string
+        project?: string
+    }): Promise<PublicComponentState> {
+        const url = this.publicMarkUrl(args)
+        const response = await this.request({ method: 'DELETE', url })
+        return parsePublicComponentState(await response.json())
     }
 
     async getHistory(args: {
