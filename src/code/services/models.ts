@@ -101,6 +101,156 @@ export const parseComponentObject = (raw: unknown): ComponentObject => {
     }
 }
 
+export type PublicComponentState = {
+    userId: string
+    project: string
+    componentName: string
+    isPublic: boolean
+    publicRegistryName: string | null
+}
+
+export const parsePublicComponentState = (
+    raw: unknown
+): PublicComponentState => {
+    const obj = (raw ?? {}) as Record<string, unknown>
+    const pickStr = (...keys: string[]): string => {
+        for (const k of keys) {
+            const v = obj[k]
+            if (typeof v === 'string') return v
+        }
+        return ''
+    }
+    const registry =
+        typeof obj.public_registry_name === 'string'
+            ? obj.public_registry_name
+            : typeof (obj as { publicRegistryName?: unknown })
+                    .publicRegistryName === 'string'
+              ? (obj as { publicRegistryName: string }).publicRegistryName
+              : null
+    return {
+        userId: pickStr('user_id', 'userId'),
+        project: pickStr('project_slug', 'projectSlug'),
+        componentName: pickStr('component_name', 'componentName'),
+        isPublic:
+            obj.is_public === true ||
+            (obj as { isPublic?: unknown }).isPublic === true,
+        publicRegistryName: registry,
+    }
+}
+
+export type HistoryFileStatus = 'added' | 'modified' | 'deleted'
+
+export type HistoryFileEntry = {
+    key: string
+    status: HistoryFileStatus
+    isBinary: boolean
+    additions: number
+    deletions: number
+    patch?: string
+}
+
+export type HistoryEntry = {
+    revision: number
+    previousRevision: number | null
+    createdAt: string
+    mutation: string
+    deleted: boolean
+    files: HistoryFileEntry[]
+}
+
+export type ComponentHistory = {
+    userId: string
+    project: string
+    componentName: string
+    page: number
+    perPage: number
+    totalRevisions: number
+    fromRevision: number | null
+    toRevision: number | null
+    entries: HistoryEntry[]
+}
+
+const pickString = (
+    obj: Record<string, unknown>,
+    ...keys: string[]
+): string => {
+    for (const k of keys) {
+        const v = obj[k]
+        if (typeof v === 'string') return v
+    }
+    return ''
+}
+
+const pickNumber = (
+    obj: Record<string, unknown>,
+    ...keys: string[]
+): number | null => {
+    for (const k of keys) {
+        const v = obj[k]
+        if (typeof v === 'number') return v
+    }
+    return null
+}
+
+const parseHistoryFile = (raw: unknown): HistoryFileEntry | null => {
+    const obj = (raw ?? {}) as Record<string, unknown>
+    const key = typeof obj.key === 'string' ? obj.key : ''
+    const status = obj.status
+    if (status !== 'added' && status !== 'modified' && status !== 'deleted') {
+        return null
+    }
+    const additions = pickNumber(obj, 'additions') ?? 0
+    const deletions = pickNumber(obj, 'deletions') ?? 0
+    return {
+        key,
+        status,
+        isBinary:
+            obj.is_binary === true ||
+            (obj as { isBinary?: unknown }).isBinary === true,
+        additions,
+        deletions,
+        patch: typeof obj.patch === 'string' ? obj.patch : undefined,
+    }
+}
+
+const parseHistoryEntry = (raw: unknown): HistoryEntry | null => {
+    const obj = (raw ?? {}) as Record<string, unknown>
+    const revision = pickNumber(obj, 'revision')
+    if (revision === null) return null
+    const diff = (obj.diff ?? {}) as Record<string, unknown>
+    const rawFiles = Array.isArray(diff.files) ? diff.files : []
+    const files = rawFiles
+        .map(parseHistoryFile)
+        .filter((f): f is HistoryFileEntry => f !== null)
+    return {
+        revision,
+        previousRevision: pickNumber(obj, 'previous_revision', 'previousRevision'),
+        createdAt: pickString(obj, 'created_at', 'createdAt'),
+        mutation: pickString(obj, 'mutation'),
+        deleted: obj.deleted === true,
+        files,
+    }
+}
+
+export const parseComponentHistory = (raw: unknown): ComponentHistory => {
+    const obj = (raw ?? {}) as Record<string, unknown>
+    const rawEntries = Array.isArray(obj.entries) ? obj.entries : []
+    const entries = rawEntries
+        .map(parseHistoryEntry)
+        .filter((e): e is HistoryEntry => e !== null)
+    return {
+        userId: pickString(obj, 'user_id', 'userId'),
+        project: pickString(obj, 'project_slug', 'projectSlug'),
+        componentName: pickString(obj, 'component_name', 'componentName'),
+        page: pickNumber(obj, 'page') ?? 1,
+        perPage: pickNumber(obj, 'per_page', 'perPage') ?? 10,
+        totalRevisions: pickNumber(obj, 'total_revisions', 'totalRevisions') ?? 0,
+        fromRevision: pickNumber(obj, 'from_revision', 'fromRevision'),
+        toRevision: pickNumber(obj, 'to_revision', 'toRevision'),
+        entries,
+    }
+}
+
 export const parseProjectComponentList = (
     raw: unknown
 ): ProjectComponentList => {

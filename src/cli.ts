@@ -12,6 +12,9 @@ import { cardRemotePushCommand } from './code/commands/cardRemote/push'
 import { cardRemotePullCommand } from './code/commands/cardRemote/pull'
 import { cardRemoteListCommand } from './code/commands/cardRemote/list'
 import { cardRemoteRemoveCommand } from './code/commands/cardRemote/remove'
+import { cardRemoteHistoryCommand } from './code/commands/cardRemote/history'
+import { cardRemotePublicCommand } from './code/commands/cardRemote/public'
+import { cardRemotePrivateCommand } from './code/commands/cardRemote/private'
 import { pageAddCommand } from './code/commands/pageAdd'
 import { createCommand } from './code/commands/create'
 import { createPieAppCommand } from './code/commands/createPieApp'
@@ -37,6 +40,10 @@ const main = async () => {
         remoteProject,
         pageAction,
         pagePath,
+        historyPage,
+        historyPerPage,
+        historyFrom,
+        historyTo,
     } = parseArgs(process.argv.slice(2))
 
     console.log(`[pieui] CLI started with command: "${command}"`)
@@ -110,8 +117,26 @@ const main = async () => {
                     await cardRemoteRemoveCommand(componentName)
                     return
                 }
+                if (cardRemoteAction === 'history') {
+                    await cardRemoteHistoryCommand({
+                        componentName,
+                        page: historyPage,
+                        perPage: historyPerPage,
+                        from: historyFrom,
+                        to: historyTo,
+                    })
+                    return
+                }
+                if (cardRemoteAction === 'public') {
+                    await cardRemotePublicCommand(componentName)
+                    return
+                }
+                if (cardRemoteAction === 'private') {
+                    await cardRemotePrivateCommand(componentName)
+                    return
+                }
                 console.error(
-                    '[pieui] Error: Supported card remote subcommands: push, pull, list, remove'
+                    '[pieui] Error: Supported card remote subcommands: push, pull, list, remove, history, public, private'
                 )
                 printUsage()
                 process.exit(1)

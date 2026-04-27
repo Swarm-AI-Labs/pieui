@@ -1,12 +1,16 @@
 import type { Settings } from './settings'
 import {
+    parseComponentHistory,
     parseComponentObject,
     parseComponentRevisionList,
     parseProjectComponentList,
+    parsePublicComponentState,
+    type ComponentHistory,
     type ComponentObject,
     type ComponentRevisionList,
     type ComponentTree,
     type ProjectComponentList,
+    type PublicComponentState,
 } from './models'
 
 export const STORAGE_LANGUAGE = 'typescript'
@@ -172,6 +176,33 @@ export class PieStorageService {
         return `${this.componentUrl(args)}/revisions`
     }
 
+    publicMarkUrl(args: {
+        componentName: string
+        userId?: string
+        project?: string
+    }): string {
+        return `${this.componentUrl(args)}/public`
+    }
+
+    historyUrl(args: {
+        componentName: string
+        userId?: string
+        project?: string
+        page?: number
+        perPage?: number
+        from?: number
+        to?: number
+    }): string {
+        const base = `${this.componentUrl(args)}/history`
+        const params = new URLSearchParams()
+        if (args.page !== undefined) params.set('page', String(args.page))
+        if (args.perPage !== undefined) params.set('per_page', String(args.perPage))
+        if (args.from !== undefined) params.set('from', String(args.from))
+        if (args.to !== undefined) params.set('to', String(args.to))
+        const qs = params.toString()
+        return qs ? `${base}?${qs}` : base
+    }
+
     languageBatchUrl(args: {
         componentName: string
         userId?: string
@@ -227,6 +258,40 @@ export class PieStorageService {
         const url = this.revisionsUrl(args)
         const response = await this.request({ method: 'GET', url })
         return parseComponentRevisionList(await response.json())
+    }
+
+    async markComponentPublic(args: {
+        componentName: string
+        userId?: string
+        project?: string
+    }): Promise<PublicComponentState> {
+        const url = this.publicMarkUrl(args)
+        const response = await this.request({ method: 'PUT', url })
+        return parsePublicComponentState(await response.json())
+    }
+
+    async markComponentPrivate(args: {
+        componentName: string
+        userId?: string
+        project?: string
+    }): Promise<PublicComponentState> {
+        const url = this.publicMarkUrl(args)
+        const response = await this.request({ method: 'DELETE', url })
+        return parsePublicComponentState(await response.json())
+    }
+
+    async getHistory(args: {
+        componentName: string
+        userId?: string
+        project?: string
+        page?: number
+        perPage?: number
+        from?: number
+        to?: number
+    }): Promise<ComponentHistory> {
+        const url = this.historyUrl(args)
+        const response = await this.request({ method: 'GET', url })
+        return parseComponentHistory(await response.json())
     }
 
     async deleteComponent(args: {

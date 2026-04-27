@@ -98,18 +98,37 @@ export const parseArgs = (argv: string[]): ParsedArgs => {
         }
     }
 
+    let historyPage: number | undefined
+    let historyPerPage: number | undefined
+    let historyFrom: number | undefined
+    let historyTo: number | undefined
+
     if (command === 'card' && cardAction === 'remote' && argv[2]) {
         const validRemoteActions: CardRemoteAction[] = [
             'push',
             'pull',
             'list',
             'remove',
+            'history',
+            'public',
+            'private',
         ]
         const action = argv[2] as CardRemoteAction
         if (validRemoteActions.includes(action)) {
             cardRemoteAction = action
             const rest = argv.slice(3)
             const flagIndexes = new Set<number>()
+            const parseIntFlag = (
+                name: string,
+                raw: string
+            ): number | undefined => {
+                if (!/^-?\d+$/.test(raw)) {
+                    throw new Error(
+                        `${name} must be an integer, got ${JSON.stringify(raw)}`
+                    )
+                }
+                return Number(raw)
+            }
             for (let i = 0; i < rest.length; i++) {
                 const tok = rest[i]
                 if (tok === '--user' && rest[i + 1]) {
@@ -122,11 +141,55 @@ export const parseArgs = (argv: string[]): ParsedArgs => {
                     flagIndexes.add(i)
                     flagIndexes.add(i + 1)
                     i++
+                } else if (tok === '--page' && rest[i + 1]) {
+                    historyPage = parseIntFlag('--page', rest[i + 1])
+                    flagIndexes.add(i)
+                    flagIndexes.add(i + 1)
+                    i++
+                } else if (tok === '--per-page' && rest[i + 1]) {
+                    historyPerPage = parseIntFlag('--per-page', rest[i + 1])
+                    flagIndexes.add(i)
+                    flagIndexes.add(i + 1)
+                    i++
+                } else if (tok === '--from' && rest[i + 1]) {
+                    historyFrom = parseIntFlag('--from', rest[i + 1])
+                    flagIndexes.add(i)
+                    flagIndexes.add(i + 1)
+                    i++
+                } else if (tok === '--to' && rest[i + 1]) {
+                    historyTo = parseIntFlag('--to', rest[i + 1])
+                    flagIndexes.add(i)
+                    flagIndexes.add(i + 1)
+                    i++
                 } else if (tok?.startsWith('--user=')) {
                     remoteUserId = tok.slice('--user='.length)
                     flagIndexes.add(i)
                 } else if (tok?.startsWith('--project=')) {
                     remoteProject = tok.slice('--project='.length)
+                    flagIndexes.add(i)
+                } else if (tok?.startsWith('--page=')) {
+                    historyPage = parseIntFlag(
+                        '--page',
+                        tok.slice('--page='.length)
+                    )
+                    flagIndexes.add(i)
+                } else if (tok?.startsWith('--per-page=')) {
+                    historyPerPage = parseIntFlag(
+                        '--per-page',
+                        tok.slice('--per-page='.length)
+                    )
+                    flagIndexes.add(i)
+                } else if (tok?.startsWith('--from=')) {
+                    historyFrom = parseIntFlag(
+                        '--from',
+                        tok.slice('--from='.length)
+                    )
+                    flagIndexes.add(i)
+                } else if (tok?.startsWith('--to=')) {
+                    historyTo = parseIntFlag(
+                        '--to',
+                        tok.slice('--to='.length)
+                    )
                     flagIndexes.add(i)
                 }
             }
@@ -183,6 +246,10 @@ export const parseArgs = (argv: string[]): ParsedArgs => {
         remoteProject,
         pageAction,
         pagePath,
+        historyPage,
+        historyPerPage,
+        historyFrom,
+        historyTo,
     }
 }
 
@@ -228,6 +295,15 @@ export const printUsage = () => {
     )
     console.log(
         '  card remote remove <ComponentName>       Delete component from PieUI storage'
+    )
+    console.log(
+        '  card remote history <ComponentName> [--page N] [--per-page N] [--from R] [--to R]  Show revision history with per-file diff stats'
+    )
+    console.log(
+        '  card remote public <ComponentName>       Mark a component public (readable without API key as r/<user>/<Name>)'
+    )
+    console.log(
+        '  card remote private <ComponentName>      Make a public component private again'
     )
     console.log(
         '  list-events <ComponentName>             List registered methods keys for <PieCard card="ComponentName" ... methods={...} />'
@@ -364,5 +440,20 @@ export const printUsage = () => {
     )
     console.log(
         '  pieui card remote remove ExchangeAlertsCard  # Delete remote component'
+    )
+    console.log(
+        '  pieui card remote history ExchangeAlertsCard                      # Full history (newest first)'
+    )
+    console.log(
+        '  pieui card remote history ExchangeAlertsCard --page 1 --per-page 5 # Paginate'
+    )
+    console.log(
+        '  pieui card remote history ExchangeAlertsCard --from 12 --to 14    # Revision range'
+    )
+    console.log(
+        '  pieui card remote public ExchangeAlertsCard  # Make this component public'
+    )
+    console.log(
+        '  pieui card remote private ExchangeAlertsCard # Revert to private'
     )
 }
