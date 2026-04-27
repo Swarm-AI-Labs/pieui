@@ -488,7 +488,7 @@ test('login still fetches credentials and writes .pie/config.json and .env', asy
 
 // Verifies push exits non-zero and surfaces a human-readable error (no raw
 // stack trace) when the target server refuses the connection.
-test('push surfaces a clean error message when the server refuses the connection', async () => {
+test('card remote push surfaces a clean error message when the server refuses the connection', async () => {
     // Bind a server to get a free port, close it immediately — leaves nothing listening
     const { server, baseUrl } = await startServer((_req, res) => {
         res.statusCode = 200
@@ -497,7 +497,7 @@ test('push surfaces a clean error message when the server refuses the connection
     const url = `${baseUrl}/push`
     await stopServer(server)
 
-    const projectDir = makeProjectDir('pieui-step2-push-refused-')
+    const projectDir = mkTempDir('pieui-step2-push-refused-')
     writeFile(
         path.join(projectDir, 'package.json'),
         JSON.stringify({ name: 'demo' })
@@ -509,8 +509,13 @@ test('push surfaces a clean error message when the server refuses the connection
 
     const result = await runCli({
         cwd: projectDir,
-        args: ['push', 'AnyCard'],
-        env: { PIEUI_EXTERNAL_PUSH_URL: url },
+        args: ['card', 'remote', 'push', 'AnyCard'],
+        env: {
+            PIE_USER_ID: 'u1',
+            PIE_PROJECT: 'proj',
+            PIE_API_KEY: 'k',
+            PIE_API_BASE_URL: `${url}/api`,
+        },
     })
 
     assert.equal(result.status, 1)
@@ -519,7 +524,7 @@ test('push surfaces a clean error message when the server refuses the connection
 
 // Verifies pull exits non-zero and surfaces a human-readable error when the
 // target server refuses the connection.
-test('pull surfaces a clean error message when the server refuses the connection', async () => {
+test('card remote pull surfaces a clean error message when the server refuses the connection', async () => {
     const { server, baseUrl } = await startServer((_req, res) => {
         res.statusCode = 200
         res.end('ok')
@@ -527,22 +532,27 @@ test('pull surfaces a clean error message when the server refuses the connection
     const url = `${baseUrl}/pull`
     await stopServer(server)
 
-    const projectDir = makeProjectDir('pieui-step2-pull-refused-')
+    const projectDir = mkTempDir('pieui-step2-pull-refused-')
     fs.mkdirSync(path.join(projectDir, 'piecomponents'), { recursive: true })
 
     const result = await runCli({
         cwd: projectDir,
-        args: ['pull', 'AnyCard'],
-        env: { PIEUI_EXTERNAL_PULL_URL: url },
+        args: ['card', 'remote', 'pull', 'AnyCard'],
+        env: {
+            PIE_USER_ID: 'u1',
+            PIE_PROJECT: 'proj',
+            PIE_API_KEY: 'k',
+            PIE_API_BASE_URL: `${url}/api`,
+        },
     })
 
     assert.equal(result.status, 1)
     assert.doesNotMatch(result.stderr, /\n\s*at\s+.*\(/)
 })
 
-// Verifies remote-remove exits non-zero and surfaces a human-readable error
+// Verifies card remote remove exits non-zero and surfaces a human-readable error
 // when the target server refuses the connection.
-test('remote-remove surfaces a clean error message when the server refuses the connection', async () => {
+test('card remote remove surfaces a clean error message when the server refuses the connection', async () => {
     const { server, baseUrl } = await startServer((_req, res) => {
         res.statusCode = 200
         res.end('ok')
@@ -550,7 +560,7 @@ test('remote-remove surfaces a clean error message when the server refuses the c
     const url = `${baseUrl}/remove`
     await stopServer(server)
 
-    const projectDir = makeProjectDir('pieui-step2-remove-refused-')
+    const projectDir = mkTempDir('pieui-step2-remove-refused-')
     writeFile(
         path.join(projectDir, 'package.json'),
         JSON.stringify({ name: 'demo' })
@@ -558,8 +568,13 @@ test('remote-remove surfaces a clean error message when the server refuses the c
 
     const result = await runCli({
         cwd: projectDir,
-        args: ['remote-remove', 'OldCard'],
-        env: { PIEUI_EXTERNAL_REMOVE_URL: url },
+        args: ['card', 'remote', 'remove', 'OldCard'],
+        env: {
+            PIE_USER_ID: 'u1',
+            PIE_PROJECT: 'proj',
+            PIE_API_KEY: 'k',
+            PIE_API_BASE_URL: `${url}/api`,
+        },
     })
 
     assert.equal(result.status, 1)
