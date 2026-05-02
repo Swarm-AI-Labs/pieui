@@ -36,6 +36,7 @@ const PieMaxRootContent: React.FC<PieRootProps> = ({
     piecache,
     onError,
     queryOptions,
+    disableGlobalForm,
 }) => {
     const apiServer = useApiServer()
     const centrifugeServer = useCentrifugeServer()
@@ -160,18 +161,22 @@ const PieMaxRootContent: React.FC<PieRootProps> = ({
                     <FallbackContext.Provider value={fallback ?? <></>}>
                         <SocketIOInitProvider>
                             <CentrifugeIOInitProvider>
-                                <form
-                                    id="piedata_global_form"
-                                    action={
-                                        apiServer +
-                                        'api/process' +
-                                        location.pathname
-                                    }
-                                    method="post"
-                                    encType="multipart/form-data"
-                                >
+                                {disableGlobalForm ? (
                                     <UI uiConfig={uiConfiguration} />
-                                </form>
+                                ) : (
+                                    <form
+                                        id="piedata_global_form"
+                                        action={
+                                            apiServer +
+                                            'api/process' +
+                                            location.pathname
+                                        }
+                                        method="post"
+                                        encType="multipart/form-data"
+                                    >
+                                        <UI uiConfig={uiConfiguration} />
+                                    </form>
+                                )}
                             </CentrifugeIOInitProvider>
                         </SocketIOInitProvider>
                     </FallbackContext.Provider>

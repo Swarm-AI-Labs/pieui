@@ -35,6 +35,7 @@ const PieRootContent = ({
     piecache,
     onError,
     queryOptions,
+    disableGlobalForm,
 }: PieRootProps) => {
     const apiServer = useApiServer()
     const centrifugeServer = useCentrifugeServer()
@@ -160,18 +161,22 @@ const PieRootContent = ({
                     <FallbackContext.Provider value={fallback ?? <></>}>
                         <SocketIOInitProvider>
                             <CentrifugeIOInitProvider>
-                                <form
-                                    id="piedata_global_form"
-                                    action={
-                                        apiServer +
-                                        'api/process' +
-                                        location.pathname
-                                    }
-                                    method="post"
-                                    encType="multipart/form-data"
-                                >
+                                {disableGlobalForm ? (
                                     <UI uiConfig={uiConfiguration} />
-                                </form>
+                                ) : (
+                                    <form
+                                        id="piedata_global_form"
+                                        action={
+                                            apiServer +
+                                            'api/process' +
+                                            location.pathname
+                                        }
+                                        method="post"
+                                        encType="multipart/form-data"
+                                    >
+                                        <UI uiConfig={uiConfiguration} />
+                                    </form>
+                                )}
                             </CentrifugeIOInitProvider>
                         </SocketIOInitProvider>
                     </FallbackContext.Provider>

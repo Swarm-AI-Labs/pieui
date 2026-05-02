@@ -23,6 +23,7 @@ const PieBaseRootContent = ({
     location,
     fallback,
     children,
+    disableGlobalForm,
 }: PieBaseRootProps) => {
     const apiServer = useApiServer()
     const centrifugeServer = useCentrifugeServer()
@@ -52,18 +53,22 @@ const PieBaseRootContent = ({
                     <FallbackContext.Provider value={fallback ?? <></>}>
                         <SocketIOInitProvider>
                             <CentrifugeIOInitProvider>
-                                <form
-                                    id="piedata_global_form"
-                                    action={
-                                        apiServer +
-                                        'api/process' +
-                                        location.pathname
-                                    }
-                                    method="post"
-                                    encType="multipart/form-data"
-                                >
-                                    {children}
-                                </form>
+                                {disableGlobalForm ? (
+                                    children
+                                ) : (
+                                    <form
+                                        id="piedata_global_form"
+                                        action={
+                                            apiServer +
+                                            'api/process' +
+                                            location.pathname
+                                        }
+                                        method="post"
+                                        encType="multipart/form-data"
+                                    >
+                                        {children}
+                                    </form>
+                                )}
                             </CentrifugeIOInitProvider>
                         </SocketIOInitProvider>
                     </FallbackContext.Provider>

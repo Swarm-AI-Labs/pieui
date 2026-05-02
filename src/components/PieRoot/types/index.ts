@@ -50,4 +50,11 @@ export interface PieRootProps {
     config: PieConfig
     /** Optional react-query overrides; see {@link PieQueryOptions}. */
     queryOptions?: PieQueryOptions
+    /**
+     * When `true`, the implicit `<form id="piedata_global_form">` wrapper is
+     * not rendered. Use this when the host application owns its own form
+     * element or when PieUI is embedded inside another form and a nested
+     * `<form>` would be invalid HTML.
+     */
+    disableGlobalForm?: boolean
 }
