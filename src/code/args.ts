@@ -102,6 +102,9 @@ export const parseArgs = (argv: string[]): ParsedArgs => {
     let historyPerPage: number | undefined
     let historyFrom: number | undefined
     let historyTo: number | undefined
+    let skipAnalyze: boolean | undefined
+    let allowExternal: boolean | undefined
+    let includeStories: boolean | undefined
 
     if (command === 'card' && cardAction === 'remote' && argv[2]) {
         const validRemoteActions: CardRemoteAction[] = [
@@ -112,6 +115,7 @@ export const parseArgs = (argv: string[]): ParsedArgs => {
             'history',
             'public',
             'private',
+            'analyze',
         ]
         const action = argv[2] as CardRemoteAction
         if (validRemoteActions.includes(action)) {
@@ -191,6 +195,15 @@ export const parseArgs = (argv: string[]): ParsedArgs => {
                         tok.slice('--to='.length)
                     )
                     flagIndexes.add(i)
+                } else if (tok === '--no-analyze') {
+                    skipAnalyze = true
+                    flagIndexes.add(i)
+                } else if (tok === '--allow-external') {
+                    allowExternal = true
+                    flagIndexes.add(i)
+                } else if (tok === '--include-stories') {
+                    includeStories = true
+                    flagIndexes.add(i)
                 }
             }
             const positionals = rest.filter((_, i) => !flagIndexes.has(i))
@@ -250,6 +263,9 @@ export const parseArgs = (argv: string[]): ParsedArgs => {
         historyPerPage,
         historyFrom,
         historyTo,
+        skipAnalyze,
+        allowExternal,
+        includeStories,
     }
 }
 
@@ -304,6 +320,9 @@ export const printUsage = () => {
     )
     console.log(
         '  card remote private <ComponentName>      Make a public component private again'
+    )
+    console.log(
+        '  card remote analyze <ComponentName> [--include-stories]  Print full dependency tree of the local component and flag externals'
     )
     console.log(
         '  list-events <ComponentName>             List registered methods keys for <PieCard card="ComponentName" ... methods={...} />'
@@ -455,5 +474,14 @@ export const printUsage = () => {
     )
     console.log(
         '  pieui card remote private ExchangeAlertsCard # Revert to private'
+    )
+    console.log(
+        '  pieui card remote analyze ExchangeAlertsCard # Print dep tree and flag externals'
+    )
+    console.log(
+        '  pieui card remote push ExchangeAlertsCard --allow-external  # Push despite blockers'
+    )
+    console.log(
+        '  pieui card remote push ExchangeAlertsCard --no-analyze       # Skip the pre-push analysis entirely'
     )
 }

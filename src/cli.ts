@@ -15,6 +15,7 @@ import { cardRemoteRemoveCommand } from './code/commands/cardRemote/remove'
 import { cardRemoteHistoryCommand } from './code/commands/cardRemote/history'
 import { cardRemotePublicCommand } from './code/commands/cardRemote/public'
 import { cardRemotePrivateCommand } from './code/commands/cardRemote/private'
+import { cardRemoteAnalyzeCommand } from './code/commands/cardRemote/analyze'
 import { pageAddCommand } from './code/commands/pageAdd'
 import { createCommand } from './code/commands/create'
 import { createPieAppCommand } from './code/commands/createPieApp'
@@ -44,6 +45,9 @@ const main = async () => {
         historyPerPage,
         historyFrom,
         historyTo,
+        skipAnalyze,
+        allowExternal,
+        includeStories,
     } = parseArgs(process.argv.slice(2))
 
     console.log(`[pieui] CLI started with command: "${command}"`)
@@ -106,7 +110,18 @@ const main = async () => {
                     process.exit(1)
                 }
                 if (cardRemoteAction === 'push') {
-                    await cardRemotePushCommand(componentName)
+                    await cardRemotePushCommand(componentName, {
+                        skipAnalyze,
+                        allowExternal,
+                        includeStories,
+                    })
+                    return
+                }
+                if (cardRemoteAction === 'analyze') {
+                    await cardRemoteAnalyzeCommand({
+                        componentName,
+                        includeStories,
+                    })
                     return
                 }
                 if (cardRemoteAction === 'pull') {
@@ -136,7 +151,7 @@ const main = async () => {
                     return
                 }
                 console.error(
-                    '[pieui] Error: Supported card remote subcommands: push, pull, list, remove, history, public, private'
+                    '[pieui] Error: Supported card remote subcommands: push, pull, list, remove, history, public, private, analyze'
                 )
                 printUsage()
                 process.exit(1)

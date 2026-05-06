@@ -19,6 +19,7 @@ export type CardRemoteAction =
     | 'history'
     | 'public'
     | 'private'
+    | 'analyze'
 export type PageAction = 'add'
 
 export type ParsedArgs = {
@@ -44,6 +45,9 @@ export type ParsedArgs = {
     historyPerPage?: number
     historyFrom?: number
     historyTo?: number
+    skipAnalyze?: boolean
+    allowExternal?: boolean
+    includeStories?: boolean
 }
 
 export type CardScaffoldOptions = {

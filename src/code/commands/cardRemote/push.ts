@@ -1,12 +1,20 @@
 import fs from 'node:fs'
 import path from 'node:path'
+import { analyzeComponentDeps, formatDepReport } from '../../cardDeps'
 import { extractCardMetadata, serializeCardMetadata } from '../../cardMetadata'
 import { loadSettings } from '../../services/settings'
 import { PieStorageError, PieStorageService } from '../../services/storage'
 import { parseCardRef } from './cardRef'
 
+export type CardRemotePushOptions = {
+    skipAnalyze?: boolean
+    allowExternal?: boolean
+    includeStories?: boolean
+}
+
 export const cardRemotePushCommand = async (
-    cardRef: string
+    cardRef: string,
+    options: CardRemotePushOptions = {}
 ): Promise<void> => {
     const ref = parseCardRef(cardRef)
     if (ref.revision !== undefined) {
@@ -39,6 +47,19 @@ export const cardRemotePushCommand = async (
         !fs.statSync(componentDir).isDirectory()
     ) {
         throw new Error(`Component directory not found: ${componentDir}`)
+    }
+
+    if (!options.skipAnalyze) {
+        const report = analyzeComponentDeps(componentDir, {
+            includeStories: options.includeStories,
+        })
+        console.log(formatDepReport(report).join('\n'))
+        if (report.hasBlockers && !options.allowExternal) {
+            throw new Error(
+                `Dependency analysis found blockers (${report.blockerClasses.join(', ')}). Re-run with --allow-external to push anyway, or pass --no-analyze to skip the check.`
+            )
+        }
+        console.log('')
     }
 
     const service = new PieStorageService(settings)
