@@ -38,7 +38,7 @@ export type {
 
 export type { PieQueryOptions } from './components/PieRoot/types'
 
-export { useAjaxSubmit } from './util/ajaxCommonUtils'
+export { useAjaxSubmit, readAjaxKey } from './util/ajaxCommonUtils'
 export type { RetryPolicy } from './util/ajaxCommonUtils'
 export { usePieEmit } from './util/mitt'
 export {

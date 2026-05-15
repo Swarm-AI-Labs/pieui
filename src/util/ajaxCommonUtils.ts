@@ -35,6 +35,54 @@ export type GetAjaxSubmitOptions = {
 }
 
 /**
+ * Reads the value(s) for a single dep name from the DOM, following the same
+ * convention used by Ajax cards. Returns an array because file inputs can
+ * contribute multiple values for the same key.
+ *
+ * - `'sid'` resolves to `window.sid`. The caller must ensure SocketIO is
+ *   ready (e.g. via {@link waitForSidAvailable}) before calling this.
+ * - Other names are looked up via `document.getElementsByName`; only the
+ *   first match is read.
+ * - `<input type="file">` returns every selected `File`.
+ * - Other `<input>` / `<textarea>` returns the current `.value`.
+ * - Missing inputs return `[]` (and emit a warning when `renderingLogEnabled`).
+ *
+ * Must run in a browser environment — relies on `document` and `window`.
+ *
+ * @throws if `depName === 'sid'` and `window.sid` is not initialized.
+ */
+export const readAjaxKey = (
+    depName: string,
+    renderingLogEnabled: boolean = false
+): Array<string | File> => {
+    if (depName === 'sid') {
+        if (!window.sid)
+            throw new Error("SocketIO isn't initialized properly")
+        return [window.sid]
+    }
+
+    const inputs = document.getElementsByName(depName)
+    if (!inputs.length) {
+        if (renderingLogEnabled) {
+            console.warn(`No input found with name ${depName}`)
+        }
+        return []
+    }
+
+    const input = inputs[0]
+    if (input instanceof HTMLInputElement) {
+        if (input.type === 'file' && input.files) {
+            return Array.from(input.files)
+        }
+        return [input.value]
+    }
+    if (input instanceof HTMLTextAreaElement) {
+        return [input.value]
+    }
+    return []
+}
+
+/**
  * Builds an async "submit" function that issues an AJAX request to
  * `api/ajax_content{pathname}` and streams (or JSON-decodes) the response
  * into a `setUiAjaxConfiguration` callback supplied by an Ajax container.
@@ -119,30 +167,8 @@ export const getAjaxSubmit = (
         }
 
         for (const depName of depsNames) {
-            if (depName === 'sid') {
-                if (!window.sid)
-                    throw new Error("SocketIO isn't initialized properly")
-                data.append('sid', window.sid)
-            } else {
-                const inputs = document.getElementsByName(depName)
-                if (!inputs.length) {
-                    if (renderingLogEnabled) {
-                        console.warn(`No input found with name ${depName}`)
-                    }
-                    continue
-                }
-                const input = inputs[0]
-                if (input instanceof HTMLInputElement) {
-                    if (input.type === 'file' && input.files) {
-                        Array.from(input.files).forEach((file) =>
-                            data.append(depName, file)
-                        )
-                    } else {
-                        data.append(depName, input.value)
-                    }
-                } else if (input instanceof HTMLTextAreaElement) {
-                    data.append(depName, input.value)
-                }
+            for (const value of readAjaxKey(depName, renderingLogEnabled)) {
+                data.append(depName, value)
             }
         }
 
