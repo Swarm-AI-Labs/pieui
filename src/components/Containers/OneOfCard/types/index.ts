@@ -1,9 +1,9 @@
 import { CSSProperties } from 'react'
 import { PieComplexContainerComponentProps } from '../../../../types'
 
-export interface SequenceCardData {
+export interface OneOfCardData {
     name: string
     sx: CSSProperties
 }
 
-export interface SequenceCardProps extends PieComplexContainerComponentProps<SequenceCardData> {}
+export interface OneOfCardProps extends PieComplexContainerComponentProps<OneOfCardData> {}

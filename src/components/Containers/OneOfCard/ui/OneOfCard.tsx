@@ -1,6 +1,6 @@
 import { useContext } from 'react'
 import { UIConfigType } from '../../../../types'
-import { SequenceCardProps } from '../types'
+import { OneOfCardProps } from '../types'
 import PieCard from '../../../PieCard'
 import UI from '../../../UI'
 import UIRendererContext from '../../../../util/uiRenderer'
@@ -9,7 +9,7 @@ const OneOfCard = ({
     data,
     content,
     setUiAjaxConfiguration,
-}: SequenceCardProps) => {
+}: OneOfCardProps) => {
     const { name, sx } = data
     const Renderer = useContext(UIRendererContext) ?? UI
     return (
