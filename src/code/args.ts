@@ -19,6 +19,7 @@ const VALID_CARD_ACTIONS: CardAction[] = [
     'remote',
     'dump-metadata',
     'check-sync',
+    'add-story',
 ]
 
 const VALID_CARD_REMOTE_ACTIONS: CardRemoteAction[] = [
@@ -261,6 +262,8 @@ export const parseArgs = (argv: string[]): ParsedArgs => {
             result.dumpMetadataOut = flags.dumpMetadataOut
         } else if (action === 'check-sync') {
             result.componentName = positionals[0]
+        } else if (action === 'add-story') {
+            result.componentName = positionals[0]
         } else if (action === 'remote') {
             const sub = positionals[0] as CardRemoteAction | undefined
             if (sub && VALID_CARD_REMOTE_ACTIONS.includes(sub)) {
@@ -354,6 +357,7 @@ const ALL_LINES: string[] = [
     '  card remove <Name>                               Remove a component from piecomponents/',
     '  card list-events <Name>                          List methods keys on the registered PieCard',
     '  card add-event <Name> <event>                    Add a new methods key with a default handler',
+    '  card add-story <Name>                            Generate a Storybook stories.tsx wired to PieCard methods',
     '  card dump-metadata <Name> [--out file.json]      Dump full PieMetadata JSON for the component',
     '  card check-sync <Name>                           Compare TS ↔ Python metadata; prompt for backend project path if not configured',
     '  card remote list [--user U] [--project S]        List remote components',
@@ -424,6 +428,7 @@ const CARD_LINES: string[] = [
     '  remove <Name>                               Remove a component from piecomponents/',
     '  list-events <Name>                          List methods keys on the registered PieCard',
     '  add-event <Name> <event>                    Add a new methods key with a default handler',
+    '  add-story <Name>                            Generate a Storybook stories.tsx wired to PieCard methods',
     '  dump-metadata <Name> [--out file.json]      Dump full PieMetadata JSON for the component',
     '  check-sync <Name>                           Compare TS ↔ Python metadata; prompts for backend project path',
     '  remote ...                                  Remote storage operations (see `pieui card remote --help`)',

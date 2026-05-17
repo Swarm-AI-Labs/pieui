@@ -20,6 +20,7 @@ import { cardPullCommand } from './code/commands/cardPull'
 import { cardViewCommand } from './code/commands/cardView'
 import { cardDumpMetadataCommand } from './code/commands/cardDumpMetadata'
 import { cardCheckSyncCommand } from './code/commands/cardCheckSync'
+import { cardAddStoryCommand } from './code/commands/cardAddStory'
 import {
     cardAddFromMetaCommand,
     hasBackendSourceFor,
@@ -194,6 +195,11 @@ const main = async () => {
                 const name = requireName(componentName, 'Component name')
                 const exitCode = await cardCheckSyncCommand(name)
                 process.exit(exitCode)
+            }
+            if (cardAction === 'add-story') {
+                const name = requireName(componentName, 'Component name')
+                cardAddStoryCommand(name)
+                return
             }
             if (cardAction === 'remote') {
                 if (cardRemoteAction === 'list') {

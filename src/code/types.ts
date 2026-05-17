@@ -21,6 +21,7 @@ export type CardAction =
     | 'remote'
     | 'dump-metadata'
     | 'check-sync'
+    | 'add-story'
 export type CardRemoteAction =
     | 'push'
     | 'pull'

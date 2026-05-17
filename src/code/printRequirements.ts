@@ -129,6 +129,14 @@ export const initRequirements = (): string[] => {
     ]
 }
 
+export const cardAddStoryRequirements = (componentName: string): string[] => {
+    return [
+        `Install Storybook in the host app (\`npx storybook@latest init --type=nextjs\`) and add \`'@swarm.ing/pieui/storybook/addon'\` to its \`.storybook/main.ts\` addons list.`,
+        `The generated story passes \`useMittSupport: true\` in args so the addon's "Fire" buttons reach the card. If you change to socketio/centrifuge transports, scaffold a corresponding story.`,
+        `Re-run \`pieui card add-story ${componentName}\` after changing the card's \`methods={{ … }}\` so the addon panel stays in sync with eventsPropsSchema.`,
+    ]
+}
+
 export const createRequirements = (appName: string): string[] => {
     return [
         `Bootstrap the Python backend: in your pie repo, run \`pie init\` and set "frontendProjectDir" to the new app directory (./${appName}).`,
