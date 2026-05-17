@@ -11,6 +11,7 @@ import {
 } from '../templates'
 
 const DEFAULT_TEMPLATE_SPEC = 'next-app@latest'
+const DEFAULT_PIEUI_PACKAGE_SPEC = '@swarm.ing/pieui'
 
 const clearDirectory = (targetDir: string) => {
     if (!fs.existsSync(targetDir)) return
@@ -107,6 +108,8 @@ export const createCommand = async (appName: string) => {
     const bunBin = process.env.PIEUI_CREATE_BUN_BIN || 'bun'
     const templateSpec =
         process.env.PIEUI_CREATE_NEXT_APP_SPEC || DEFAULT_TEMPLATE_SPEC
+    const pieuiPackageSpec =
+        process.env.PIEUI_CREATE_PACKAGE_SPEC || DEFAULT_PIEUI_PACKAGE_SPEC
 
     console.log(`[pieui] Creating Next.js app in "${trimmedAppName}"...`)
 
@@ -130,8 +133,8 @@ export const createCommand = async (appName: string) => {
     }
 
     scaffoldCreateAppFiles(appDir)
-    await initCommand(trimmedAppName)
     writeFile(path.join(appDir, '.env'), envTemplate())
-    runBunCommand(bunBin, ['install'], appDir)
+    runBunCommand(bunBin, ['add', pieuiPackageSpec], appDir)
+    await initCommand(trimmedAppName)
     runBunCommand(bunBin, ['run', 'dev'], appDir)
 }

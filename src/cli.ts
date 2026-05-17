@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import path from 'node:path'
-import { parseArgs, printUsage } from './code/args'
+import { detectHelpScope, parseArgs, printUsage } from './code/args'
 import { initCommand } from './code/commands/init'
 import { addCommand } from './code/commands/add'
 import { removeCommand } from './code/commands/remove'
@@ -38,7 +38,15 @@ const requireName = (
 }
 
 const main = async () => {
-    const args = parseArgs(process.argv.slice(2))
+    const rawArgs = process.argv.slice(2)
+
+    const helpScope = detectHelpScope(rawArgs)
+    if (helpScope) {
+        printUsage(helpScope)
+        return
+    }
+
+    const args = parseArgs(rawArgs)
     const {
         command,
         outDir,

@@ -273,74 +273,228 @@ export const parseArgs = (argv: string[]): ParsedArgs => {
     return result
 }
 
-export const printUsage = () => {
-    const lines: string[] = [
-        'Usage: pieui <command> [options]',
-        '',
-        'Commands:',
-        '  login                                            Sign in to PieUI and save credentials to .pie/config.json',
-        '  create <AppName>                                 Create a Next.js app and run pieui init inside it',
-        '  create-pie-app <AppName>                         Create a blank Next.js web template for PieUI',
-        '  create-pieui <AppName>                           Alias for create-pie-app',
-        '  init                                             Initialize piecomponents dir, registry.ts, tailwind & next.config; prompt for backend dirs',
-        '  postbuild                                        Scan for components and generate manifest',
-        '',
-        'Card management (mirrors `pie card ...`):',
-        '  card add [type] <Name> [--io] [--ajax]           Create a new component in piecomponents/',
-        '  card list [filter]                               List registered components',
-        '  card pull <ref>                                  Pull a card by Name, project/Name, or r/user/Name (public alias)',
-        '  card view <Name>                                 Print card name, props, ajax, IO, and events',
-        '  card remove <Name>                               Remove a component from piecomponents/',
-        '  card list-events <Name>                          List methods keys on the registered PieCard',
-        '  card add-event <Name> <event>                    Add a new methods key with a default handler',
-        '  card remote list [--user U] [--project S]        List remote components',
-        '  card remote push <Name>                          Upload piecomponents/<Name>/ to PieUI storage',
-        '  card remote pull <Name>[@rev]                    Download component from PieUI storage',
-        '  card remote remove <Name>                        Delete component from PieUI storage',
-        '  card remote history <Name> [--page N] [--per-page N] [--from R] [--to R]',
-        '                                                   Show revision history with per-file diff stats',
-        '  card remote public <Name>                        Mark component public (readable as r/<user>/<Name>)',
-        '  card remote private <Name>                       Make a public component private again',
-        '',
-        'Page management (mirrors `pie page ...`):',
-        '  page add <path>                                  Create app/<path>/page.tsx from the standard Pie page template',
-        '  page view <path>                                 Print app/<path>/page.tsx source',
-        '  page ajax <path> <add|remove> <handler>          Add or remove an AJAX handler in app/<path>/page.tsx',
-        '',
-        'Component types for `card add`:',
-        '  simple              Simple component (only data prop)',
-        '  complex             Complex component (data + children props)',
-        '  simple-container    Container with single content (data + content)',
-        '  complex-container   Container with array content (data + content[])  [default]',
-        '',
-        'Options for `card add`:',
-        '  --io                Add realtime support fields to the generated data interface',
-        '  --ajax              Add AJAX request fields to the generated data interface',
-        '',
-        'Options for init:',
-        '  --out-dir <dir>, -o <dir>    Base directory for piecomponents (default: .)',
-        '',
-        'Options for postbuild:',
-        '  --out-dir <dir>, -o <dir>    Output directory (default: public)',
-        '  --src-dir <dir>, -s <dir>    Source directory (default: src)',
-        '  --append                     Include built-in pieui components in the manifest',
-        '',
-        'Options for `card list` / `card list-events` / `card add-event`:',
-        '  --src-dir <dir>, -s <dir>    Source directory (default: .)',
-        '',
-        'Examples:',
-        '  pieui login',
-        '  pieui init',
-        '  pieui create my-pie-app',
-        '  pieui card add MyCustomCard',
-        '  pieui card add simple MySimpleCard',
-        '  pieui card list complex-container',
-        '  pieui card view MyCustomCard',
-        '  pieui card pull r/alice/HeroCard',
-        '  pieui card remote push MyCustomCard',
-        '  pieui page add dashboard',
-        '  pieui page view dashboard',
-        '  pieui page ajax dashboard add refresh',
-    ]
+export type HelpScope =
+    | 'all'
+    | 'login'
+    | 'create'
+    | 'init'
+    | 'postbuild'
+    | 'card'
+    | 'card-remote'
+    | 'page'
+
+export const detectHelpScope = (argv: string[]): HelpScope | null => {
+    if (!argv.includes('--help') && !argv.includes('-h')) return null
+    const [c0, c1] = argv
+    if (!c0 || c0 === '--help' || c0 === '-h') return 'all'
+    if (c0 === 'card' && c1 === 'remote') return 'card-remote'
+    if (c0 === 'card') return 'card'
+    if (c0 === 'page') return 'page'
+    if (c0 === 'init') return 'init'
+    if (c0 === 'postbuild') return 'postbuild'
+    if (c0 === 'login') return 'login'
+    if (
+        c0 === 'create' ||
+        c0 === 'create-pie-app' ||
+        c0 === 'create-pieui'
+    ) {
+        return 'create'
+    }
+    return 'all'
+}
+
+const ALL_LINES: string[] = [
+    'Usage: pieui <command> [options]',
+    '',
+    'Commands:',
+    '  login                                            Sign in to PieUI and save credentials to .pie/config.json',
+    '  create <AppName>                                 Create a Next.js app and run pieui init inside it',
+    '  create-pie-app <AppName>                         Create a blank Next.js web template for PieUI',
+    '  create-pieui <AppName>                           Alias for create-pie-app',
+    '  init                                             Initialize piecomponents dir, registry.ts, tailwind & next.config; prompt for backend dirs',
+    '  postbuild                                        Scan for components and generate manifest',
+    '',
+    'Card management (mirrors `pie card ...`):',
+    '  card add [type] <Name> [--io] [--ajax]           Create a new component in piecomponents/',
+    '  card list [filter]                               List registered components',
+    '  card pull <ref>                                  Pull a card by Name, project/Name, or r/user/Name (public alias)',
+    '  card view <Name>                                 Print card name, props, ajax, IO, and events',
+    '  card remove <Name>                               Remove a component from piecomponents/',
+    '  card list-events <Name>                          List methods keys on the registered PieCard',
+    '  card add-event <Name> <event>                    Add a new methods key with a default handler',
+    '  card remote list [--user U] [--project S]        List remote components',
+    '  card remote push <Name>                          Upload piecomponents/<Name>/ to PieUI storage',
+    '  card remote pull <Name>[@rev]                    Download component from PieUI storage',
+    '  card remote remove <Name>                        Delete component from PieUI storage',
+    '  card remote history <Name> [--page N] [--per-page N] [--from R] [--to R]',
+    '                                                   Show revision history with per-file diff stats',
+    '  card remote public <Name>                        Mark component public (readable as r/<user>/<Name>)',
+    '  card remote private <Name>                       Make a public component private again',
+    '',
+    'Page management (mirrors `pie page ...`):',
+    '  page add <path>                                  Create app/<path>/page.tsx from the standard Pie page template',
+    '  page view <path>                                 Print app/<path>/page.tsx source',
+    '  page ajax <path> <add|remove> <handler>          Add or remove an AJAX handler in app/<path>/page.tsx',
+    '',
+    'Component types for `card add`:',
+    '  simple              Simple component (only data prop)',
+    '  complex             Complex component (data + children props)',
+    '  simple-container    Container with single content (data + content)',
+    '  complex-container   Container with array content (data + content[])  [default]',
+    '',
+    'Options for `card add`:',
+    '  --io                Add realtime support fields to the generated data interface',
+    '  --ajax              Add AJAX request fields to the generated data interface',
+    '',
+    'Options for init:',
+    '  --out-dir <dir>, -o <dir>    Base directory for piecomponents (default: .)',
+    '',
+    'Options for postbuild:',
+    '  --out-dir <dir>, -o <dir>    Output directory (default: public)',
+    '  --src-dir <dir>, -s <dir>    Source directory (default: src)',
+    '  --append                     Include built-in pieui components in the manifest',
+    '',
+    'Options for `card list` / `card list-events` / `card add-event`:',
+    '  --src-dir <dir>, -s <dir>    Source directory (default: .)',
+    '',
+    'Examples:',
+    '  pieui login',
+    '  pieui init',
+    '  pieui create my-pie-app',
+    '  pieui card add MyCustomCard',
+    '  pieui card add simple MySimpleCard',
+    '  pieui card list complex-container',
+    '  pieui card view MyCustomCard',
+    '  pieui card pull r/alice/HeroCard',
+    '  pieui card remote push MyCustomCard',
+    '  pieui page add dashboard',
+    '  pieui page view dashboard',
+    '  pieui page ajax dashboard add refresh',
+]
+
+const CARD_LINES: string[] = [
+    'Usage: pieui card <subcommand> [options]',
+    '',
+    'Subcommands:',
+    '  add [type] <Name> [--io] [--ajax]           Create a new component in piecomponents/',
+    '  list [filter]                               List registered components',
+    '  pull <ref>                                  Pull a card by Name, project/Name, or r/user/Name (public alias)',
+    '  view <Name>                                 Print card name, props, ajax, IO, and events',
+    '  remove <Name>                               Remove a component from piecomponents/',
+    '  list-events <Name>                          List methods keys on the registered PieCard',
+    '  add-event <Name> <event>                    Add a new methods key with a default handler',
+    '  remote ...                                  Remote storage operations (see `pieui card remote --help`)',
+    '',
+    'Component types for `card add`:',
+    '  simple              Simple component (only data prop)',
+    '  complex             Complex component (data + children props)',
+    '  simple-container    Container with single content (data + content)',
+    '  complex-container   Container with array content (data + content[])  [default]',
+    '',
+    'Options for `card add`:',
+    '  --io                Add realtime support fields to the generated data interface',
+    '  --ajax              Add AJAX request fields to the generated data interface',
+    '',
+    'Options for `card list` / `card list-events` / `card add-event`:',
+    '  --src-dir <dir>, -s <dir>    Source directory (default: .)',
+    '',
+    'Examples:',
+    '  pieui card add MyCustomCard',
+    '  pieui card add simple MySimpleCard',
+    '  pieui card list complex-container',
+    '  pieui card view MyCustomCard',
+    '  pieui card pull r/alice/HeroCard',
+]
+
+const CARD_REMOTE_LINES: string[] = [
+    'Usage: pieui card remote <subcommand> [options]',
+    '',
+    'Subcommands:',
+    '  list [--user U] [--project S]               List remote components',
+    '  push <Name>                                 Upload piecomponents/<Name>/ to PieUI storage',
+    '  pull <Name>[@rev]                           Download component from PieUI storage',
+    '  remove <Name>                               Delete component from PieUI storage',
+    '  history <Name> [--page N] [--per-page N] [--from R] [--to R]',
+    '                                              Show revision history with per-file diff stats',
+    '  public <Name>                               Mark component public (readable as r/<user>/<Name>)',
+    '  private <Name>                              Make a public component private again',
+    '',
+    'Examples:',
+    '  pieui card remote push MyCustomCard',
+    '  pieui card remote pull MyCustomCard',
+    '  pieui card remote list --user alice --project demo',
+    '  pieui card remote history MyCustomCard --page 2',
+]
+
+const PAGE_LINES: string[] = [
+    'Usage: pieui page <subcommand> [options]',
+    '',
+    'Subcommands:',
+    '  add <path>                                  Create app/<path>/page.tsx from the standard Pie page template',
+    '  view <path>                                 Print app/<path>/page.tsx source',
+    '  ajax <path> <add|remove> <handler>          Add or remove an AJAX handler in app/<path>/page.tsx',
+    '',
+    'Examples:',
+    '  pieui page add dashboard',
+    '  pieui page view dashboard',
+    '  pieui page ajax dashboard add refresh',
+]
+
+const INIT_LINES: string[] = [
+    'Usage: pieui init [options]',
+    '',
+    'Initialize piecomponents dir, registry.ts, tailwind & next.config; prompt for backend dirs.',
+    '',
+    'Options:',
+    '  --out-dir <dir>, -o <dir>    Base directory for piecomponents (default: .)',
+]
+
+const POSTBUILD_LINES: string[] = [
+    'Usage: pieui postbuild [options]',
+    '',
+    'Scan for components and generate manifest.',
+    '',
+    'Options:',
+    '  --out-dir <dir>, -o <dir>    Output directory (default: public)',
+    '  --src-dir <dir>, -s <dir>    Source directory (default: src)',
+    '  --append                     Include built-in pieui components in the manifest',
+]
+
+const LOGIN_LINES: string[] = [
+    'Usage: pieui login',
+    '',
+    'Sign in to PieUI and save credentials to .pie/config.json.',
+]
+
+const CREATE_LINES: string[] = [
+    'Usage: pieui create <AppName>',
+    '       pieui create-pie-app <AppName>',
+    '       pieui create-pieui <AppName>',
+    '',
+    '`create` creates a Next.js app and runs `pieui init` inside it.',
+    '`create-pie-app` (alias `create-pieui`) creates a blank Next.js web template for PieUI.',
+]
+
+export const printUsage = (scope: HelpScope = 'all') => {
+    const lines = (() => {
+        switch (scope) {
+            case 'card':
+                return CARD_LINES
+            case 'card-remote':
+                return CARD_REMOTE_LINES
+            case 'page':
+                return PAGE_LINES
+            case 'init':
+                return INIT_LINES
+            case 'postbuild':
+                return POSTBUILD_LINES
+            case 'login':
+                return LOGIN_LINES
+            case 'create':
+                return CREATE_LINES
+            default:
+                return ALL_LINES
+        }
+    })()
     for (const line of lines) console.log(line)
 }
