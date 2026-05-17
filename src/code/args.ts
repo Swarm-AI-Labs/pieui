@@ -188,6 +188,16 @@ export const parseArgs = (argv: string[]): ParsedArgs => {
         append: appendFlag,
     }
 
+    if (command === 'self-upgrade') {
+        const pmFlag = argv.find((arg) => arg.startsWith('--pm='))
+        const pmIndex = argv.findIndex((arg) => arg === '--pm')
+        if (pmFlag) {
+            result.selfUpgradePm = pmFlag.split('=')[1]
+        } else if (pmIndex !== -1 && argv[pmIndex + 1]) {
+            result.selfUpgradePm = argv[pmIndex + 1]
+        }
+    }
+
     if (
         (command === 'create-pie-app' ||
             command === 'create-pieui' ||
@@ -282,6 +292,7 @@ export type HelpScope =
     | 'card'
     | 'card-remote'
     | 'page'
+    | 'self-upgrade'
 
 export const detectHelpScope = (argv: string[]): HelpScope | null => {
     if (!argv.includes('--help') && !argv.includes('-h')) return null
@@ -293,6 +304,7 @@ export const detectHelpScope = (argv: string[]): HelpScope | null => {
     if (c0 === 'init') return 'init'
     if (c0 === 'postbuild') return 'postbuild'
     if (c0 === 'login') return 'login'
+    if (c0 === 'self-upgrade') return 'self-upgrade'
     if (
         c0 === 'create' ||
         c0 === 'create-pie-app' ||
@@ -313,6 +325,7 @@ const ALL_LINES: string[] = [
     '  create-pieui <AppName>                           Alias for create-pie-app',
     '  init                                             Initialize piecomponents dir, registry.ts, tailwind & next.config; prompt for backend dirs',
     '  postbuild                                        Scan for components and generate manifest',
+    '  self-upgrade [--pm bun|npm|pnpm|yarn]            Upgrade the globally installed pieui CLI to the latest published version',
     '',
     'Card management (mirrors `pie card ...`):',
     '  card add [type] <Name> [--io] [--ajax]           Create a new component in piecomponents/',
@@ -359,6 +372,7 @@ const ALL_LINES: string[] = [
     '',
     'Examples:',
     '  pieui login',
+    '  pieui self-upgrade',
     '  pieui init',
     '  pieui create my-pie-app',
     '  pieui card add MyCustomCard',
@@ -466,6 +480,15 @@ const LOGIN_LINES: string[] = [
     'Sign in to PieUI and save credentials to .pie/config.json.',
 ]
 
+const SELF_UPGRADE_LINES: string[] = [
+    'Usage: pieui self-upgrade [--pm bun|npm|pnpm|yarn]',
+    '',
+    'Upgrade the globally installed @swarm.ing/pieui CLI to the latest published version.',
+    '',
+    'Options:',
+    '  --pm <manager>    Force package manager (default: auto-detect — prefers bun, then pnpm, yarn, npm)',
+]
+
 const CREATE_LINES: string[] = [
     'Usage: pieui create <AppName>',
     '       pieui create-pie-app <AppName>',
@@ -490,6 +513,8 @@ export const printUsage = (scope: HelpScope = 'all') => {
                 return POSTBUILD_LINES
             case 'login':
                 return LOGIN_LINES
+            case 'self-upgrade':
+                return SELF_UPGRADE_LINES
             case 'create':
                 return CREATE_LINES
             default:

@@ -125,7 +125,7 @@ test('add and remove manage files and registry entry', () => {
 
     const addResult = runCli({
         cwd: projectDir,
-        args: ['add', 'simple', 'StatusCard'],
+        args: ['card', 'add', 'simple', 'StatusCard'],
     })
     assertSucceeded(addResult, 'add command should succeed')
 
@@ -140,7 +140,7 @@ test('add and remove manage files and registry entry', () => {
 
     const removeResult = runCli({
         cwd: projectDir,
-        args: ['remove', 'StatusCard'],
+        args: ['card', 'remove', 'StatusCard'],
     })
     assertSucceeded(removeResult, 'remove command should succeed')
 
@@ -158,20 +158,20 @@ test('list prints components and supports type filter', () => {
         'init should succeed'
     )
     assertSucceeded(
-        runCli({ cwd: projectDir, args: ['add', 'simple', 'SimpleCard'] }),
+        runCli({ cwd: projectDir, args: ['card', 'add', 'simple', 'SimpleCard'] }),
         'add simple should succeed'
     )
     assertSucceeded(
-        runCli({ cwd: projectDir, args: ['add', 'complex', 'ComplexCard'] }),
+        runCli({ cwd: projectDir, args: ['card', 'add', 'complex', 'ComplexCard'] }),
         'add complex should succeed'
     )
 
-    const listAll = runCli({ cwd: projectDir, args: ['list'] })
+    const listAll = runCli({ cwd: projectDir, args: ['card', 'list'] })
     assertSucceeded(listAll, 'list should succeed')
     assert.match(listAll.stdout, /SimpleCard/)
     assert.match(listAll.stdout, /ComplexCard/)
 
-    const listSimple = runCli({ cwd: projectDir, args: ['list', 'simple'] })
+    const listSimple = runCli({ cwd: projectDir, args: ['card', 'list', 'simple'] })
     assertSucceeded(listSimple, 'list simple should succeed')
     assert.match(listSimple.stdout, /SimpleCard/)
     assert.match(listSimple.stdout, /\(filtered by: simple\)/)
@@ -199,7 +199,7 @@ test('list-events prints methods keys for PieCard', () => {
 
     const result = runCli({
         cwd: projectDir,
-        args: ['list-events', 'AlertsCard', '--src-dir', 'src'],
+        args: ['card', 'list-events', 'AlertsCard', '--src-dir', 'src'],
     })
 
     assertSucceeded(result, 'list-events should succeed')
@@ -233,7 +233,7 @@ export const Screen = () => {
 
     const result = runCli({
         cwd: projectDir,
-        args: ['list-events', 'IOEventsCard', '--src-dir', 'src'],
+        args: ['card', 'list-events', 'IOEventsCard', '--src-dir', 'src'],
     })
 
     assertSucceeded(
@@ -272,7 +272,7 @@ export const Screen = () => {
 
     const result = runCli({
         cwd: projectDir,
-        args: ['list-events', 'ShapeCard', '--src-dir', 'src'],
+        args: ['card', 'list-events', 'ShapeCard', '--src-dir', 'src'],
     })
 
     assertSucceeded(
@@ -323,7 +323,7 @@ test('list-events covers built-in component methods in repository source', () =>
     for (const testCase of cases) {
         const result = runCli({
             cwd: repoRoot,
-            args: ['list-events', testCase.component, '--src-dir', './src'],
+            args: ['card', 'list-events', testCase.component, '--src-dir', './src'],
         })
 
         assertSucceeded(
@@ -358,7 +358,7 @@ test('add-event appends a methods handler for inline object literal', () => {
 
     const addEvent = runCli({
         cwd: projectDir,
-        args: ['add-event', 'AlertsCard', 'create', '--src-dir', 'src'],
+        args: ['card', 'add-event', 'AlertsCard', 'create', '--src-dir', 'src'],
     })
     assertSucceeded(addEvent, 'add-event should succeed')
 
@@ -368,7 +368,7 @@ test('add-event appends a methods handler for inline object literal', () => {
 
     const addInvalid = runCli({
         cwd: projectDir,
-        args: ['add-event', 'AlertsCard', 'invalid key', '--src-dir', 'src'],
+        args: ['card', 'add-event', 'AlertsCard', 'invalid key', '--src-dir', 'src'],
     })
     assert.equal(addInvalid.status, 1)
     assert.match(addInvalid.stderr, /Invalid event key/)
@@ -392,7 +392,7 @@ test('add-event inserts into empty inline methods object', () => {
 
     const result = runCli({
         cwd: projectDir,
-        args: ['add-event', 'AlertsCard', 'create', '--src-dir', 'src'],
+        args: ['card', 'add-event', 'AlertsCard', 'create', '--src-dir', 'src'],
     })
     assertSucceeded(result, 'add-event should support empty methods object')
 
@@ -469,7 +469,7 @@ test('add without explicit type defaults to complex-container templates', () => 
     )
 
     assertSucceeded(
-        runCli({ cwd: projectDir, args: ['add', 'OrdersCard'] }),
+        runCli({ cwd: projectDir, args: ['card', 'add', 'OrdersCard'] }),
         'add should succeed with implicit type'
     )
 
@@ -508,7 +508,7 @@ test('add rejects invalid component names', () => {
 
     const result = runCli({
         cwd: projectDir,
-        args: ['add', 'simple', 'invalidName'],
+        args: ['card', 'add', 'simple', 'invalidName'],
     })
 
     assert.equal(result.status, 1)
@@ -526,13 +526,13 @@ test('add fails when component already exists', () => {
         'init should succeed'
     )
     assertSucceeded(
-        runCli({ cwd: projectDir, args: ['add', 'simple', 'AlphaCard'] }),
+        runCli({ cwd: projectDir, args: ['card', 'add', 'simple', 'AlphaCard'] }),
         'first add should succeed'
     )
 
     const duplicate = runCli({
         cwd: projectDir,
-        args: ['add', 'simple', 'AlphaCard'],
+        args: ['card', 'add', 'simple', 'AlphaCard'],
     })
 
     assert.equal(duplicate.status, 1)
@@ -557,7 +557,7 @@ test('remove missing component warns but succeeds when piecomponents exists', ()
 
     const result = runCli({
         cwd: projectDir,
-        args: ['remove', 'GhostCard'],
+        args: ['card', 'remove', 'GhostCard'],
     })
 
     assertSucceeded(
@@ -575,13 +575,13 @@ test('list with invalid filter falls back to all', () => {
         'init should succeed'
     )
     assertSucceeded(
-        runCli({ cwd: projectDir, args: ['add', 'simple', 'OneCard'] }),
+        runCli({ cwd: projectDir, args: ['card', 'add', 'simple', 'OneCard'] }),
         'add should succeed'
     )
 
     const listResult = runCli({
         cwd: projectDir,
-        args: ['list', 'not-a-filter'],
+        args: ['card', 'list', 'not-a-filter'],
     })
 
     assertSucceeded(listResult, 'list should succeed with invalid filter input')
@@ -600,7 +600,7 @@ test('list-events returns no methods for unknown component', () => {
 
     const result = runCli({
         cwd: projectDir,
-        args: ['list-events', 'UnknownCard', '--src-dir=src'],
+        args: ['card', 'list-events', 'UnknownCard', '--src-dir=src'],
     })
 
     assertSucceeded(
@@ -621,7 +621,7 @@ test('add-event fails if target PieCard with inline methods object is missing', 
 
     const result = runCli({
         cwd: projectDir,
-        args: ['add-event', 'AlertsCard', 'create', '-s', 'src'],
+        args: ['card', 'add-event', 'AlertsCard', 'create', '-s', 'src'],
     })
 
     assert.equal(result.status, 1)
@@ -975,7 +975,7 @@ EOF
   exit 0
 fi
 
-if [ "$1" = "install" ]; then
+if [ "$1" = "add" ]; then
   exit 0
 fi
 
@@ -999,7 +999,7 @@ exit 3
 
     const commandLog = fs.readFileSync(logPath, 'utf8')
     assert.match(commandLog, /^create next-app@latest my-create-app --yes/m)
-    assert.match(commandLog, /^install$/m)
+    assert.match(commandLog, /^add @swarm\.ing\/pieui/m)
     assert.match(commandLog, /^run dev$/m)
 
     const appDir = path.join(projectDir, 'my-create-app')
@@ -1056,7 +1056,7 @@ test('page add route creates normalized page scaffold', () => {
     assertSucceeded(result, 'page add should succeed')
     assert.match(
         result.stdout,
-        /Page created successfully at app\/chat\/room\/page\.tsx/
+        /Page created successfully at .*app\/chat\/room\/page\.tsx/
     )
 
     const pageFile = path.join(projectDir, 'app', 'chat', 'room', 'page.tsx')
@@ -1083,7 +1083,7 @@ test('add complex type generates PieComplexComponentProps in types/index.ts', ()
 
     const addResult = runCli({
         cwd: projectDir,
-        args: ['add', 'complex', 'ComplexCard'],
+        args: ['card', 'add', 'complex', 'ComplexCard'],
     })
     assertSucceeded(addResult, 'add complex should succeed')
     assert.match(addResult.stdout, /Component type: complex/)
@@ -1132,7 +1132,7 @@ test('add simple-container generates PieContainerComponentProps and destructures
 
     const addResult = runCli({
         cwd: projectDir,
-        args: ['add', 'simple-container', 'WrapCard'],
+        args: ['card', 'add', 'simple-container', 'WrapCard'],
     })
     assertSucceeded(addResult, 'add simple-container should succeed')
     assert.match(addResult.stdout, /Component type: simple-container/)
@@ -1193,7 +1193,7 @@ test('add reports correct component type label for all four type arguments', () 
     ]
 
     for (const { type, name, expectedProp } of cases) {
-        const result = runCli({ cwd: projectDir, args: ['add', type, name] })
+        const result = runCli({ cwd: projectDir, args: ['card', 'add', type, name] })
         assertSucceeded(result, `add ${type} ${name} should succeed`)
 
         assert.match(
@@ -1243,22 +1243,22 @@ test('list simple in a temp project finds all added components due to type-resol
     const projectDir = makeProjectDir('pieui-cli-list-type-fallback-')
     assertSucceeded(runCli({ cwd: projectDir, args: ['init'] }), 'init')
     assertSucceeded(
-        runCli({ cwd: projectDir, args: ['add', 'simple', 'OneCard'] }),
+        runCli({ cwd: projectDir, args: ['card', 'add', 'simple', 'OneCard'] }),
         'add simple'
     )
     assertSucceeded(
-        runCli({ cwd: projectDir, args: ['add', 'complex', 'TwoCard'] }),
+        runCli({ cwd: projectDir, args: ['card', 'add', 'complex', 'TwoCard'] }),
         'add complex'
     )
     assertSucceeded(
         runCli({
             cwd: projectDir,
-            args: ['add', 'simple-container', 'ThreeCard'],
+            args: ['card', 'add', 'simple-container', 'ThreeCard'],
         }),
         'add simple-container'
     )
 
-    const result = runCli({ cwd: projectDir, args: ['list', 'simple'] })
+    const result = runCli({ cwd: projectDir, args: ['card', 'list', 'simple'] })
     assertSucceeded(result, 'list simple should succeed')
     assert.match(result.stdout, /OneCard/)
     assert.match(result.stdout, /TwoCard/)
@@ -1414,7 +1414,7 @@ test('list-events returns only the target card methods when multiple PieCard exi
 
     const alertsResult = runCli({
         cwd: projectDir,
-        args: ['list-events', 'AlertsCard', '--src-dir', 'src'],
+        args: ['card', 'list-events', 'AlertsCard', '--src-dir', 'src'],
     })
     assertSucceeded(alertsResult, 'list-events AlertsCard should succeed')
     assert.match(alertsResult.stdout, /notify/)
@@ -1426,7 +1426,7 @@ test('list-events returns only the target card methods when multiple PieCard exi
 
     const metricsResult = runCli({
         cwd: projectDir,
-        args: ['list-events', 'MetricsCard', '--src-dir', 'src'],
+        args: ['card', 'list-events', 'MetricsCard', '--src-dir', 'src'],
     })
     assertSucceeded(metricsResult, 'list-events MetricsCard should succeed')
     assert.match(metricsResult.stdout, /refresh/)

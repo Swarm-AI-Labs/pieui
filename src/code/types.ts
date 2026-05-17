@@ -56,6 +56,7 @@ export type ParsedArgs = {
     historyPerPage?: number
     historyFrom?: number
     historyTo?: number
+    selfUpgradePm?: string
 }
 
 export type CardScaffoldOptions = {

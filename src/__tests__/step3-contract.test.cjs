@@ -200,7 +200,7 @@ test('unknown command prints usage and exits with code 1', () => {
 })
 
 // Verifies required-argument errors keep their contract for local commands.
-test('required arg contract for create/create-pie-app/card/page/add/remove/list-events/add-event', () => {
+test('required arg contract for create/create-pie-app/card/page', () => {
     const projectDir = makeProjectDir('pieui-step3-required-args-local-')
 
     const createResult = runCli({
@@ -208,7 +208,7 @@ test('required arg contract for create/create-pie-app/card/page/add/remove/list-
         args: ['create'],
     })
     assert.equal(createResult.status, 1)
-    assert.match(createResult.stderr, /App name is required for create command/)
+    assert.match(createResult.stderr, /App name is required/)
     assertUsageShown(createResult)
 
     const createPieAppResult = runCli({
@@ -216,10 +216,7 @@ test('required arg contract for create/create-pie-app/card/page/add/remove/list-
         args: ['create-pie-app'],
     })
     assert.equal(createPieAppResult.status, 1)
-    assert.match(
-        createPieAppResult.stderr,
-        /App name is required for create-pie-app command/
-    )
+    assert.match(createPieAppResult.stderr, /App name is required/)
     assertUsageShown(createPieAppResult)
 
     const createPieUiAliasResult = runCli({
@@ -227,58 +224,38 @@ test('required arg contract for create/create-pie-app/card/page/add/remove/list-
         args: ['create-pieui'],
     })
     assert.equal(createPieUiAliasResult.status, 1)
-    assert.match(
-        createPieUiAliasResult.stderr,
-        /App name is required for create-pie-app command/
-    )
+    assert.match(createPieUiAliasResult.stderr, /App name is required/)
     assertUsageShown(createPieUiAliasResult)
 
     const cardAddResult = runCli({ cwd: projectDir, args: ['card', 'add'] })
     assert.equal(cardAddResult.status, 1)
-    assert.match(
-        cardAddResult.stderr,
-        /Component name is required for card add command/
-    )
+    assert.match(cardAddResult.stderr, /Component name is required/)
     assertUsageShown(cardAddResult)
 
     const pageAddResult = runCli({ cwd: projectDir, args: ['page', 'add'] })
     assert.equal(pageAddResult.status, 1)
-    assert.match(pageAddResult.stderr, /Path is required for page add command/)
+    assert.match(pageAddResult.stderr, /Path is required/)
     assertUsageShown(pageAddResult)
 
-    const addResult = runCli({ cwd: projectDir, args: ['add'] })
-    assert.equal(addResult.status, 1)
-    assert.match(
-        addResult.stderr,
-        /Component name is required for card add command/
-    )
-    assertUsageShown(addResult)
-
-    const removeResult = runCli({ cwd: projectDir, args: ['remove'] })
+    const removeResult = runCli({ cwd: projectDir, args: ['card', 'remove'] })
     assert.equal(removeResult.status, 1)
-    assert.match(
-        removeResult.stderr,
-        /Component name is required for remove command/
-    )
+    assert.match(removeResult.stderr, /Component name is required/)
     assertUsageShown(removeResult)
 
-    const listEventsResult = runCli({ cwd: projectDir, args: ['list-events'] })
+    const listEventsResult = runCli({
+        cwd: projectDir,
+        args: ['card', 'list-events'],
+    })
     assert.equal(listEventsResult.status, 1)
-    assert.match(
-        listEventsResult.stderr,
-        /Component name is required for list-events command/
-    )
+    assert.match(listEventsResult.stderr, /Component name is required/)
     assertUsageShown(listEventsResult)
 
     const addEventResult = runCli({
         cwd: projectDir,
-        args: ['add-event', 'OnlyCard'],
+        args: ['card', 'add-event', 'OnlyCard'],
     })
     assert.equal(addEventResult.status, 1)
-    assert.match(
-        addEventResult.stderr,
-        /Component name and event name are required for add-event command/
-    )
+    assert.match(addEventResult.stderr, /Event name is required/)
     assertUsageShown(addEventResult)
 })
 
@@ -289,8 +266,8 @@ test('postbuild defaults are stable and produce manifest in public', () => {
     const result = runCli({ cwd: projectDir, args: ['postbuild'] })
     assertSucceeded(result, 'postbuild with defaults should succeed')
 
-    assert.match(result.stdout, /Source directory: \./)
-    assert.match(result.stdout, /Output directory: public/)
+    assert.match(result.stdout, /Source directory: .*\//)
+    assert.match(result.stdout, /Output directory: .*public/)
     assert.match(result.stdout, /Append mode: false/)
     assert.ok(
         fs.existsSync(path.join(projectDir, 'public', 'pieui.components.json'))
@@ -308,8 +285,8 @@ test('postbuild equals flags and append mode are reflected in output contract', 
     })
     assertSucceeded(result, 'postbuild with explicit flags should succeed')
 
-    assert.match(result.stdout, /Source directory: appsrc/)
-    assert.match(result.stdout, /Output directory: distx/)
+    assert.match(result.stdout, /Source directory: .*appsrc/)
+    assert.match(result.stdout, /Output directory: .*distx/)
     assert.match(result.stdout, /Append mode: true/)
     assert.ok(
         fs.existsSync(path.join(projectDir, 'distx', 'pieui.components.json'))
@@ -321,10 +298,10 @@ test('list short -s flag sets source directory used in scan output', () => {
     const projectDir = makeProjectDir('pieui-step3-list-short-flag-')
     fs.mkdirSync(path.join(projectDir, 'appsrc'), { recursive: true })
 
-    const result = runCli({ cwd: projectDir, args: ['list', '-s', 'appsrc'] })
+    const result = runCli({ cwd: projectDir, args: ['card', 'list', '-s', 'appsrc'] })
     assertSucceeded(result, 'list with short source flag should succeed')
 
-    assert.match(result.stdout, /Scanning components in: appsrc/)
+    assert.match(result.stdout, /Scanning components in: .*appsrc/)
 })
 
 // Verifies list invalid filter contract falls back to unfiltered output wording.
@@ -332,9 +309,9 @@ test('list invalid filter keeps unfiltered total wording contract', () => {
     const projectDir = makeProjectDir('pieui-step3-list-filter-contract-')
 
     runCli({ cwd: projectDir, args: ['init'] })
-    runCli({ cwd: projectDir, args: ['add', 'simple', 'OneCard'] })
+    runCli({ cwd: projectDir, args: ['card', 'add', 'simple', 'OneCard'] })
 
-    const result = runCli({ cwd: projectDir, args: ['list', 'not-a-filter'] })
+    const result = runCli({ cwd: projectDir, args: ['card', 'list', 'not-a-filter'] })
     assertSucceeded(result, 'list should succeed with invalid filter')
 
     assert.match(result.stdout, /\[pieui\] Total: 1 component/)
@@ -349,7 +326,7 @@ test('add default type contract reports complex-container', () => {
         'init should succeed'
     )
 
-    const result = runCli({ cwd: projectDir, args: ['add', 'ContractCard'] })
+    const result = runCli({ cwd: projectDir, args: ['card', 'add', 'ContractCard'] })
     assertSucceeded(result, 'add should succeed with default type')
 
     assert.match(result.stdout, /Component type: complex-container/)
@@ -365,7 +342,7 @@ test('add explicit simple type contract reports simple', () => {
 
     const result = runCli({
         cwd: projectDir,
-        args: ['add', 'simple', 'SimpleContractCard'],
+        args: ['card', 'add', 'simple', 'SimpleContractCard'],
     })
     assertSucceeded(result, 'add with explicit type should succeed')
 
@@ -395,7 +372,7 @@ test('init short -o flag creates piecomponents in provided directory', () => {
 // Verifies remove error contract when piecomponents root does not exist.
 test('remove without piecomponents returns stable error contract', () => {
     const projectDir = makeProjectDir('pieui-step3-remove-missing-root-')
-    const result = runCli({ cwd: projectDir, args: ['remove', 'GhostCard'] })
+    const result = runCli({ cwd: projectDir, args: ['card', 'remove', 'GhostCard'] })
 
     assert.equal(result.status, 1)
     assert.match(
@@ -414,7 +391,7 @@ test('add-event invalid key returns stable validation error', () => {
 
     const result = runCli({
         cwd: projectDir,
-        args: ['add-event', 'A', 'invalid key', '--src-dir', 'src'],
+        args: ['card', 'add-event', 'A', 'invalid key', '--src-dir', 'src'],
     })
 
     assert.equal(result.status, 1)
@@ -432,8 +409,8 @@ test('postbuild short flags are reflected in output contract', () => {
     })
     assertSucceeded(result, 'postbuild with short flags should succeed')
 
-    assert.match(result.stdout, /Source directory: ssrc/)
-    assert.match(result.stdout, /Output directory: oout/)
+    assert.match(result.stdout, /Source directory: .*ssrc/)
+    assert.match(result.stdout, /Output directory: .*oout/)
     assert.match(result.stdout, /Append mode: false/)
     assert.ok(
         fs.existsSync(path.join(projectDir, 'oout', 'pieui.components.json'))
@@ -469,10 +446,10 @@ test('list equals-form src-dir prints selected source directory', () => {
 
     const result = runCli({
         cwd: projectDir,
-        args: ['list', '--src-dir=eqsrc'],
+        args: ['card', 'list', '--src-dir=eqsrc'],
     })
     assertSucceeded(result, 'list with equals-form src-dir should succeed')
-    assert.match(result.stdout, /Scanning components in: eqsrc/)
+    assert.match(result.stdout, /Scanning components in: .*eqsrc/)
 })
 
 // Verifies usage text keeps key command entries to preserve discoverability contract.
@@ -483,10 +460,10 @@ test('usage output includes key command entries', () => {
     assert.equal(result.status, 1)
     assert.match(result.stdout, /init/)
     assert.match(result.stdout, /create-pie-app <AppName>/)
-    assert.match(result.stdout, /add \[type\] <ComponentName>/)
+    assert.match(result.stdout, /card add \[type\] <Name>/)
     assert.match(result.stdout, /postbuild/)
-    assert.match(result.stdout, /list-events <ComponentName>/)
-    assert.match(result.stdout, /card remote remove <ComponentName>/)
+    assert.match(result.stdout, /card list-events <Name>/)
+    assert.match(result.stdout, /card remote remove <Name>/)
 })
 
 // Verifies add parser fallback behavior when first positional token is not a known type.
@@ -499,7 +476,7 @@ test('add unknown type token falls back to default type using first token as com
 
     const result = runCli({
         cwd: projectDir,
-        args: ['add', 'UnknownType', 'IgnoredName'],
+        args: ['card', 'add', 'UnknownType', 'IgnoredName'],
     })
     assertSucceeded(result, 'add fallback parsing should succeed')
 

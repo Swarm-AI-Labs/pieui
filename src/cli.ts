@@ -24,6 +24,7 @@ import { pageAjaxCommand } from './code/commands/pageAjax'
 import { createCommand } from './code/commands/create'
 import { createPieAppCommand } from './code/commands/createPieApp'
 import { loginCommand } from './code/commands/login'
+import { selfUpgradeCommand } from './code/commands/selfUpgrade'
 
 const requireName = (
     value: string | undefined,
@@ -98,6 +99,10 @@ const main = async () => {
             await loginCommand()
             return
 
+        case 'self-upgrade':
+            await selfUpgradeCommand(args.selfUpgradePm)
+            return
+
         case 'postbuild':
             console.log(
                 `[pieui] Source directory: ${path.resolve(process.cwd(), srcDir)}`
@@ -167,10 +172,7 @@ const main = async () => {
                     })
                     return
                 }
-                const name = requireName(
-                    componentName,
-                    `Component name (for card remote ${cardRemoteAction ?? ''})`
-                )
+                const name = requireName(componentName, 'Component name')
                 if (cardRemoteAction === 'push') {
                     await cardRemotePushCommand(name)
                     return
