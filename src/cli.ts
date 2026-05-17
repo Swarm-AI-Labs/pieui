@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import path from 'node:path'
 import { parseArgs, printUsage } from './code/args'
 import { initCommand } from './code/commands/init'
 import { addCommand } from './code/commands/add'
@@ -90,8 +91,12 @@ const main = async () => {
             return
 
         case 'postbuild':
-            console.log(`[pieui] Source directory: ${srcDir}`)
-            console.log(`[pieui] Output directory: ${outDir}`)
+            console.log(
+                `[pieui] Source directory: ${path.resolve(process.cwd(), srcDir)}`
+            )
+            console.log(
+                `[pieui] Output directory: ${path.resolve(process.cwd(), outDir)}`
+            )
             console.log(`[pieui] Append mode: ${append}`)
             await postbuildCommand(srcDir, outDir, append)
             return

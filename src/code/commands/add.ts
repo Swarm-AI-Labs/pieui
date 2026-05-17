@@ -120,10 +120,12 @@ export const addCommand = (
         `[pieui] Component ${componentName} (${componentType}) created successfully!`
     )
     console.log(`[pieui] Files created:`)
-    console.log(`  - piecomponents/${componentName}/index.ts`)
-    console.log(`  - piecomponents/${componentName}/types/index.ts`)
-    console.log(`  - piecomponents/${componentName}/ui/${componentName}.tsx`)
-    console.log(`[pieui] Updated registry.ts with new component`)
+    console.log(`  - ${path.join(componentDir, 'index.ts')}`)
+    console.log(`  - ${path.join(componentDir, 'types', 'index.ts')}`)
+    console.log(`  - ${path.join(componentDir, 'ui', `${componentName}.tsx`)}`)
+    console.log(
+        `[pieui] Updated registry: ${resolveRegistryPath(pieComponentsDir)}`
+    )
     console.log('')
     console.log(`[pieui] Component type: ${componentType}`)
     console.log(`[pieui] IO fields: ${options.io ? 'enabled' : 'disabled'}`)

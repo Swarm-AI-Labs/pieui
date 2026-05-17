@@ -15,7 +15,9 @@ const defaultCompilerOptions = () => ({
 })
 
 export const findComponentRegistrations = (srcDir: string): ComponentInfo[] => {
-    console.log(`[pieui] Searching for components in: ${srcDir}`)
+    console.log(
+        `[pieui] Searching for components in: ${path.resolve(process.cwd(), srcDir)}`
+    )
 
     const files = glob.sync(`${srcDir}/**/*.{ts,tsx}`, {
         ignore: ['**/*.d.ts', '**/dist/**', '**/node_modules/**'],

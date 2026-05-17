@@ -13,7 +13,8 @@ type ComponentListEntry = {
 }
 
 export const listCommand = (srcDir: string, filter: ListFilter) => {
-    console.log(`[pieui] Scanning components in: ${srcDir}`)
+    const resolvedSrcDir = path.resolve(process.cwd(), srcDir)
+    console.log(`[pieui] Scanning components in: ${resolvedSrcDir}`)
 
     const files = glob.sync(`${srcDir}/**/*.{ts,tsx}`, {
         ignore: [
@@ -173,10 +174,7 @@ export const listCommand = (srcDir: string, filter: ListFilter) => {
                             components.push({
                                 name: componentName,
                                 type: compType,
-                                file: path.relative(
-                                    process.cwd(),
-                                    componentFile
-                                ),
+                                file: path.resolve(componentFile),
                                 dataType: dataTypeName,
                                 lazy: hasLoader && !componentRef,
                             })

@@ -199,10 +199,7 @@ export const addEventCommand = (
 
     if (existingKeys.has(eventName)) {
         console.log(
-            `[pieui] methods.${eventName} already exists in ${path.relative(
-                process.cwd(),
-                filePath
-            )}`
+            `[pieui] methods.${eventName} already exists in ${path.resolve(filePath)}`
         )
         return
     }
@@ -230,6 +227,6 @@ ${propIndent}}`
     fs.writeFileSync(filePath, updated, 'utf8')
 
     console.log(
-        `[pieui] Updated: ${path.relative(process.cwd(), filePath)} (added "${eventName}")`
+        `[pieui] Updated: ${path.resolve(filePath)} (added "${eventName}")`
     )
 }

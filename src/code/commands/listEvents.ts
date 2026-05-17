@@ -255,7 +255,7 @@ export const listEventsCommand = (srcDir: string, componentName: string) => {
                     entries.push({
                         event: f.event,
                         handler: f.handler,
-                        file: path.relative(process.cwd(), sourceFile.fileName),
+                        file: path.resolve(sourceFile.fileName),
                         line: f.line,
                     })
                 }
@@ -297,7 +297,7 @@ export const listEventsCommand = (srcDir: string, componentName: string) => {
                     entries.push({
                         event: f.event,
                         handler: f.handler,
-                        file: path.relative(process.cwd(), sourceFile.fileName),
+                        file: path.resolve(sourceFile.fileName),
                         line: f.line,
                     })
                 }

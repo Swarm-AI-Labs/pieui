@@ -17,15 +17,15 @@ export const removeCommand = (componentName: string) => {
         process.exit(1)
     }
 
-    const componentDir = path.join(pieComponentsDir, componentName)
+    const componentDir = path.resolve(pieComponentsDir, componentName)
 
     // Remove component directory
     if (fs.existsSync(componentDir)) {
         fs.rmSync(componentDir, { recursive: true, force: true })
-        console.log(`[pieui] Removed directory: piecomponents/${componentName}`)
+        console.log(`[pieui] Removed directory: ${componentDir}`)
     } else {
         console.log(
-            `[pieui] Warning: Component directory piecomponents/${componentName} not found`
+            `[pieui] Warning: Component directory not found: ${componentDir}`
         )
     }
 
@@ -47,10 +47,10 @@ export const removeCommand = (componentName: string) => {
 
         if (registryContent !== originalContent) {
             fs.writeFileSync(registryPath, registryContent, 'utf8')
-            console.log(`[pieui] Cleaned up registry.ts`)
+            console.log(`[pieui] Cleaned up registry: ${registryPath}`)
         } else {
             console.log(
-                `[pieui] Warning: ${componentName} not found in registry.ts`
+                `[pieui] Warning: ${componentName} not found in ${registryPath}`
             )
         }
     }

@@ -16,9 +16,11 @@ export const initCommand = async (outDir: string) => {
     // Create piecomponents directory
     if (!fs.existsSync(pieComponentsDir)) {
         fs.mkdirSync(pieComponentsDir, { recursive: true })
-        console.log('[pieui] Created piecomponents directory')
+        console.log(`[pieui] Created piecomponents directory: ${pieComponentsDir}`)
     } else {
-        console.log('[pieui] piecomponents directory already exists')
+        console.log(
+            `[pieui] piecomponents directory already exists: ${pieComponentsDir}`
+        )
     }
 
     // Create registry.ts
@@ -32,9 +34,9 @@ export const initCommand = async (outDir: string) => {
 
     if (!fs.existsSync(registryPath)) {
         fs.writeFileSync(registryPath, registryContent, 'utf8')
-        console.log('[pieui] Created registry.ts')
+        console.log(`[pieui] Created registry.ts: ${registryPath}`)
     } else {
-        console.log('[pieui] registry.ts already exists')
+        console.log(`[pieui] registry.ts already exists: ${registryPath}`)
     }
 
     // Update tailwind.config.js if it exists

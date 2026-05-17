@@ -62,16 +62,12 @@ export const pageAddCommand = (pagePath: string) => {
     }
 
     if (fs.existsSync(targetFile)) {
-        console.error(
-            `[pieui] Error: Page already exists at app/${normalizedPath}/page.tsx`
-        )
+        console.error(`[pieui] Error: Page already exists at ${targetFile}`)
         process.exit(1)
     }
 
     fs.mkdirSync(path.dirname(targetFile), { recursive: true })
     fs.writeFileSync(targetFile, pageTemplate(pageComponentName), 'utf8')
 
-    console.log(
-        `[pieui] Page created successfully at app/${normalizedPath}/page.tsx`
-    )
+    console.log(`[pieui] Page created successfully at ${targetFile}`)
 }
