@@ -3,6 +3,10 @@ import path from 'path'
 import { spawnSync } from 'child_process'
 import { initCommand } from './init'
 import {
+    createRequirements,
+    printRequirements,
+} from '../printRequirements'
+import {
     envTemplate,
     homePageTemplate,
     loadingScreenTemplate,
@@ -137,4 +141,6 @@ export const createCommand = async (appName: string) => {
     runBunCommand(bunBin, ['add', pieuiPackageSpec], appDir)
     await initCommand(trimmedAppName)
     runBunCommand(bunBin, ['run', 'dev'], appDir)
+
+    printRequirements(createRequirements(trimmedAppName))
 }

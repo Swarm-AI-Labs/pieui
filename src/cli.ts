@@ -18,6 +18,12 @@ import { cardRemotePublicCommand } from './code/commands/cardRemote/public'
 import { cardRemotePrivateCommand } from './code/commands/cardRemote/private'
 import { cardPullCommand } from './code/commands/cardPull'
 import { cardViewCommand } from './code/commands/cardView'
+import { cardDumpMetadataCommand } from './code/commands/cardDumpMetadata'
+import { cardCheckSyncCommand } from './code/commands/cardCheckSync'
+import {
+    cardAddFromMetaCommand,
+    hasBackendSourceFor,
+} from './code/commands/cardAddFromMeta'
 import { pageAddCommand } from './code/commands/pageAdd'
 import { pageViewCommand } from './code/commands/pageView'
 import { pageAjaxCommand } from './code/commands/pageAjax'
@@ -124,6 +130,21 @@ const main = async () => {
             }
             if (cardAction === 'add') {
                 const name = requireName(componentName, 'Component name')
+                const explicitFrom = args.cardAddFrom !== undefined
+                const autoFrom = !explicitFrom && hasBackendSourceFor(name)
+                if (explicitFrom || autoFrom) {
+                    if (autoFrom) {
+                        console.log(
+                            `[pieui] Auto-detected backend source for ${name} (use --from to override)`
+                        )
+                    }
+                    cardAddFromMetaCommand(
+                        name,
+                        componentType ?? 'simple',
+                        args.cardAddFrom
+                    )
+                    return
+                }
                 addCommand(name, componentType, {
                     ajax: cardAjax,
                     io: cardIo,
@@ -163,6 +184,16 @@ const main = async () => {
                 }
                 addEventCommand(srcDir, name, eventName)
                 return
+            }
+            if (cardAction === 'dump-metadata') {
+                const name = requireName(componentName, 'Component name')
+                cardDumpMetadataCommand(name, args.dumpMetadataOut)
+                return
+            }
+            if (cardAction === 'check-sync') {
+                const name = requireName(componentName, 'Component name')
+                const exitCode = await cardCheckSyncCommand(name)
+                process.exit(exitCode)
             }
             if (cardAction === 'remote') {
                 if (cardRemoteAction === 'list') {

@@ -19,6 +19,8 @@ export type CardAction =
     | 'list-events'
     | 'add-event'
     | 'remote'
+    | 'dump-metadata'
+    | 'check-sync'
 export type CardRemoteAction =
     | 'push'
     | 'pull'
@@ -43,6 +45,7 @@ export type ParsedArgs = {
     cardAction?: CardAction
     cardAjax?: boolean
     cardIo?: boolean
+    cardAddFrom?: string
     cardRemoteAction?: CardRemoteAction
     cardPullRef?: string
     remoteUserId?: string
@@ -57,6 +60,7 @@ export type ParsedArgs = {
     historyFrom?: number
     historyTo?: number
     selfUpgradePm?: string
+    dumpMetadataOut?: string
 }
 
 export type CardScaffoldOptions = {
@@ -73,4 +77,21 @@ export type ComponentInfo = {
     name: string
     file: string
     dataTypeName: string
+}
+
+export type JSONSchema = Record<string, unknown>
+
+export type PieMetadata = {
+    name: string
+    files: string[]
+    packages: string[]
+    relativeImports: string[]
+    events: string[]
+    propsSchema: JSONSchema | null
+    propsCode: string
+    eventsPropsSchema: Record<string, JSONSchema>
+    eventsPropsCode: Record<string, string>
+    inputPropsCode: string | null
+    inputPropsSchema: JSONSchema | null
+    ajaxList: string[]
 }

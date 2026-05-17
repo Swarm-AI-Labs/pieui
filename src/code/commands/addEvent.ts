@@ -2,6 +2,10 @@ import fs from 'fs'
 import path from 'path'
 import { glob } from 'glob'
 import { ts } from '../ts'
+import {
+    cardAddEventRequirements,
+    printRequirements,
+} from '../printRequirements'
 
 const getStringLiteralFromJsxInitializer = (init: any): string | undefined => {
     if (!init) return
@@ -229,4 +233,6 @@ ${propIndent}}`
     console.log(
         `[pieui] Updated: ${path.resolve(filePath)} (added "${eventName}")`
     )
+
+    printRequirements(cardAddEventRequirements(componentName, eventName))
 }

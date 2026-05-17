@@ -1,6 +1,10 @@
 import fs from 'fs'
 import path from 'path'
 import { resolveRegistryPath } from '../registryPath'
+import {
+    cardRemoveRequirements,
+    printRequirements,
+} from '../printRequirements'
 
 export const removeCommand = (componentName: string) => {
     if (!componentName) {
@@ -56,4 +60,6 @@ export const removeCommand = (componentName: string) => {
     }
 
     console.log(`[pieui] Component ${componentName} removed successfully!`)
+
+    printRequirements(cardRemoveRequirements(componentName))
 }

@@ -17,6 +17,8 @@ const VALID_CARD_ACTIONS: CardAction[] = [
     'list-events',
     'add-event',
     'remote',
+    'dump-metadata',
+    'check-sync',
 ]
 
 const VALID_CARD_REMOTE_ACTIONS: CardRemoteAction[] = [
@@ -59,8 +61,10 @@ type FlagState = {
     historyPerPage?: number
     historyFrom?: number
     historyTo?: number
+    fromRaw?: string
     remoteUserId?: string
     remoteProject?: string
+    dumpMetadataOut?: string
 }
 
 const consumeFlags = (
@@ -106,13 +110,22 @@ const consumeFlags = (
             continue
         }
         if (tok === '--from' && tokens[i + 1]) {
-            flags.historyFrom = parseIntFlag('--from', tokens[i + 1])
+            flags.fromRaw = tokens[i + 1]
             i++
             continue
         }
         if (tok === '--to' && tokens[i + 1]) {
             flags.historyTo = parseIntFlag('--to', tokens[i + 1])
             i++
+            continue
+        }
+        if ((tok === '--out' || tok === '-o') && tokens[i + 1]) {
+            flags.dumpMetadataOut = tokens[i + 1]
+            i++
+            continue
+        }
+        if (tok.startsWith('--out=')) {
+            flags.dumpMetadataOut = tok.slice('--out='.length)
             continue
         }
         if (tok.startsWith('--user=')) {
@@ -138,10 +151,7 @@ const consumeFlags = (
             continue
         }
         if (tok.startsWith('--from=')) {
-            flags.historyFrom = parseIntFlag(
-                '--from',
-                tok.slice('--from='.length)
-            )
+            flags.fromRaw = tok.slice('--from='.length)
             continue
         }
         if (tok.startsWith('--to=')) {
@@ -220,6 +230,7 @@ export const parseArgs = (argv: string[]): ParsedArgs => {
         if (action === 'add') {
             result.cardAjax = boolFlags.ajax
             result.cardIo = boolFlags.io
+            if (flags.fromRaw !== undefined) result.cardAddFrom = flags.fromRaw
             if (
                 positionals[0] &&
                 VALID_COMPONENT_TYPES.includes(positionals[0] as ComponentType)
@@ -245,6 +256,11 @@ export const parseArgs = (argv: string[]): ParsedArgs => {
         } else if (action === 'add-event') {
             result.componentName = positionals[0]
             result.eventName = positionals[1]
+        } else if (action === 'dump-metadata') {
+            result.componentName = positionals[0]
+            result.dumpMetadataOut = flags.dumpMetadataOut
+        } else if (action === 'check-sync') {
+            result.componentName = positionals[0]
         } else if (action === 'remote') {
             const sub = positionals[0] as CardRemoteAction | undefined
             if (sub && VALID_CARD_REMOTE_ACTIONS.includes(sub)) {
@@ -254,7 +270,9 @@ export const parseArgs = (argv: string[]): ParsedArgs => {
                 result.remoteProject = flags.remoteProject
                 result.historyPage = flags.historyPage
                 result.historyPerPage = flags.historyPerPage
-                result.historyFrom = flags.historyFrom
+                if (flags.fromRaw !== undefined) {
+                    result.historyFrom = parseIntFlag('--from', flags.fromRaw)
+                }
                 result.historyTo = flags.historyTo
             }
         }
@@ -328,13 +346,16 @@ const ALL_LINES: string[] = [
     '  self-upgrade [--pm bun|npm|pnpm|yarn]            Upgrade the globally installed pieui CLI to the latest published version',
     '',
     'Card management (mirrors `pie card ...`):',
-    '  card add [type] <Name> [--io] [--ajax]           Create a new component in piecomponents/',
+    '  card add [type] <Name> [--io] [--ajax] [--from <ref>]',
+    '                                                   Create a new component in piecomponents/ (or port from backend via --from)',
     '  card list [filter]                               List registered components',
     '  card pull <ref>                                  Pull a card by Name, project/Name, or r/user/Name (public alias)',
     '  card view <Name>                                 Print card name, props, ajax, IO, and events',
     '  card remove <Name>                               Remove a component from piecomponents/',
     '  card list-events <Name>                          List methods keys on the registered PieCard',
     '  card add-event <Name> <event>                    Add a new methods key with a default handler',
+    '  card dump-metadata <Name> [--out file.json]      Dump full PieMetadata JSON for the component',
+    '  card check-sync <Name>                           Compare TS ↔ Python metadata; prompt for backend project path if not configured',
     '  card remote list [--user U] [--project S]        List remote components',
     '  card remote push <Name>                          Upload piecomponents/<Name>/ to PieUI storage',
     '  card remote pull <Name>[@rev]                    Download component from PieUI storage',
@@ -358,6 +379,11 @@ const ALL_LINES: string[] = [
     'Options for `card add`:',
     '  --io                Add realtime support fields to the generated data interface',
     '  --ajax              Add AJAX request fields to the generated data interface',
+    '  --from <ref>        Port from backend (Python card). <ref> can be:',
+    '                        • path to a .py file or PieMetadata JSON file',
+    '                        • a card name (resolved via backendComponentsDir)',
+    '                      If omitted and backendComponentsDir is configured,',
+    '                      auto-resolves by component name.',
     '',
     'Options for init:',
     '  --out-dir <dir>, -o <dir>    Base directory for piecomponents (default: .)',
@@ -390,13 +416,16 @@ const CARD_LINES: string[] = [
     'Usage: pieui card <subcommand> [options]',
     '',
     'Subcommands:',
-    '  add [type] <Name> [--io] [--ajax]           Create a new component in piecomponents/',
+    '  add [type] <Name> [--io] [--ajax] [--from <ref>]',
+    '                                              Create a new component in piecomponents/ (or port from backend via --from)',
     '  list [filter]                               List registered components',
     '  pull <ref>                                  Pull a card by Name, project/Name, or r/user/Name (public alias)',
     '  view <Name>                                 Print card name, props, ajax, IO, and events',
     '  remove <Name>                               Remove a component from piecomponents/',
     '  list-events <Name>                          List methods keys on the registered PieCard',
     '  add-event <Name> <event>                    Add a new methods key with a default handler',
+    '  dump-metadata <Name> [--out file.json]      Dump full PieMetadata JSON for the component',
+    '  check-sync <Name>                           Compare TS ↔ Python metadata; prompts for backend project path',
     '  remote ...                                  Remote storage operations (see `pieui card remote --help`)',
     '',
     'Component types for `card add`:',

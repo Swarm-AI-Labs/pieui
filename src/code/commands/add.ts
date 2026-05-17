@@ -8,6 +8,10 @@ import {
     componentTemplateFor,
     componentTypesTemplate,
 } from '../templates'
+import {
+    cardAddRequirements,
+    printRequirements,
+} from '../printRequirements'
 
 const updateRegistryFile = (
     registryPath: string,
@@ -144,4 +148,6 @@ export const addCommand = (
             console.log('  - Props: data + content (array of UIConfig)')
             break
     }
+
+    printRequirements(cardAddRequirements(componentName, { ported: false }))
 }

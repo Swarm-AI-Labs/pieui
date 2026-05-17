@@ -1,0 +1,1009 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>CLI — pieui & pie</title>
+<style>
+  :root {
+    --bg: #0c0d10;
+    --panel: #15171c;
+    --panel-2: #1c1f26;
+    --border: #2a2e38;
+    --text: #e8eaed;
+    --muted: #9aa0a8;
+    --accent: #ffb86b;
+    --accent-2: #ff6b6b;
+    --py: #4ec9b0;
+    --ts: #5cb1ff;
+    --code-bg: #0a0b0e;
+    --tag-bg: #21252e;
+    --shadow: 0 1px 0 rgba(255,255,255,0.04), 0 12px 30px rgba(0,0,0,0.25);
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-size: 15px;
+    line-height: 1.55;
+    margin: 0;
+    padding: 0;
+    -webkit-font-smoothing: antialiased;
+  }
+  body {
+    background-image:
+      radial-gradient(900px 500px at 80% -10%, rgba(255,184,107,0.06), transparent 70%),
+      radial-gradient(700px 400px at -10% 110%, rgba(92,177,255,0.06), transparent 70%);
+    background-attachment: fixed;
+  }
+  .container {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 64px 28px 96px;
+  }
+  header.hero {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 24px;
+    flex-wrap: wrap;
+    padding-bottom: 32px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 48px;
+  }
+  .hero h1 {
+    margin: 0 0 8px;
+    font-size: clamp(34px, 4vw, 48px);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .hero p { margin: 0; color: var(--muted); max-width: 640px; }
+  .badges { display: flex; gap: 10px; flex-wrap: wrap; }
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  .badge .dot { width: 7px; height: 7px; border-radius: 50%; }
+  .badge.py .dot { background: var(--py); }
+  .badge.ts .dot { background: var(--ts); }
+
+  nav.toc {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px 22px;
+    margin-bottom: 44px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 6px 18px;
+    box-shadow: var(--shadow);
+  }
+  nav.toc h2 {
+    grid-column: 1 / -1;
+    margin: 0 0 6px;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+    font-weight: 600;
+  }
+  nav.toc .group-label {
+    grid-column: 1 / -1;
+    margin: 14px 0 2px;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--accent);
+    font-weight: 700;
+  }
+  nav.toc a {
+    color: var(--text);
+    text-decoration: none;
+    padding: 4px 0;
+    font-size: 14px;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    transition: color 0.15s;
+  }
+  nav.toc a:hover { color: var(--accent); }
+
+  h2.section-title {
+    margin: 56px 0 18px;
+    font-size: 22px;
+    letter-spacing: -0.01em;
+    color: var(--accent);
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 8px;
+  }
+
+  .field {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 26px 28px;
+    margin-bottom: 22px;
+    box-shadow: var(--shadow);
+  }
+  .field-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 16px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
+  .field-name {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--accent);
+    margin: 0;
+  }
+  .field-type {
+    font-family: ui-monospace, monospace;
+    font-size: 12px;
+    color: var(--muted);
+    background: var(--tag-bg);
+    padding: 4px 10px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+  }
+  .field-desc {
+    color: var(--muted);
+    margin: 0 0 18px;
+  }
+  .lang-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+  }
+  @media (max-width: 760px) {
+    .lang-grid { grid-template-columns: 1fr; }
+  }
+  .lang {
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+  }
+  .lang-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+    margin-bottom: 10px;
+    font-weight: 600;
+  }
+  .lang-title .dot { width: 7px; height: 7px; border-radius: 50%; }
+  .lang.py .dot { background: var(--py); }
+  .lang.ts .dot { background: var(--ts); }
+  .lang p { margin: 0 0 8px; font-size: 14px; }
+  .lang ul { margin: 4px 0 8px; padding-left: 20px; font-size: 14px; }
+  .lang ul li { margin-bottom: 2px; }
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+    overflow-x: auto;
+    margin: 8px 0 0;
+    font-size: 12.5px;
+    line-height: 1.5;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  code { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
+  .inline { background: var(--tag-bg); padding: 2px 6px; border-radius: 4px; font-size: 13px; }
+  .note {
+    background: rgba(255,184,107,0.06);
+    border: 1px solid rgba(255,184,107,0.2);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 13px;
+    color: #f5d29a;
+    margin-top: 14px;
+  }
+  .warn {
+    background: rgba(255,107,107,0.07);
+    border: 1px solid rgba(255,107,107,0.22);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 13px;
+    color: #f6b2b2;
+    margin-top: 14px;
+  }
+  table.api {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 12px;
+    font-size: 13px;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  table.api th, table.api td {
+    text-align: left;
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  table.api th {
+    color: var(--muted);
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+  }
+  table.api td.method {
+    color: var(--accent);
+    width: 70px;
+  }
+  table.api td.path { color: var(--ts); }
+  table.api td.desc { color: var(--muted); }
+
+  .pill {
+    display: inline-block;
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    background: var(--tag-bg);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    margin-right: 6px;
+  }
+  .pill.py { color: var(--py); }
+  .pill.ts { color: var(--ts); }
+  .pill.both { color: var(--accent); }
+
+  .key { color: var(--ts); }
+  .str { color: #c3e88d; }
+
+  footer {
+    margin-top: 64px;
+    padding-top: 28px;
+    border-top: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 13px;
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+<header class="hero">
+  <div>
+    <h1>CLI: pieui &amp; pie</h1>
+    <p>Подробная карта работы двух симметричных CLI: TypeScript-фронтенд (<code>pieui</code>) и Python-бэкенд (<code>pie</code>). Команды, источники параметров, интроспекция AST, HTTP-эндпоинты и шаблоны.</p>
+  </div>
+  <div class="badges">
+    <span class="badge py"><span class="dot"></span> Python · pie</span>
+    <span class="badge ts"><span class="dot"></span> TypeScript · pieui</span>
+  </div>
+</header>
+
+<nav class="toc">
+  <h2>Содержание</h2>
+
+  <span class="group-label">Основы</span>
+  <a href="#architecture">Архитектура и диспетчер</a>
+  <a href="#args">Парсинг аргументов</a>
+  <a href="#config">Источники конфигурации</a>
+  <a href="#help">Help-система</a>
+
+  <span class="group-label">Скаффолд проекта</span>
+  <a href="#login">login</a>
+  <a href="#create">create</a>
+  <a href="#init">init</a>
+  <a href="#self-upgrade">self-upgrade</a>
+
+  <span class="group-label">Карточки (локально)</span>
+  <a href="#card-add">card add</a>
+  <a href="#card-list">card list</a>
+  <a href="#card-view">card view</a>
+  <a href="#card-remove">card remove</a>
+  <a href="#card-list-events">card list-events</a>
+  <a href="#card-add-event">card add-event</a>
+  <a href="#card-pull">card pull</a>
+  <a href="#card-dump-metadata">card dump-metadata</a>
+
+  <span class="group-label">Карточки (remote)</span>
+  <a href="#card-remote">card remote *</a>
+
+  <span class="group-label">Страницы</span>
+  <a href="#page-add">page add</a>
+  <a href="#page-view">page view</a>
+  <a href="#page-ajax">page ajax</a>
+
+  <span class="group-label">Билд</span>
+  <a href="#postbuild">postbuild / web build</a>
+
+  <span class="group-label">Внутренности</span>
+  <a href="#introspection">Интроспекция AST</a>
+  <a href="#http-api">HTTP API</a>
+  <a href="#templates">Шаблоны</a>
+</nav>
+
+<!-- =========================================================== -->
+<h2 class="section-title" id="architecture">Архитектура и диспетчер</h2>
+
+<section class="field">
+  <p class="field-desc">Оба CLI — один процесс с плоским switch по верхнему command-токену. Никаких фоновых сервисов, никакого глобального состояния, кроме <code>.pie/config.json</code> и <code>.env</code> на диске. <span class="pill both">PIE</span> служит источником истины для surface (имена команд, позиционные аргументы, флаги); <span class="pill ts">PIEUI</span> зеркалит surface через TS-реализацию. Постхук <code>.claude/hooks/cli-symmetry-check.sh</code> подсвечивает дивергенции при правках.</p>
+  <div class="lang-grid">
+    <div class="lang ts">
+      <div class="lang-title"><span class="dot"></span> TypeScript</div>
+      <p><code>src/cli.ts</code> — точка входа (shebang <code>#!/usr/bin/env node</code>). Поток:</p>
+      <ul>
+        <li>Срез <code>process.argv.slice(2)</code> → <code>rawArgs</code></li>
+        <li><code>detectHelpScope(rawArgs)</code> — короткое замыкание на help</li>
+        <li><code>parseArgs(rawArgs)</code> → структура <code>ParsedArgs</code></li>
+        <li>Большой <code>switch(command)</code> с вложенными <code>if (cardAction === …)</code> и <code>if (pageAction === …)</code></li>
+        <li>Обёртка <code>void main().catch(…)</code> печатает <code>[pieui] Error: …</code> и выходит с кодом 1</li>
+      </ul>
+      <pre>switch (command) {
+  case 'init': await initCommand(outDir); return
+  case 'card': { /* … */ }
+  case 'page': { /* … */ }
+  default: printUsage(); process.exit(1)
+}</pre>
+    </div>
+    <div class="lang py">
+      <div class="lang-title"><span class="dot"></span> Python</div>
+      <p><code>pie/__main__.py</code> — точка входа (<code>python -m pie</code>). Поток:</p>
+      <ul>
+        <li><code>build_parser()</code> создаёт <code>argparse.ArgumentParser</code> с <code>subparsers</code> (<code>required=True</code>)</li>
+        <li><code>parse_args(argv).vars()</code> → <code>**kwargs</code> в <code>run()</code></li>
+        <li><code>run()</code> — каскадные <code>if command == "card"</code> → <code>if card_command == "add"</code> и т. д.</li>
+        <li>Все хендлеры в <code>pie/code/</code>, ловятся <code>ValueError</code> и <code>PieStorageError</code> → <code>print(..., file=sys.stderr); return 1</code></li>
+      </ul>
+      <pre>if command == "card":
+    if card_command == "add":
+        handle_card_add(...)
+    elif card_command == "remote":
+        if card_remote_command == "push":
+            handle_card_remote_push(...)</pre>
+    </div>
+  </div>
+  <div class="note">Симметрия: surface-уровень <code>pieui &lt;command&gt;</code> ↔ <code>pie &lt;command&gt;</code> идентичен. Реализация — нет (TS делает introspection через TypeScript Compiler API, Py — через модуль <code>ast</code>).</div>
+</section>
+
+<!-- =========================================================== -->
+<h2 class="section-title" id="args">Парсинг аргументов</h2>
+
+<section class="field">
+  <div class="field-head">
+    <h3 class="field-name">parseArgs / parse_args</h3>
+    <span class="field-type">argv[] → ParsedArgs</span>
+  </div>
+  <p class="field-desc">Превращение строки запуска в типизированную структуру. <span class="pill ts">PIEUI</span> — рукописный парсер на <code>argv.find/findIndex/startsWith</code>; <span class="pill py">PIE</span> — стандартный <code>argparse</code>.</p>
+  <div class="lang-grid">
+    <div class="lang ts">
+      <div class="lang-title"><span class="dot"></span> TypeScript</div>
+      <p><code>src/code/args.ts</code> вручную сканирует <code>argv</code> в три прохода:</p>
+      <ol>
+        <li><b>Глобальные dir-флаги</b>: <code>--out-dir=X</code> | <code>--out-dir X</code> | <code>-o X</code>; то же для <code>--src-dir/-s</code>. Форма с <code>=</code> имеет приоритет над пробельной.</li>
+        <li><b>Булевы</b>: <code>--append</code> через <code>argv.includes(...)</code>.</li>
+        <li><b>Командные хвосты</b>: <code>consumeFlags(tail)</code> — линейный walker, потребляющий <code>--ajax</code>, <code>--io</code>, <code>--user/--project</code>, <code>--page/--per-page/--from/--to</code>, <code>--out</code> и их <code>=</code>-формы; всё остальное — позиционно в <code>positionals[]</code>.</li>
+      </ol>
+      <p>Дефолты: <code>outDir = "public"</code> для <code>postbuild</code>, иначе <code>"."</code>; <code>srcDir = "."</code> всегда.</p>
+      <p>Числовые флаги (<code>--page</code>, <code>--per-page</code>, …) валидируются регуляркой <code>/^-?\d+$/</code> в <code>parseIntFlag()</code>; невалидный ввод бросает Error.</p>
+      <p>Тип результата: <code>ParsedArgs</code> в <code>src/code/types.ts</code> — все поля опциональны кроме <code>command/outDir/srcDir/append</code>.</p>
+    </div>
+    <div class="lang py">
+      <div class="lang-title"><span class="dot"></span> Python</div>
+      <p><code>argparse.ArgumentParser(prog="pie")</code> в <code>build_parser()</code> определяет всю иерархию:</p>
+      <ul>
+        <li>Subparsers: <code>web</code>, <code>card</code>, <code>page</code>, <code>create</code>, <code>init</code>, <code>login</code>, <code>self-upgrade</code></li>
+        <li>Вложенные subparsers: <code>card_subparsers</code> (<code>add</code>/<code>list</code>/…/<code>remote</code>) → <code>card_remote_subparsers</code> (<code>push</code>/<code>pull</code>/…/<code>private</code>)</li>
+        <li>Типизация флагов: <code>--page</code>/<code>--per-page</code>/<code>--from</code>/<code>--to</code> с <code>type=int</code>; <code>--io</code>/<code>--ajax</code> — <code>action="store_true"</code></li>
+        <li>Дефолты задаются через <code>default=…</code> на каждом argument-вызове</li>
+      </ul>
+      <p>Результат — <code>argparse.Namespace</code>, далее <code>vars(ns)</code> распаковывается в <code>run(**kwargs)</code>.</p>
+      <p>Невалидный choice (например, <code>card add wrongtype</code>) argparse сам печатает ошибку и выходит с кодом 2.</p>
+    </div>
+  </div>
+  <div class="warn">⚠ Сторона TS жёстче в позиционных правилах: первый позиционный для <code>card add</code> сначала проверяется на принадлежность <code>VALID_COMPONENT_TYPES</code>, и только если не подошёл — трактуется как имя с типом по умолчанию <code>complex-container</code>. У <code>pie</code> тип всегда обязательный позиционный, выбор валидируется argparse-ом.</div>
+</section>
+
+<!-- =========================================================== -->
+<h2 class="section-title" id="config">Источники конфигурации</h2>
+
+<section class="field">
+  <p class="field-desc">Конфиг приходит из трёх слоёв (по приоритету сверху вниз): CLI-флаги → переменные окружения (<code>process.env</code> / <code>os.environ</code>) → <code>.env</code> в cwd → <code>.pie/config.json</code> → встроенные дефолты.</p>
+  <div class="lang-grid">
+    <div class="lang ts">
+      <div class="lang-title"><span class="dot"></span> TypeScript</div>
+      <p><code>src/code/services/settings.ts</code> → <code>loadSettings()</code>:</p>
+      <ul>
+        <li><code>parseDotenv()</code> читает <code>.env</code> построчно (своя реализация, без зависимостей)</li>
+        <li><code>pick(key)</code> — сначала <code>process.env[key]</code>, затем значение из .env</li>
+        <li>Возвращает: <code>userId</code>, <code>apiKey</code>, <code>project</code> (fallback — <code>basename(cwd)</code>), <code>componentsDir</code> (default <code>piecomponents/</code>, абсолютный путь), <code>apiBaseUrl</code> (default <code>https://cdn-pieui.swarm.ing/api</code>)</li>
+      </ul>
+      <p><code>.pie/config.json</code> читается отдельно — там лежат <code>backendPagesDir</code>, <code>backendComponentsDir</code> (заполняются командой <code>init</code>) и кэш креденшелов от <code>login</code>.</p>
+    </div>
+    <div class="lang py">
+      <div class="lang-title"><span class="dot"></span> Python</div>
+      <p><code>pie/config.py</code> → <code>Settings</code> (<code>@dataclass</code>, кэширован <code>@lru_cache</code>):</p>
+      <ul>
+        <li><code>python-dotenv</code> подгружает <code>.env</code> на импорт модуля</li>
+        <li>Поля читаются из <code>os.environ</code>: <code>PIE_USER_ID</code>, <code>PIE_API_KEY</code>, <code>PIE_PROJECT</code>/<code>PIE_PROJECT_SLUG</code>, <code>PIE_COMPONENTS_DIR</code> (default <code>pages/components</code>)</li>
+        <li><code>api_base_url</code> зашит константой: <code>https://cdn-pieui.swarm.ing/api</code></li>
+      </ul>
+      <p><code>.pie/config.json</code> хранит линковку с фронтенд-проектом (<code>frontendProjectDir</code>, <code>frontendComponentsDir</code>) и креды от <code>login</code>.</p>
+    </div>
+  </div>
+  <div class="note">Идея <code>.pie/config.json</code>: переживает между запусками, не уходит в git (обычно в <code>.gitignore</code>), хранит интерактивные ответы юзера и токены. Идея <code>.env</code>: пишется командой <code>login</code> на одном уровне с <code>.pie/</code>, чтобы остальные скрипты тоже видели креды.</p>
+</section>
+
+<!-- =========================================================== -->
+<h2 class="section-title" id="help">Help-система</h2>
+
+<section class="field">
+  <p class="field-desc">Оба CLI поддерживают <code>--help</code>/<code>-h</code> на каждом уровне команды.</p>
+  <div class="lang-grid">
+    <div class="lang ts">
+      <div class="lang-title"><span class="dot"></span> TypeScript</div>
+      <p><code>detectHelpScope(argv)</code> в <code>src/code/args.ts</code>:</p>
+      <ul>
+        <li>Возвращает <code>'all' | 'card' | 'card-remote' | 'page' | 'init' | 'postbuild' | 'login' | 'create' | null</code></li>
+        <li>Определяет scope по первым 1–2 токенам (<code>card remote --help</code> → <code>'card-remote'</code>)</li>
+      </ul>
+      <p><code>printUsage(scope)</code> рендерит срез строк (<code>CARD_LINES</code>, <code>CARD_REMOTE_LINES</code>, <code>PAGE_LINES</code>, …). Перехват сделан в <code>main()</code> до <code>parseArgs</code>.</p>
+    </div>
+    <div class="lang py">
+      <div class="lang-title"><span class="dot"></span> Python</div>
+      <p>Бесплатно от <code>argparse</code>: каждый subparser автоматически принимает <code>-h/--help</code> и печатает usage своего уровня.</p>
+      <p>Текст хелпа собирается из аргументов <code>help=</code> при объявлении subparser-ов и опций.</p>
+    </div>
+  </div>
+</section>
+
+<!-- =========================================================== -->
+<h2 class="section-title" id="login">login</h2>
+
+<section class="field" id="login-section">
+  <div class="field-head">
+    <h3 class="field-name">pie login · pieui login</h3>
+    <span class="field-type">Авторизация через браузер</span>
+  </div>
+  <p class="field-desc">Бесконечный поллинг credentials-endpoint, пока пользователь не подтвердит сессию в браузере.</p>
+  <div class="lang-grid">
+    <div class="lang ts">
+      <div class="lang-title"><span class="dot"></span> TypeScript</div>
+      <p><code>src/code/commands/login.ts</code>:</p>
+      <ol>
+        <li>Генерит 32-символьный код (<code>[a-zA-Z0-9]</code>)</li>
+        <li>Открывает <code>https://pieui.swarm.ing/connect?code=&lt;code&gt;</code> (override: <code>PIEUI_LOGIN_CONNECT_BASE</code>)</li>
+        <li>Поллит <code>https://api-pieui.swarm.ing/api/external/credentials?code=&lt;code&gt;</code> раз в 3 с, таймаут 30 с (override через env)</li>
+        <li>Ожидает <code>{ status: "ok", config: { user_id, project, api_key } }</code></li>
+        <li>Пишет <code>~/.pie/config.json</code> и аппендит <code>PIE_USER_ID</code>/<code>PIE_PROJECT</code>/<code>PIE_API_KEY</code> в <code>.env</code> с экранированием</li>
+      </ol>
+    </div>
+    <div class="lang py">
+      <div class="lang-title"><span class="dot"></span> Python</div>
+      <p><code>pie/code/login.py</code>: тот же протокол, тот же эндпоинт, тот же 3-секундный интервал. Сохраняет креды в <code>.pie/config.json</code>, аппендит <code>.env</code> с теми же ключами.</p>
+    </div>
+  </div>
+  <div class="note">Маппинг ключей JSON↔ENV: <code>user_id → PIE_USER_ID</code>, <code>project → PIE_PROJECT</code>, <code>api_key → PIE_API_KEY</code>.</div>
+</section>
+
+<!-- =========================================================== -->
+<h2 class="section-title" id="create">create / create-pie-app / create-pieui</h2>
+
+<section class="field">
+  <p class="field-desc">Скаффолд нового проекта с нуля (создаёт директорию и наполняет её).</p>
+  <div class="lang-grid">
+    <div class="lang ts">
+      <div class="lang-title"><span class="dot"></span> TypeScript</div>
+      <p><code>pieui create &lt;Name&gt;</code> создаёт Next.js-приложение и затем запускает внутри <code>pieui init</code>. <code>create-pie-app</code> / алиас <code>create-pieui</code> — тот же шаблон без последующего init (чистый скелет).</p>
+      <p>Хендлер: <code>src/code/commands/create.ts</code>, <code>createPieApp.ts</code>.</p>
+    </div>
+    <div class="lang py">
+      <div class="lang-title"><span class="dot"></span> Python</div>
+      <p><code>pie create &lt;Name&gt;</code> использует <code>uv init</code> для создания проекта, добавляет <code>pieui</code> в зависимости, чистит boilerplate, копирует шаблоны <code>pages/main.py</code>, <code>web.py</code> и <code>pages/components/</code>, запускает фоновый <code>uvicorn web:app --port 8008</code>.</p>
+      <p>Хендлер: <code>pie/code/create.py</code>.</p>
+    </div>
+  </div>
+</section>
+
+<!-- =========================================================== -->
+<h2 class="section-title" id="init">init</h2>
+
+<section class="field">
+  <p class="field-desc">Инициализация структуры PieUI в существующем проекте + интерактивная линковка двух репозиториев (фронт ↔ бэк).</p>
+  <div class="lang-grid">
+    <div class="lang ts">
+      <div class="lang-title"><span class="dot"></span> TypeScript</div>
+      <p><code>src/code/commands/init.ts</code> делает:</p>
+      <ol>
+        <li>Создаёт <code>piecomponents/</code> в <code>--out-dir</code> (default — cwd)</li>
+        <li>Пишет <code>piecomponents/registry.ts</code> с заглушкой <code>"use client"</code></li>
+        <li>Патчит <code>tailwind.config.{js,ts}</code>: добавляет <code>./node_modules/@swarm.ing/pieui/dist/**/*</code> в <code>content[]</code></li>
+        <li>Создаёт/патчит <code>next.config.ts</code>: ключи <code>PIE_*</code> в <code>env</code>, <code>transpilePackages: ["@swarm.ing/pieui"]</code></li>
+        <li>Если TTY: ищет в <code>os.homedir()</code> до глубины 2 директории с <code>pages/</code>+<code>components/</code>, через <code>readline</code> предлагает варианты, сохраняет в <code>.pie/config.json</code> ключи <code>backendPagesDir</code>, <code>backendComponentsDir</code></li>
+      </ol>
+    </div>
+    <div class="lang py">
+      <div class="lang-title"><span class="dot"></span> Python</div>
+      <p><code>pie/code/init.py</code> делает:</p>
+      <ol>
+        <li>Создаёт <code>pages/</code>, <code>pages/components/</code></li>
+        <li>Копирует <code>web.py</code> и <code>pages/main.py</code> из templates</li>
+        <li>Если TTY: ищет в домашней директории фронтенд-проекты (с <code>piecomponents/</code> или <code>app/</code>), сохраняет в <code>.pie/config.json</code>: <code>frontendProjectDir</code>, <code>frontendComponentsDir</code></li>
+      </ol>
+    </div>
+  </div>
+  <div class="note">Идея кросс-линковки: обе команды <code>init</code> прописывают пути к парному проекту в локальный <code>.pie/config.json</code>. Это нужно для будущих UX-фич типа "запушить компонент в pieui-проект из pie".</div>
+</section>
+
+<!-- =========================================================== -->
+<h2 class="section-title" id="self-upgrade">self-upgrade</h2>
+
+<section class="field">
+  <p class="field-desc">Самообновление CLI до последней версии. Автодетект пакетного менеджера; ручной override через <code>--pm</code>.</p>
+  <div class="lang-grid">
+    <div class="lang ts">
+      <div class="lang-title"><span class="dot"></span> TypeScript</div>
+      <p><code>src/code/commands/selfUpgrade.ts</code>. Порядок автодетекта: <code>bun → pnpm → yarn → npm</code>. Команды:</p>
+      <pre>bun add  -g @swarm.ing/pieui@latest
+npm install -g @swarm.ing/pieui@latest
+pnpm add -g @swarm.ing/pieui@latest
+yarn global add @swarm.ing/pieui@latest</pre>
+      <p>Запускается через <code>spawn</code> с <code>stdio: 'inherit'</code>, чтобы юзер видел вывод PM в реальном времени.</p>
+    </div>
+    <div class="lang py">
+      <div class="lang-title"><span class="dot"></span> Python</div>
+      <p><code>pie/code/self_upgrade.py</code>. Порядок автодетекта: <code>uv tool → poetry → pip</code>. Команды:</p>
+      <pre>uv tool upgrade pieui
+poetry update pieui
+pip install --upgrade pieui</pre>
+    </div>
+  </div>
+</section>
+
+<!-- =========================================================== -->
+<h2 class="section-title" id="card-add">card add</h2>
+
+<section class="field">
+  <p class="field-desc">Скаффолд нового компонента из шаблона. 4 базовых типа × опции <code>--io</code> × <code>--ajax</code>.</p>
+  <div class="lang-grid">
+    <div class="lang ts">
+      <div class="lang-title"><span class="dot"></span> TypeScript</div>
+      <p><code>src/code/commands/add.ts</code>. Имя валидируется регуляркой <code>/^[A-Z][a-zA-Z0-9]+$/</code>. Создаёт:</p>
+      <ul>
+        <li><code>piecomponents/&lt;Name&gt;/index.ts</code> — вызов <code>registerPieComponent({ name, component })</code></li>
+        <li><code>piecomponents/&lt;Name&gt;/types/index.ts</code> — интерфейс данных (поля зависят от типа + опций)</li>
+        <li><code>piecomponents/&lt;Name&gt;/ui/&lt;Name&gt;.tsx</code> — скелет React-компонента</li>
+      </ul>
+      <p>Опции:</p>
+      <ul>
+        <li><code>--io</code> → добавляет <code>useSocketioSupport</code>, <code>useCentrifugeSupport</code>, <code>useMittSupport</code>, <code>centrifugeChannel</code></li>
+        <li><code>--ajax</code> → добавляет <code>pathname</code>, <code>depsNames</code>, <code>kwargs</code></li>
+      </ul>
+      <p>Дополнительно: дописывает строку <code>import "@/piecomponents/&lt;Name&gt;";</code> в <code>registry.ts</code>.</p>
+    </div>
+    <div class="lang py">
+      <div class="lang-title"><span class="dot"></span> Python</div>
+      <p><code>pie/code/card_add.py</code>. Имя нормализуется в <code>CamelCase</code> (<code>my-card</code> → <code>MyCard</code>), файл — в <code>snake_case_card.py</code>.</p>
+      <p>Шаблон выбирается по формуле <code>{prefix}{card_type}_component.py.j2</code>, где prefix ∈ {"", "io_", "ajax_", "ajax_io_"} и опционально <code>input_</code>. Итого 32 комбинации в <code>pie/code/templates/pages/components/</code>.</p>
+      <p>Рендерится Jinja2 с переменной <code>{{name}}</code>. Опции:</p>
+      <ul>
+        <li><code>--io</code> → добавляет <code>use_socketio_support</code>, <code>use_centrifuge_support</code>, <code>use_mitt_support</code>, <code>centrifuge_channel</code></li>
+        <li><code>--ajax</code> → добавляет <code>pathname</code>, <code>deps_names</code>, <code>kwargs</code></li>
+      </ul>
+    </div>
+  </div>
+  <div class="note">Типы компонентов: <code>simple</code> (только data), <code>complex</code> (data+children), <code>simple-container</code>/<code>container</code> (data+content), <code>complex-container</code> (data+content[]). В TS дефолт при пропуске типа — <code>complex-container</code>; в Py тип обязателен.</div>
+</section>
+
+<!-- =========================================================== -->
+<h2 class="section-title" id="card-list">card list</h2>
+
+<section class="field">
+  <p class="field-desc">Перечисление зарегистрированных компонентов с типом, AJAX/IO-флагами и путём к файлу.</p>
+  <div class="lang-grid">
+    <div class="lang ts">
+      <div class="lang-title"><span class="dot"></span> TypeScript</div>
+      <p><code>src/code/commands/list.ts</code>:</p>
+      <ol>
+        <li><code>glob ${srcDir}/**/*.{ts,tsx}</code>, исключая <code>.d.ts</code>, <code>dist/</code>, <code>node_modules/</code></li>
+        <li>Создаёт <code>ts.Program</code> и <code>TypeChecker</code></li>
+        <li>Walk AST: ищет <code>CallExpression</code> с <code>callee.text === "registerPieComponent"</code></li>
+        <li>Из аргумента-объекта берёт ключи <code>name</code>, <code>component</code>, <code>loader</code></li>
+        <li>Через <code>TypeChecker</code> резолвит type компонента, читает свойство <code>content</code>/<code>children</code> для определения типа</li>
+        <li>Печатает таблицу: Name · Type · DataType · Lazy · File</li>
+      </ol>
+    </div>
+    <div class="lang py">
+      <div class="lang-title"><span class="dot"></span> Python</div>
+      <p><code>pie/code/card_list.py</code>:</p>
+      <ol>
+        <li>Рекурсивный обход <code>{components_dir}/**/*.py</code></li>
+        <li>Парсинг каждого файла через <code>ast.parse()</code></li>
+        <li>Строит alias-map импортов (<code>import X as Y</code>, <code>from M import A as B</code>) для резолва базовых классов</li>
+        <li>Находит классы, наследующие <code>Card</code>/<code>InputCard</code> (с учётом алиасов)</li>
+        <li>Сканирует <code>AnnAssign</code>/<code>Assign</code> для определения AJAX (<code>pathname</code>/<code>deps_names</code>/<code>kwargs</code>) и IO (<code>use_*_support</code>) полей</li>
+        <li>Тип определяет по аннотациям: <code>list[Card]</code> → container, вложенный Card → complex, иначе simple</li>
+      </ol>
+    </div>
+  </div>
+  <div class="warn">⚠ TS использует Compiler API → надёжно резолвит типы через checker. Py использует только <code>ast</code> (статический парсер) → не выполняет код, но требует точных regex/AST-эвристик для базовых классов.</div>
+</section>
+
+<!-- =========================================================== -->
+<h2 class="section-title" id="card-view">card view</h2>
+
+<section class="field">
+  <p class="field-desc">Дамп всех видимых снаружи характеристик карточки: props, ajax, IO, events.</p>
+  <div class="lang-grid">
+    <div class="lang ts">
+      <div class="lang-title"><span class="dot"></span> TypeScript</div>
+      <p><code>src/code/commands/cardView.ts</code>:</p>
+      <ul>
+        <li>Читает <code>piecomponents/&lt;Name&gt;/types/index.ts</code> и <code>index.ts</code>/<code>index.tsx</code></li>
+        <li>Regex <code>interface ${Name}Data { … }</code> вырезает тело интерфейса</li>
+        <li>Regex <code>^[ \t]*([A-Za-z_]\w*)(\?)?\s*:\s*([^;\n]+);?</code> — список props</li>
+        <li>AJAX: имя props в <code>{pathname, deps_names, kwargs}</code></li>
+        <li>IO: <code>\buse_[A-Za-z0-9_]+_support\b</code></li>
+        <li>Events: из <code>methods = { … }</code> в JSX — ключи объекта через regex <code>([A-Za-z_]\w*)\s*:</code></li>
+      </ul>
+    </div>
+    <div class="lang py">
+      <div class="lang-title"><span class="dot"></span> Python</div>
+      <p><code>pie/code/card_inspect.py</code>:</p>
+      <ul>
+        <li>Парсит файл через <code>ast.parse()</code>, находит ClassDef с нужным именем</li>
+        <li>Props — поля <code>AnnAssign</code> в теле класса; default/required определяется наличием <code>value</code></li>
+        <li>AJAX/IO — те же имена полей</li>
+        <li>Events: <code>get_supported_events()</code> → парсит <code>Return</code>-литерал; плюс методы <code>create_&lt;event&gt;_event</code> с экстракцией параметров из сигнатуры</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- =========================================================== -->
+<h2 class="section-title" id="card-remove">card remove</h2>
+
+<section class="field">
+  <p class="field-desc">Удаление локального компонента.</p>
+  <div class="lang-grid">
+    <div class="lang ts">
+      <div class="lang-title"><span class="dot"></span> TypeScript</div>
+      <p><code>src/code/commands/remove.ts</code>: рекурсивно удаляет <code>piecomponents/&lt;Name&gt;/</code> и снимает строку импорта из <code>registry.ts</code>.</p>
+    </div>
+    <div class="lang py">
+      <div class="lang-title"><span class="dot"></span> Python</div>
+      <p>На стороне <code>pie</code> локальный <code>card remove</code> не объявлен в <code>__main__.py</code> — удаление файла руками либо через <code>card remote remove</code> (для облака).</p>
+    </div>
+  </div>
+</section>
+
+<!-- =========================================================== -->
+<h2 class="section-title" id="card-list-events">card list-events</h2>
+
+<section class="field">
+  <p class="field-desc">Перечисление имён событий, которые компонент умеет порождать.</p>
+  <div class="lang-grid">
+    <div class="lang ts">
+      <div class="lang-title"><span class="dot"></span> TypeScript</div>
+      <p>Берёт ключи из <code>methods={…}</code> атрибута JSX-элемента <code>&lt;PieCard&gt;</code>. См. <a href="#introspection">extractEvents.ts</a>.</p>
+    </div>
+    <div class="lang py">
+      <div class="lang-title"><span class="dot"></span> Python</div>
+      <p>Статически парсит <code>def get_supported_events(self) -&gt; list[str]: return [...]</code> — извлекает literal-список <code>ast.Constant</code> элементов.</p>
+    </div>
+  </div>
+</section>
+
+<!-- =========================================================== -->
+<h2 class="section-title" id="card-add-event">card add-event</h2>
+
+<section class="field">
+  <p class="field-desc">Добавление нового события в существующий компонент через правку исходника.</p>
+  <div class="lang-grid">
+    <div class="lang ts">
+      <div class="lang-title"><span class="dot"></span> TypeScript</div>
+      <p><code>src/code/commands/addEvent.ts</code>: дописывает ключ в объект <code>methods={…}</code> в JSX. Имя нормализуется в camelCase; вставляется хендлер-заглушка.</p>
+    </div>
+    <div class="lang py">
+      <div class="lang-title"><span class="dot"></span> Python</div>
+      <p><code>pie/code/card_inspect.py</code> (<code>add-event</code> action): нормализует имя в (snake_case, camelCase); рендерит сниппет <code>snippets/create_event_method.py.j2</code> (<code>def create_{snake}_event(self): return self.create_event("{camel}", {})</code>); вставляет в конец class body по <code>end_lineno</code> последнего statement.</p>
+    </div>
+  </div>
+</section>
+
+<!-- =========================================================== -->
+<h2 class="section-title" id="card-pull">card pull</h2>
+
+<section class="field">
+  <p class="field-desc">Скачивание карточки в локальный <code>piecomponents/</code> по ссылке трёх форматов.</p>
+  <div class="lang-grid">
+    <div class="lang ts">
+      <div class="lang-title"><span class="dot"></span> TypeScript</div>
+      <p><code>src/code/commands/cardPull.ts</code> + <code>cardRemote/pull.ts</code>. Парсер ссылок <code>parseCardRef()</code>:</p>
+      <ul>
+        <li><code>Name</code> → текущий user/project</li>
+        <li><code>Name@123</code> → ревизия 123</li>
+        <li><code>project/Name[@rev]</code> → override проекта</li>
+        <li><code>r/user/Name</code> → публичный алиас (без авторизации, без ревизии)</li>
+      </ul>
+      <p>Скачивает во временную папку <code>${componentDir}.pieui-tmp-${pid}-${ts}</code>, после успеха атомарно переименовывает в целевую.</p>
+    </div>
+    <div class="lang py">
+      <div class="lang-title"><span class="dot"></span> Python</div>
+      <p><code>pie/code/card_remote.py</code>: те же 3 формата ссылки (<code>parse_card_ref</code>/<code>parse_pull_ref</code>/<code>parse_public_pull_ref</code>), та же логика временной папки → атомарный rename.</p>
+    </div>
+  </div>
+</section>
+
+<!-- =========================================================== -->
+<h2 class="section-title" id="card-dump-metadata">card dump-metadata</h2>
+
+<section class="field">
+  <p class="field-desc">Канонический JSON-дамп компонента для интероп-сценариев (LLM, миграции, AI-инспекция). Формат описан отдельно в <a href="PieMetadata.html">PieMetadata</a>.</p>
+  <div class="lang-grid">
+    <div class="lang ts">
+      <div class="lang-title"><span class="dot"></span> TypeScript</div>
+      <p><code>src/code/commands/cardDumpMetadata.ts</code>. Собирает 12 полей:</p>
+      <ul>
+        <li><code>name</code>, <code>files[]</code> (все <code>.ts</code>/<code>.tsx</code> кроме тестов/сториз)</li>
+        <li><code>packages[]</code> — npm-пакеты с версиями из <code>package.json</code></li>
+        <li><code>relativeImports[]</code> — резолв через <code>tsconfig.paths</code></li>
+        <li><code>events[]</code> — через <code>extractEvents()</code> из <code>methods={…}</code></li>
+        <li><code>propsSchema</code>/<code>propsCode</code> — JSON Schema + источник интерфейса данных</li>
+        <li><code>eventsPropsSchema</code>/<code>eventsPropsCode</code> — payload-типы каждого события</li>
+        <li><code>inputPropsCode</code>/<code>inputPropsSchema</code> — тип <code>stored={…}</code> (если есть)</li>
+        <li><code>ajaxList[]</code> — поля с префиксом <code>pathname</code></li>
+      </ul>
+      <p>Schema генерится через <code>typescript-json-schema</code> с настройками <code>strictNullChecks</code>, <code>noExtraProps</code>, <code>ref: false</code>.</p>
+      <p>Опция <code>--out &lt;file&gt;</code> — записать в файл; иначе stdout.</p>
+    </div>
+    <div class="lang py">
+      <div class="lang-title"><span class="dot"></span> Python</div>
+      <p><code>pie/code/card_dump_metadata.py</code>. Те же 12 полей:</p>
+      <ul>
+        <li><code>files[]</code> — .py-файлы компонента</li>
+        <li><code>packages[]</code> — фильтр <code>sys.stdlib_module_names</code> + проверка локальных модулей; версия через <code>importlib.metadata.version()</code> или <code>pyproject.toml</code></li>
+        <li><code>relativeImports[]</code> — резолв относительных и абсолютных проектных импортов в пути файлов</li>
+        <li><code>events[]</code> — пересечение <code>get_supported_events()</code> и <code>create_*_event</code> методов</li>
+        <li><code>propsSchema</code>/<code>propsCode</code> — schema через <code>metadata_schema.py</code> (рекурсивный AST-only обход аннотаций), source — целиком <code>@dataclass</code> класс</li>
+        <li>Аналогично — <code>eventsPropsSchema/Code</code> для каждого <code>create_*_event</code> метода</li>
+      </ul>
+      <p>Опция <code>--out</code> аналогично.</p>
+    </div>
+  </div>
+  <div class="note">Оба дампа — детерминированный JSON (отсортированные ключи) для diff-friendly артефактов и сравнения «фронт ↔ бэк» одного и того же компонента.</div>
+</section>
+
+<!-- =========================================================== -->
+<h2 class="section-title" id="card-remote">card remote · push/pull/list/remove/history/public/private</h2>
+
+<section class="field">
+  <p class="field-desc">Подкоманды для синка компонентов с PieUI Storage. Один HTTP-клиент в каждой реализации, единый набор эндпоинтов.</p>
+  <div class="lang-grid">
+    <div class="lang ts">
+      <div class="lang-title"><span class="dot"></span> TypeScript</div>
+      <p><code>src/code/services/storage.ts</code> — обёртка над нативным <code>fetch()</code> с <code>AbortController</code> (30 с таймаут). Аутентификация: заголовок <code>x-api-key</code> из <code>settings.apiKey</code>. Папка <code>cardRemote/</code> содержит файл на каждый action.</p>
+      <p>Push: walk файлов компонента, FormData с <code>object_paths[]</code> и <code>files[]</code>, PUT batch-эндпоинт; затем отдельный PUT метаданных <code>eventSchema</code>.</p>
+    </div>
+    <div class="lang py">
+      <div class="lang-title"><span class="dot"></span> Python</div>
+      <p><code>pie/code/services/storage.py</code> — синхронный <code>httpx.request()</code> (30 с timeout), та же схема <code>x-api-key</code>. Все вызовы оборачиваются в <code>PieStorageError</code> (subclass <code>RuntimeError</code>).</p>
+      <p>Push/pull/list/etc. — методы <code>PieStorageService</code>, дёргаются из <code>card_remote.py</code>.</p>
+    </div>
+  </div>
+  <p class="field-desc" style="margin-top:14px;">Источники <code>user_id</code>/<code>project</code> при remote-операциях (порядок приоритета):</p>
+  <ol>
+    <li>Флаги <code>--user</code> / <code>--project</code></li>
+    <li>Префикс ссылки (для <code>pull</code>): <code>project/Name</code> или <code>r/user/Name</code></li>
+    <li><code>process.env</code>/<code>os.environ</code>: <code>PIE_USER_ID</code>, <code>PIE_PROJECT</code> или <code>PIE_PROJECT_SLUG</code></li>
+    <li><code>.env</code> в cwd</li>
+    <li>Дефолт <code>project</code>: <code>basename(cwd)</code></li>
+  </ol>
+  <p class="field-desc">Подкоманда <code>history</code> принимает <code>--page N</code> (default 1), <code>--per-page N</code> (default 10), <code>--from R</code>, <code>--to R</code> — все передаются как query-параметры эндпоинту истории.</p>
+</section>
+
+<!-- =========================================================== -->
+<h2 class="section-title" id="page-add">page add</h2>
+
+<section class="field">
+  <p class="field-desc">Создание новой страницы из шаблона.</p>
+  <div class="lang-grid">
+    <div class="lang ts">
+      <div class="lang-title"><span class="dot"></span> TypeScript</div>
+      <p><code>src/code/commands/pageAdd.ts</code>: нормализует путь (срез <code>app/</code> и <code>/page.tsx</code>, защита от выхода за корень), генерит PascalCase-имя (<code>user-profile</code> → <code>UserProfilePage</code>), пишет <code>app/&lt;path&gt;/page.tsx</code> через <code>pageTemplate(name)</code>.</p>
+    </div>
+    <div class="lang py">
+      <div class="lang-title"><span class="dot"></span> Python</div>
+      <p><code>pie/code/page_create.py</code>: создаёт <code>pages/&lt;file&gt;.py</code> из <code>page.py.j2</code>; идемпотентно регистрирует страницу в <code>web.py</code> — добавляет <code>import</code> и ключ в <code>Web({...})</code>-словарь, если их там ещё нет.</p>
+    </div>
+  </div>
+</section>
+
+<!-- =========================================================== -->
+<h2 class="section-title" id="page-view">page view</h2>
+
+<section class="field">
+  <p class="field-desc">Дамп информации о существующей странице.</p>
+  <div class="lang-grid">
+    <div class="lang ts">
+      <div class="lang-title"><span class="dot"></span> TypeScript</div>
+      <p><code>src/code/commands/pageView.ts</code>: печатает исходник <code>app/&lt;path&gt;/page.tsx</code>.</p>
+    </div>
+    <div class="lang py">
+      <div class="lang-title"><span class="dot"></span> Python</div>
+      <p><code>pie/code/page_create.py</code>: динамически импортирует <code>pages.&lt;name&gt;</code>, инстанцирует <code>AsyncPage</code>-подкласс, интроспектит <code>ajax_post</code>/<code>ajax_get</code> словари, печатает: имя, модуль, путь, флаг <code>is_typed</code>, overridden <code>form_process</code>, таблицу ajax-роутов.</p>
+    </div>
+  </div>
+  <div class="warn">⚠ Pie импортирует код страницы для интроспекции (использует runtime). TS-версия — чисто текстовый дамп.</div>
+</section>
+
+<!-- =========================================================== -->
+<h2 class="section-title" id="page-ajax">page ajax · add / remove</h2>
+
+<section class="field">
+  <p class="field-desc">Добавление/удаление ajax-хендлера в существующую страницу через правку исходника.</p>
+  <div class="lang-grid">
+    <div class="lang ts">
+      <div class="lang-title"><span class="dot"></span> TypeScript</div>
+      <p><code>src/code/commands/pageAjax.ts</code>: на фронте ajax-хендлеры живут на бэке; команда делегирует через <code>subprocess</code> в <code>pie</code>, чтобы сохранить симметрию surface — флаг <code>add</code>/<code>remove</code>, имя handler-а; редактирование выполняется на бэк-стороне.</p>
+    </div>
+    <div class="lang py">
+      <div class="lang-title"><span class="dot"></span> Python</div>
+      <p><code>pie/code/page_create.py</code>:</p>
+      <ul>
+        <li><b>add</b> — добавляет атрибут <code>{handler}_ajax = "/{handler}"</code>, вызов <code>self.register_ajax(...)</code> после <code>super().__init__()</code>, и async-метод <code>async def {handler}(self, **data): return []</code></li>
+        <li><b>remove</b> — снимает все три участка по позициям AST (с захватом пустой строки перед методом, если есть)</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- =========================================================== -->
+<h2 class="section-title" id="postbuild">postbuild · web build</h2>
+
+<section class="field">
+  <p class="field-desc">Генерация манифеста компонентов для рантайма / статической раздачи. Главный артефакт пайплайна сборки.</p>
+  <div class="lang-grid">
+    <div class="lang ts">
+      <div class="lang-title"><span class="dot"></span> TypeScript</div>
+      <p><code>pieui postbuild [--out-dir public] [--src-dir src] [--append]</code> → <code>src/code/commands/postbuild.ts</code>:</p>
+      <ol>
+        <li>Glob <code>${srcDir}/**/*.{ts,tsx}</code></li>
+        <li>Создаёт <code>ts.Program</code>, ходит AST в поисках <code>registerPieComponent({…})</code></li>
+        <li>Для каждого: имя из <code>name</code>, data-тип из сигнатуры компонента (плюс heuristic-fallback по именам <code>{Name}Data</code>, <code>{TypeName}Data</code>)</li>
+        <li>Генерит JSON Schema через <code>typescript-json-schema</code></li>
+        <li>Если <code>--append</code>: подмердживает <code>node_modules/@swarm.ing/pieui/dist/pieui.components.json</code> (дедуп по имени)</li>
+        <li>Пишет <code>${outDir}/pieui.components.json</code></li>
+      </ol>
+    </div>
+    <div class="lang py">
+      <div class="lang-title"><span class="dot"></span> Python</div>
+      <p><code>pie web &lt;module:app&gt; build</code> → <code>pie/code/build.py</code> (<code>handle_build</code>):</p>
+      <ol>
+        <li>Импортирует <code>module:attribute</code> (FastAPI-приложение)</li>
+        <li>Итерирует страницы из <code>web.pages</code></li>
+        <li>Для каждой вызывает <code>page.fields.generate()</code> — рекурсивная сериализация дерева карточек в JSON</li>
+        <li>Пишет <code>build.json</code> с ключами по page key</li>
+      </ol>
+      <p>Симметричная команда <code>pie web &lt;m:a&gt; verify</code> просто проверяет, что у всех страниц определён <code>.fields</code>.</p>
+    </div>
+  </div>
+</section>
+
+<!-- =========================================================== -->
+<h2 class="section-title" id="introspection">Интроспекция AST</h2>
+
+<section class="field">
+  <p class="field-desc">Главная общая черта обеих CLI: <b>никогда не исполнять пользовательский код</b> (за исключением <code>pie page view</code>, где это сделано осознанно). Всё извлечение метаданных — статический анализ.</p>
+  <div class="lang-grid">
+    <div class="lang ts">
+      <div class="lang-title"><span class="dot"></span> TypeScript</div>
+      <p>Основной инструмент — <b>TypeScript Compiler API</b> (<code>typescript</code> + <code>typescript-json-schema</code>), обёрнутый в <code>src/code/ts.ts</code>. Подходы:</p>
+      <ul>
+        <li><b>Walk AST</b>: <code>ts.forEachChild(node, visit)</code> с матчингом на <code>CallExpression</code>, <code>JsxElement</code>, <code>InterfaceDeclaration</code></li>
+        <li><b>TypeChecker</b>: <code>checker.getSymbolAtLocation</code>, <code>checker.getTypeOfSymbolAtLocation</code> — резолв props компонентов через type-граф</li>
+        <li><b>Schema generation</b>: <code>TJS.buildGenerator(program, {strictNullChecks, noExtraProps, ref: false, ignoreErrors: true})</code></li>
+      </ul>
+      <p>Регэксы используются только в простых случаях (<code>cardView.ts</code> — для быстрого, не type-aware дампа). Полная интроспекция (postbuild, dump-metadata) — всегда через checker.</p>
+      <p>Извлечение событий: <code>extractEvents.ts</code> — рекурсивный поиск <code>&lt;PieCard methods={…}&gt;</code>, извлечение ключей object-literal-а. Запрещены spread и computed properties.</p>
+    </div>
+    <div class="lang py">
+      <div class="lang-title"><span class="dot"></span> Python</div>
+      <p>Основной инструмент — стандартный модуль <b><code>ast</code></b>. Подходы:</p>
+      <ul>
+        <li><b>Walk AST</b>: <code>ast.walk(tree)</code> или ручной обход с <code>ast.NodeVisitor</code></li>
+        <li><b>Alias map</b>: словарь <code>{local_name: dotted_path}</code> из всех <code>ast.Import</code>/<code>ast.ImportFrom</code> — нужен для резолва базовых классов (<code>X(Card)</code> ↔ <code>import Card as X</code>)</li>
+        <li><b>Schema generation</b>: <code>metadata_schema.py</code> — собственный walker, превращающий аннотации в JSON Schema без выполнения кода (поддержка <code>Optional</code>, <code>List</code>, <code>Dict</code>, PEP 604 union <code>X | Y</code>, форвард-рефы как строки, вложенные dataclass)</li>
+        <li><b>Position tracking</b>: <code>ast.AST.lineno</code>/<code>end_lineno</code> для точечной правки исходников (page ajax, add-event)</li>
+      </ul>
+      <p>Stdlib-фильтр: <code>sys.stdlib_module_names</code> (Python ≥3.10) с fallback на <code>sysconfig.get_paths()</code>.</p>
+    </div>
+  </div>
+  <p class="field-desc" style="margin-top:14px;">Симметричный набор полей: AJAX (<code>pathname</code>/<code>deps_names</code>/<code>kwargs</code> snake_case в Py, camelCase <code>pathname</code>/<code>depsNames</code>/<code>kwargs</code> в TS), IO (<code>use_*_support</code>/<code>centrifuge_channel</code> ↔ <code>use*Support</code>/<code>centrifugeChannel</code>), events (имена методов <code>create_*_event</code> ↔ ключи <code>methods={…}</code> в JSX).</p>
+</section>
+
+<!-- =========================================================== -->
+<h2 class="section-title" id="http-api">HTTP API: PieUI Storage</h2>
+
+<section class="field">
+  <p class="field-desc">База URL: <code>https://cdn-pieui.swarm.ing/api</code>. Аутентификация: заголовок <code>x-api-key</code> (опускается для публичных GET-ов). Таймаут: 30 с. Ошибки сворачиваются в <code>PieStorageError</code> (Py) / <code>StorageError</code> (TS) и печатаются как <code>[pieui] Error: …</code> / <code>[pie] Error: …</code>.</p>
+  <table class="api">
+    <thead><tr><th>Метод</th><th>Путь</th><th>Назначение</th></tr></thead>
+    <tbody>
+      <tr><td class="method">GET</td><td class="path">/components/{user}/{project}</td><td class="desc">список компонентов проекта</td></tr>
+      <tr><td class="method">GET</td><td class="path">/components/{user}/{project}/{name}</td><td class="desc">дерево файлов компонента (latest)</td></tr>
+      <tr><td class="method">GET</td><td class="path">/components/{user}/{project}/{name}/revisions/{rev}</td><td class="desc">дерево конкретной ревизии</td></tr>
+      <tr><td class="method">GET</td><td class="path">/components/{user}/{project}/{name}/revisions</td><td class="desc">список ревизий</td></tr>
+      <tr><td class="method">GET</td><td class="path">/components/{user}/{project}/{name}/history?page=&amp;per_page=&amp;from=&amp;to=</td><td class="desc">журнал с патчами</td></tr>
+      <tr><td class="method">PUT</td><td class="path">/components/{user}/{project}/{name}/batch/{lang}</td><td class="desc">batch-загрузка (FormData)</td></tr>
+      <tr><td class="method">GET</td><td class="path">/components/{user}/{project}/{name}/{lang}/{file}</td><td class="desc">скачать один файл</td></tr>
+      <tr><td class="method">DELETE</td><td class="path">/components/{user}/{project}/{name}</td><td class="desc">удалить компонент</td></tr>
+      <tr><td class="method">PUT</td><td class="path">/components/{user}/{project}/{name}/public</td><td class="desc">опубликовать</td></tr>
+      <tr><td class="method">DELETE</td><td class="path">/components/{user}/{project}/{name}/public</td><td class="desc">снять публикацию</td></tr>
+      <tr><td class="method">GET</td><td class="path">/components/{user}/{project}/{name}/metadata/{kind}</td><td class="desc">читать метаданные</td></tr>
+      <tr><td class="method">PUT</td><td class="path">/components/{user}/{project}/{name}/metadata/{kind}</td><td class="desc">писать метаданные</td></tr>
+      <tr><td class="method">DELETE</td><td class="path">/components/{user}/{project}/{name}/metadata/{kind}</td><td class="desc">удалить метаданные</td></tr>
+      <tr><td class="method">GET</td><td class="path">/public-components/{user}/{name}</td><td class="desc">публичное чтение (без авторизации)</td></tr>
+      <tr><td class="method">GET</td><td class="path">/external/credentials?code=…</td><td class="desc">login-поллинг (домен <code>api-pieui.swarm.ing</code>)</td></tr>
+    </tbody>
+  </table>
+  <p class="field-desc" style="margin-top:14px;"><code>{lang}</code> ∈ {<code>typescript</code>, <code>python</code>}. <code>{kind}</code> ∈ {<code>jsonSchema</code>, <code>eventSchema</code>, <code>llms.txt</code>}.</p>
+  <p class="field-desc">FormData для batch-загрузки: повторяющиеся поля <code>object_paths[]</code> (относительные пути внутри компонента) и <code>files[]</code> (бинарники с правильным Content-Type, определяемым по расширению).</p>
+</section>
+
+<!-- =========================================================== -->
+<h2 class="section-title" id="templates">Шаблоны</h2>
+
+<section class="field">
+  <div class="lang-grid">
+    <div class="lang ts">
+      <div class="lang-title"><span class="dot"></span> TypeScript</div>
+      <p>Шаблоны живут в коде как функции, возвращающие строку:</p>
+      <ul>
+        <li><code>src/code/templates/componentIndexTemplate.ts</code> — <code>index.ts</code> карточки</li>
+        <li><code>src/code/templates/componentTypesTemplate.ts</code> — <code>types/index.ts</code> с интерфейсом, поля зависят от типа + <code>--io</code>/<code>--ajax</code></li>
+        <li><code>src/code/templates/componentTemplateFor.ts</code> — <code>ui/&lt;Name&gt;.tsx</code> с React-скелетом под каждый тип</li>
+        <li><code>src/code/templates/pageTemplate.ts</code> — <code>app/&lt;path&gt;/page.tsx</code></li>
+        <li><code>src/code/templates/registryTemplate.ts</code> — <code>piecomponents/registry.ts</code></li>
+      </ul>
+      <p>Подстановка переменных — обычный <code>${name}</code> в template literals; никакого Jinja-подобного движка.</p>
+    </div>
+    <div class="lang py">
+      <div class="lang-title"><span class="dot"></span> Python</div>
+      <p>Шаблоны — файлы <code>.j2</code> в <code>pie/code/templates/</code>, рендерятся Jinja2.</p>
+      <p>Карточки: 4 базовых типа × 8 префиксов = до 32 файлов в <code>templates/pages/components/</code> (формула: <code>[input_][ajax_][io_]{type}_component.py.j2</code>).</p>
+      <p>Прочее:</p>
+      <ul>
+        <li><code>templates/page.py.j2</code> — <code>AsyncPage</code>-подкласс</li>
+        <li><code>templates/main.py.j2</code> — <code>pages/main.py</code></li>
+        <li><code>templates/web.py.j2</code> — каркас FastAPI с условными блоками socketio/centrifuge</li>
+        <li><code>templates/snippets/create_event_method.py.j2</code> — снипет для <code>add-event</code></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <span>CLI · pieui &amp; pie</span>
+  <span>обновлено: 2026-05-17</span>
+</footer>
+
+</div>
+</body>
+</html>

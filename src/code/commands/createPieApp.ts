@@ -1,6 +1,10 @@
 import fs from 'fs'
 import path from 'path'
 import { spawnSync } from 'child_process'
+import {
+    createRequirements,
+    printRequirements,
+} from '../printRequirements'
 
 const DEFAULT_TEMPLATE_SPEC = 'next-app@latest'
 const SHARED_TEMPLATE_DIR_ENV = 'PIEUI_SHARED_TEMPLATE_DIR'
@@ -296,4 +300,6 @@ export const createPieAppCommand = (appName: string) => {
     console.log(`  1. cd ${trimmedAppName}`)
     console.log(`  2. bun install`)
     console.log(`  3. bun run dev`)
+
+    printRequirements(createRequirements(trimmedAppName))
 }

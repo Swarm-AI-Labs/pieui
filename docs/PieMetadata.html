@@ -1,0 +1,522 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>PieMetadata — pieui & pie</title>
+<style>
+  :root {
+    --bg: #0c0d10;
+    --panel: #15171c;
+    --panel-2: #1c1f26;
+    --border: #2a2e38;
+    --text: #e8eaed;
+    --muted: #9aa0a8;
+    --accent: #ffb86b;
+    --accent-2: #ff6b6b;
+    --py: #4ec9b0;
+    --ts: #5cb1ff;
+    --code-bg: #0a0b0e;
+    --tag-bg: #21252e;
+    --shadow: 0 1px 0 rgba(255,255,255,0.04), 0 12px 30px rgba(0,0,0,0.25);
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-size: 15px;
+    line-height: 1.55;
+    margin: 0;
+    padding: 0;
+    -webkit-font-smoothing: antialiased;
+  }
+  body {
+    background-image:
+      radial-gradient(900px 500px at 80% -10%, rgba(255,184,107,0.06), transparent 70%),
+      radial-gradient(700px 400px at -10% 110%, rgba(92,177,255,0.06), transparent 70%);
+    background-attachment: fixed;
+  }
+  .container {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 64px 28px 96px;
+  }
+  header.hero {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 24px;
+    flex-wrap: wrap;
+    padding-bottom: 32px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 48px;
+  }
+  .hero h1 {
+    margin: 0 0 8px;
+    font-size: clamp(34px, 4vw, 48px);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .hero p { margin: 0; color: var(--muted); max-width: 600px; }
+  .badges { display: flex; gap: 10px; flex-wrap: wrap; }
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  .badge .dot { width: 7px; height: 7px; border-radius: 50%; }
+  .badge.py .dot { background: var(--py); }
+  .badge.ts .dot { background: var(--ts); }
+
+  nav.toc {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px 22px;
+    margin-bottom: 44px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 6px 18px;
+    box-shadow: var(--shadow);
+  }
+  nav.toc h2 {
+    grid-column: 1 / -1;
+    margin: 0 0 6px;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+    font-weight: 600;
+  }
+  nav.toc a {
+    color: var(--text);
+    text-decoration: none;
+    padding: 4px 0;
+    font-size: 14px;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    transition: color 0.15s;
+  }
+  nav.toc a:hover { color: var(--accent); }
+
+  .field {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 28px 30px;
+    margin-bottom: 24px;
+    box-shadow: var(--shadow);
+  }
+  .field-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 16px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+  }
+  .field-name {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--accent);
+    margin: 0;
+  }
+  .field-type {
+    font-family: ui-monospace, monospace;
+    font-size: 13px;
+    color: var(--muted);
+    background: var(--tag-bg);
+    padding: 4px 10px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+  }
+  .field-desc {
+    color: var(--muted);
+    margin: 0 0 18px;
+  }
+  .lang-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+  }
+  @media (max-width: 760px) {
+    .lang-grid { grid-template-columns: 1fr; }
+  }
+  .lang {
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+  }
+  .lang-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+    margin-bottom: 10px;
+    font-weight: 600;
+  }
+  .lang-title .dot { width: 7px; height: 7px; border-radius: 50%; }
+  .lang.py .dot { background: var(--py); }
+  .lang.ts .dot { background: var(--ts); }
+  .lang p { margin: 0 0 8px; font-size: 14px; }
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+    overflow-x: auto;
+    margin: 8px 0 0;
+    font-size: 12.5px;
+    line-height: 1.5;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  code { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
+  .inline { background: var(--tag-bg); padding: 2px 6px; border-radius: 4px; font-size: 13px; }
+  .note {
+    background: rgba(255,184,107,0.06);
+    border: 1px solid rgba(255,184,107,0.2);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 13px;
+    color: #f5d29a;
+    margin-top: 14px;
+  }
+  .schema-pre { font-size: 11.5px; color: #c0c5cc; }
+  .kv { color: var(--accent); }
+  .str { color: #c3e88d; }
+  .key { color: var(--ts); }
+
+  footer {
+    margin-top: 64px;
+    padding-top: 28px;
+    border-top: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 13px;
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+<header class="hero">
+  <div>
+    <h1>PieMetadata</h1>
+    <p>Канонический dump-формат компонента карточки — параллельный, симметричный, машино-разбираемый для <code>pieui</code> и <code>pie</code>.</p>
+  </div>
+  <div class="badges">
+    <span class="badge py"><span class="dot"></span> Python · pie card dump-metadata</span>
+    <span class="badge ts"><span class="dot"></span> TypeScript · pieui card dump-metadata</span>
+  </div>
+</header>
+
+<nav class="toc">
+  <h2>Поля</h2>
+  <a href="#name">name</a>
+  <a href="#files">files</a>
+  <a href="#packages">packages</a>
+  <a href="#relativeImports">relativeImports</a>
+  <a href="#events">events</a>
+  <a href="#propsSchema">propsSchema</a>
+  <a href="#propsCode">propsCode</a>
+  <a href="#eventsPropsSchema">eventsPropsSchema</a>
+  <a href="#eventsPropsCode">eventsPropsCode</a>
+  <a href="#inputPropsCode">inputPropsCode</a>
+  <a href="#inputPropsSchema">inputPropsSchema</a>
+  <a href="#ajaxList">ajaxList</a>
+</nav>
+
+<!-- name -->
+<section class="field" id="name">
+  <div class="field-head">
+    <h3 class="field-name">name</h3>
+    <span class="field-type">string</span>
+  </div>
+  <p class="field-desc">Имя компонента. Должно быть идентично в обоих экосистемах.</p>
+  <div class="lang-grid">
+    <div class="lang py">
+      <div class="lang-title"><span class="dot"></span> Python</div>
+      <p>Имя класса в <code>&lt;component_name&gt;.py</code>, нормализованное через <span class="inline">normalize_class_name</span>.</p>
+      <pre>"SimpleCard"</pre>
+    </div>
+    <div class="lang ts">
+      <div class="lang-title"><span class="dot"></span> TypeScript</div>
+      <p>Имя директории <span class="inline">piecomponents/&lt;Name&gt;/</span> и аргумент <span class="inline">registerPieComponent({ name })</span>.</p>
+      <pre>"SimpleCard"</pre>
+    </div>
+  </div>
+</section>
+
+<!-- files -->
+<section class="field" id="files">
+  <div class="field-head">
+    <h3 class="field-name">files</h3>
+    <span class="field-type">string[]</span>
+  </div>
+  <p class="field-desc">Абсолютные пути локальных файлов компонента.</p>
+  <div class="lang-grid">
+    <div class="lang py">
+      <div class="lang-title"><span class="dot"></span> Python</div>
+      <pre>[
+  "/abs/path/components/simple_card.py"
+]</pre>
+    </div>
+    <div class="lang ts">
+      <div class="lang-title"><span class="dot"></span> TypeScript</div>
+      <pre>[
+  "/abs/path/piecomponents/SimpleCard/index.tsx",
+  "/abs/path/piecomponents/SimpleCard/types.ts"
+]</pre>
+    </div>
+  </div>
+</section>
+
+<!-- packages -->
+<section class="field" id="packages">
+  <div class="field-head">
+    <h3 class="field-name">packages</h3>
+    <span class="field-type">string[]</span>
+  </div>
+  <p class="field-desc">Пакеты-зависимости. Строки должны быть валидными аргументами для <span class="inline">bun add</span> / <span class="inline">uv add</span>.</p>
+  <div class="lang-grid">
+    <div class="lang py">
+      <div class="lang-title"><span class="dot"></span> Python</div>
+      <p>Из <span class="inline">import x</span> / <span class="inline">from x import …</span> в файлах компонента, отфильтровано от stdlib и проектных модулей. Версия из <span class="inline">pyproject.toml</span> или <span class="inline">importlib.metadata</span>.</p>
+      <pre>["pydantic&gt;=2.5", "httpx"]</pre>
+    </div>
+    <div class="lang ts">
+      <div class="lang-title"><span class="dot"></span> TypeScript</div>
+      <p>Из <span class="inline">import … from "&lt;pkg&gt;"</span>, отфильтровано от relative-импортов. Версия из <span class="inline">package.json</span>.</p>
+      <pre>["react@^19.0.0", "clsx@^2.1.0"]</pre>
+    </div>
+  </div>
+  <div class="note">⚠ Версионная часть опциональна, но рекомендуется. При апдейте на чужом проекте — корректно установится тот же major.</div>
+</section>
+
+<!-- relativeImports -->
+<section class="field" id="relativeImports">
+  <div class="field-head">
+    <h3 class="field-name">relativeImports</h3>
+    <span class="field-type">string[]</span>
+  </div>
+  <p class="field-desc">Абсолютные пути проектных файлов, импортируемых компонентом, но не входящих в его собственные файлы.</p>
+  <div class="lang-grid">
+    <div class="lang py">
+      <div class="lang-title"><span class="dot"></span> Python</div>
+      <p>Резолв относительных импортов (<span class="inline">from ..utils import foo</span>) и абсолютных проектных (<span class="inline">from myapp.shared import bar</span>) к абсолютным путям файлов.</p>
+      <pre>["/abs/path/utils/helpers.py"]</pre>
+    </div>
+    <div class="lang ts">
+      <div class="lang-title"><span class="dot"></span> TypeScript</div>
+      <p>Резолв <span class="inline">import … from "./foo"</span>, <span class="inline">"../bar"</span>, <span class="inline">"@/x"</span> через <span class="inline">tsconfig.paths</span>.</p>
+      <pre>["/abs/path/src/utils/format.ts"]</pre>
+    </div>
+  </div>
+</section>
+
+<!-- events -->
+<section class="field" id="events">
+  <div class="field-head">
+    <h3 class="field-name">events</h3>
+    <span class="field-type">string[]</span>
+  </div>
+  <p class="field-desc">Имена реально отправляемых событий.</p>
+  <div class="lang-grid">
+    <div class="lang py">
+      <div class="lang-title"><span class="dot"></span> Python</div>
+      <p>Из <span class="inline">get_supported_events()</span> или из имен <span class="inline">create_&lt;event&gt;_event</span>. Берём то, что реально шлётся — пересечение источников.</p>
+      <pre>["click", "submit"]</pre>
+    </div>
+    <div class="lang ts">
+      <div class="lang-title"><span class="dot"></span> TypeScript</div>
+      <p>Ключи объекта <span class="inline">methods = { … }</span> внутри <span class="inline">&lt;PieCard methods=&#123;…&#125; /&gt;</span>.</p>
+      <pre>["click", "submit"]</pre>
+    </div>
+  </div>
+</section>
+
+<!-- propsSchema -->
+<section class="field" id="propsSchema">
+  <div class="field-head">
+    <h3 class="field-name">propsSchema</h3>
+    <span class="field-type">JSONSchema</span>
+  </div>
+  <p class="field-desc">JSON Schema интерфейса данных компонента. <strong>Все ключи — camelCase</strong>.</p>
+  <div class="lang-grid">
+    <div class="lang py">
+      <div class="lang-title"><span class="dot"></span> Python</div>
+      <p>Генерируется из <span class="inline">@dataclass class SimpleCard</span>. snake_case → camelCase при сериализации.</p>
+    </div>
+    <div class="lang ts">
+      <div class="lang-title"><span class="dot"></span> TypeScript</div>
+      <p>Генерируется из <span class="inline">interface SimpleCardData</span> через <span class="inline">typescript-json-schema</span>.</p>
+    </div>
+  </div>
+  <pre class="schema-pre">{
+  <span class="key">"type"</span>: <span class="str">"object"</span>,
+  <span class="key">"properties"</span>: {
+    <span class="key">"title"</span>: { <span class="key">"type"</span>: <span class="str">"string"</span> },
+    <span class="key">"buttonLabel"</span>: { <span class="key">"type"</span>: <span class="str">"string"</span> }
+  },
+  <span class="key">"required"</span>: [<span class="str">"title"</span>]
+}</pre>
+</section>
+
+<!-- propsCode -->
+<section class="field" id="propsCode">
+  <div class="field-head">
+    <h3 class="field-name">propsCode</h3>
+    <span class="field-type">string</span>
+  </div>
+  <p class="field-desc">Исходный код типа props.</p>
+  <div class="lang-grid">
+    <div class="lang py">
+      <div class="lang-title"><span class="dot"></span> Python</div>
+      <p>Весь файл с dataclass карточки целиком.</p>
+      <pre>from dataclasses import dataclass
+
+@dataclass
+class SimpleCard:
+    title: str
+    button_label: str = "Click me"</pre>
+    </div>
+    <div class="lang ts">
+      <div class="lang-title"><span class="dot"></span> TypeScript</div>
+      <p>Только блок <span class="inline">interface SimpleCardData { … }</span>.</p>
+      <pre>interface SimpleCardData {
+  title: string;
+  buttonLabel?: string;
+}</pre>
+    </div>
+  </div>
+  <div class="note">JSON-сериализуемые типы (string/number/bool/null/object/array) + <code>Any | unknown</code> и <code>Date | datetime</code>. Никаких <code>Callable</code>, <code>asyncio.Task</code>, <code>FunctionExpression</code>, etc.</div>
+</section>
+
+<!-- eventsPropsSchema -->
+<section class="field" id="eventsPropsSchema">
+  <div class="field-head">
+    <h3 class="field-name">eventsPropsSchema</h3>
+    <span class="field-type">Record&lt;string, JSONSchema&gt;</span>
+  </div>
+  <p class="field-desc">Словарь <span class="inline">eventName → JSONSchema</span> описывающий ожидаемый payload каждого события.</p>
+  <pre class="schema-pre">{
+  <span class="key">"click"</span>: {
+    <span class="key">"type"</span>: <span class="str">"object"</span>,
+    <span class="key">"properties"</span>: { <span class="key">"x"</span>: { <span class="key">"type"</span>: <span class="str">"number"</span> } },
+    <span class="key">"required"</span>: [<span class="str">"x"</span>]
+  }
+}</pre>
+</section>
+
+<!-- eventsPropsCode -->
+<section class="field" id="eventsPropsCode">
+  <div class="field-head">
+    <h3 class="field-name">eventsPropsCode</h3>
+    <span class="field-type">Record&lt;string, string&gt;</span>
+  </div>
+  <p class="field-desc">Словарь <span class="inline">eventName → исходник</span>.</p>
+  <div class="lang-grid">
+    <div class="lang py">
+      <div class="lang-title"><span class="dot"></span> Python</div>
+      <p>Весь исходник функции <span class="inline">def create_&lt;event&gt;_event(self, …):</span>.</p>
+      <pre>def create_click_event(self, x: int, y: int) -&gt; ClickEvent:
+    return ClickEvent(x=x, y=y)</pre>
+    </div>
+    <div class="lang ts">
+      <div class="lang-title"><span class="dot"></span> TypeScript</div>
+      <p>Только блок интерфейса для payload-а события.</p>
+      <pre>interface ClickEventInput {
+  x: number;
+  y: number;
+}</pre>
+    </div>
+  </div>
+</section>
+
+<!-- inputPropsCode -->
+<section class="field" id="inputPropsCode">
+  <div class="field-head">
+    <h3 class="field-name">inputPropsCode</h3>
+    <span class="field-type">string | null</span>
+  </div>
+  <p class="field-desc">Код типа/dataclass для <span class="inline">stored={}</span> словаря, передаваемого в <span class="inline">&lt;PieCard&gt;</span>. Обычно у <span class="inline">InputSimpleCard</span> входной тип называется <span class="inline">InputSimple</span>.</p>
+  <div class="lang-grid">
+    <div class="lang py">
+      <div class="lang-title"><span class="dot"></span> Python</div>
+      <pre>@dataclass
+class InputSimple:
+    value: str = ""</pre>
+    </div>
+    <div class="lang ts">
+      <div class="lang-title"><span class="dot"></span> TypeScript</div>
+      <pre>interface InputSimple {
+  value: string;
+}</pre>
+    </div>
+  </div>
+  <div class="note">Возвращает <code>null</code>, если у компонента нет input-типа.</div>
+</section>
+
+<!-- inputPropsSchema -->
+<section class="field" id="inputPropsSchema">
+  <div class="field-head">
+    <h3 class="field-name">inputPropsSchema</h3>
+    <span class="field-type">JSONSchema | null</span>
+  </div>
+  <p class="field-desc">JSON Schema того же input-типа. <code>null</code> если нет.</p>
+  <pre class="schema-pre">{
+  <span class="key">"type"</span>: <span class="str">"object"</span>,
+  <span class="key">"properties"</span>: { <span class="key">"value"</span>: { <span class="key">"type"</span>: <span class="str">"string"</span> } }
+}</pre>
+</section>
+
+<!-- ajaxList -->
+<section class="field" id="ajaxList">
+  <div class="field-head">
+    <h3 class="field-name">ajaxList</h3>
+    <span class="field-type">string[]</span>
+  </div>
+  <p class="field-desc">Имена ajax-pathname полей, объявленных в компоненте.</p>
+  <div class="lang-grid">
+    <div class="lang py">
+      <div class="lang-title"><span class="dot"></span> Python</div>
+      <p>Поля dataclass с префиксом <span class="inline">pathname_</span>.</p>
+      <pre>["pathname_click", "pathname_delete"]</pre>
+    </div>
+    <div class="lang ts">
+      <div class="lang-title"><span class="dot"></span> TypeScript</div>
+      <p>Поля интерфейса с префиксом <span class="inline">pathname</span> (camelCase).</p>
+      <pre>["pathnameClick", "pathnameDelete"]</pre>
+    </div>
+  </div>
+  <div class="note">camelCase vs snake_case — это разные ключи, но смысл один. Конвенция нейминга остается локальной для каждой экосистемы.</div>
+</section>
+
+<footer>
+  <span>PieMetadata · v1 spec</span>
+  <span>pieui · pie · <code>dump-metadata</code></span>
+</footer>
+
+</div>
+</body>
+</html>

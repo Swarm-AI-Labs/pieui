@@ -3,6 +3,7 @@ import os from 'os'
 import path from 'path'
 import * as readline from 'readline/promises'
 import { nextConfigTemplate, REQUIRED_NEXT_CONFIG_ENV_KEYS } from '../templates'
+import { initRequirements, printRequirements } from '../printRequirements'
 
 export const initCommand = async (outDir: string) => {
     const resolvedOutDir = path.resolve(process.cwd(), outDir)
@@ -118,6 +119,8 @@ export const initCommand = async (outDir: string) => {
     console.log(
         '  2. Use "pieui card add <ComponentName>" to create new components'
     )
+
+    printRequirements(initRequirements())
 }
 
 type PieProjectConfig = {

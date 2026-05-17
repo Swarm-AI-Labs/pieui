@@ -1,6 +1,10 @@
 import fs from 'fs'
 import path from 'path'
 import { pageTemplate } from '../templates'
+import {
+    pageAddRequirements,
+    printRequirements,
+} from '../printRequirements'
 
 const normalizePagePath = (pagePath: string): string => {
     const trimmed = pagePath.trim()
@@ -70,4 +74,6 @@ export const pageAddCommand = (pagePath: string) => {
     fs.writeFileSync(targetFile, pageTemplate(pageComponentName), 'utf8')
 
     console.log(`[pieui] Page created successfully at ${targetFile}`)
+
+    printRequirements(pageAddRequirements(normalizedPath))
 }
