@@ -2,6 +2,30 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Cross-repo CLI symmetry (pieui ↔ pie)
+
+PieUI ships a TypeScript CLI (`pieui …`). The backend project at `../pie` ships a Python CLI (`pie …`). **The pie CLI is the authoritative reference for command structure** — subcommand names, positional args, and flags must mirror it.
+
+When you edit any of these files in this repo:
+
+- `src/cli.ts` — top-level dispatch
+- `src/code/args.ts`, `src/code/types.ts` — argument parsing & shape
+- `src/code/commands/**` — command handlers
+
+…a PostToolUse hook (`.claude/hooks/cli-symmetry-check.sh`) prints a reminder asking you to verify the change against `../pie`. Treat it as a hard ask:
+
+1. **New / renamed / removed command, flag, or positional?** Mirror it in `../pie` (`pie/__main__.py` + relevant handler in `pie/code/`).
+2. **Pure implementation change (no surface change)?** No action — symmetry is unaffected.
+3. **Feature has no semantic frontend analog (e.g., AJAX handlers live server-side)?** Expose the symmetric subcommand anyway and delegate to the backend via subprocess (see `src/code/commands/pageAjax.ts`).
+
+Quick parity check:
+```bash
+diff <(node ./dist/cli.js --help | grep -E '^  [a-z]') \
+     <(cd ../pie && /Users/kaspar_george/pie/.venv/bin/python -m pie --help | grep -E '^    [a-z]')
+```
+
+The hook is advisory — it never blocks tool execution. Ignore the nudge only if you are certain symmetry is preserved or intentionally diverging (document the divergence in this section if so).
+
 ## Project Overview
 
 PieUI is a React component library that provides a dynamic UI rendering system with real-time communication support through WebSockets (Socket.IO), Centrifuge, and event emitters (Mitt). The library enables building server-driven UIs where components can be dynamically loaded and configured based on API responses.

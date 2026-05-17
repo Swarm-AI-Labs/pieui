@@ -9,7 +9,7 @@
         "lint": "eslint"
     },
     "dependencies": {
-        "next": "16.2.1",
+        "next": "16.2.6",
         "react": "19.2.4",
         "react-dom": "19.2.4",
         "@swarm.ing/pieui": "file:../swarm.ing-pieui-2.0.10.tgz",
@@ -21,7 +21,7 @@
         "@types/react-dom": "^19",
         "autoprefixer": "^10.4.27",
         "eslint": "^9",
-        "eslint-config-next": "16.2.1",
+        "eslint-config-next": "16.2.6",
         "postcss": "^8.5.8",
         "tailwindcss": "3",
         "tailwindcss-animate": "^1.0.7",

@@ -50,4 +50,10 @@ export interface PieCardProps {
      * does not trigger re-subscription.
      */
     methods?: Record<string, (data: any) => void>
+    /**
+     * When provided, renders a hidden input alongside `children` with
+     * `name={data.name}` and `value={JSON.stringify(stored)}` so the value
+     * can be submitted as part of a surrounding form.
+     */
+    stored?: unknown
 }

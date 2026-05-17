@@ -4,12 +4,159 @@ import type {
     ComponentType,
     ListFilter,
     PageAction,
+    PageAjaxAction,
     ParsedArgs,
 } from './types'
 
+const VALID_CARD_ACTIONS: CardAction[] = [
+    'add',
+    'list',
+    'pull',
+    'view',
+    'remove',
+    'list-events',
+    'add-event',
+    'remote',
+]
+
+const VALID_CARD_REMOTE_ACTIONS: CardRemoteAction[] = [
+    'push',
+    'pull',
+    'list',
+    'remove',
+    'history',
+    'public',
+    'private',
+]
+
+const VALID_PAGE_ACTIONS: PageAction[] = ['add', 'view', 'ajax']
+const VALID_PAGE_AJAX_ACTIONS: PageAjaxAction[] = ['add', 'remove']
+const VALID_COMPONENT_TYPES: ComponentType[] = [
+    'simple',
+    'complex',
+    'simple-container',
+    'complex-container',
+]
+const VALID_LIST_FILTERS: ListFilter[] = [
+    'all',
+    'simple',
+    'complex',
+    'simple-container',
+    'complex-container',
+]
+
+const parseIntFlag = (name: string, raw: string): number => {
+    if (!/^-?\d+$/.test(raw)) {
+        throw new Error(
+            `${name} must be an integer, got ${JSON.stringify(raw)}`
+        )
+    }
+    return Number(raw)
+}
+
+type FlagState = {
+    historyPage?: number
+    historyPerPage?: number
+    historyFrom?: number
+    historyTo?: number
+    remoteUserId?: string
+    remoteProject?: string
+}
+
+const consumeFlags = (
+    tokens: string[]
+): {
+    positionals: string[]
+    flags: FlagState
+    boolFlags: { ajax: boolean; io: boolean }
+} => {
+    const flags: FlagState = {}
+    const positionals: string[] = []
+    let ajax = false
+    let io = false
+
+    for (let i = 0; i < tokens.length; i++) {
+        const tok = tokens[i]
+        if (tok === '--ajax') {
+            ajax = true
+            continue
+        }
+        if (tok === '--io') {
+            io = true
+            continue
+        }
+        if (tok === '--user' && tokens[i + 1]) {
+            flags.remoteUserId = tokens[i + 1]
+            i++
+            continue
+        }
+        if (tok === '--project' && tokens[i + 1]) {
+            flags.remoteProject = tokens[i + 1]
+            i++
+            continue
+        }
+        if (tok === '--page' && tokens[i + 1]) {
+            flags.historyPage = parseIntFlag('--page', tokens[i + 1])
+            i++
+            continue
+        }
+        if (tok === '--per-page' && tokens[i + 1]) {
+            flags.historyPerPage = parseIntFlag('--per-page', tokens[i + 1])
+            i++
+            continue
+        }
+        if (tok === '--from' && tokens[i + 1]) {
+            flags.historyFrom = parseIntFlag('--from', tokens[i + 1])
+            i++
+            continue
+        }
+        if (tok === '--to' && tokens[i + 1]) {
+            flags.historyTo = parseIntFlag('--to', tokens[i + 1])
+            i++
+            continue
+        }
+        if (tok.startsWith('--user=')) {
+            flags.remoteUserId = tok.slice('--user='.length)
+            continue
+        }
+        if (tok.startsWith('--project=')) {
+            flags.remoteProject = tok.slice('--project='.length)
+            continue
+        }
+        if (tok.startsWith('--page=')) {
+            flags.historyPage = parseIntFlag(
+                '--page',
+                tok.slice('--page='.length)
+            )
+            continue
+        }
+        if (tok.startsWith('--per-page=')) {
+            flags.historyPerPage = parseIntFlag(
+                '--per-page',
+                tok.slice('--per-page='.length)
+            )
+            continue
+        }
+        if (tok.startsWith('--from=')) {
+            flags.historyFrom = parseIntFlag(
+                '--from',
+                tok.slice('--from='.length)
+            )
+            continue
+        }
+        if (tok.startsWith('--to=')) {
+            flags.historyTo = parseIntFlag('--to', tok.slice('--to='.length))
+            continue
+        }
+        positionals.push(tok)
+    }
+
+    return { positionals, flags, boolFlags: { ajax, io } }
+}
+
 export const parseArgs = (argv: string[]): ParsedArgs => {
     const [command = ''] = argv
-    const cardFlagSet = new Set(['--io', '--ajax'])
+
     const outDirFlag = argv.find((arg) => arg.startsWith('--out-dir='))
     const srcDirFlag = argv.find((arg) => arg.startsWith('--src-dir='))
     const outDirIndex = argv.findIndex(
@@ -22,24 +169,23 @@ export const parseArgs = (argv: string[]): ParsedArgs => {
 
     let outDir = command === 'postbuild' ? 'public' : '.'
     let srcDir = '.'
-    let componentType: ComponentType | undefined
-    let componentName: string | undefined
-    let createAppName: string | undefined
-    let eventName: string | undefined
-    let cardAction: CardAction | undefined
-    let cardAjax = false
-    let cardIo = false
-    let cardRemoteAction: CardRemoteAction | undefined
-    let remoteUserId: string | undefined
-    let remoteProject: string | undefined
-    let pageAction: PageAction | undefined
-    let pagePath: string | undefined
 
-    let removeComponentName: string | undefined
-    let listFilter: ListFilter | undefined
+    if (outDirFlag) {
+        outDir = outDirFlag.split('=')[1] || outDir
+    } else if (outDirIndex !== -1 && argv[outDirIndex + 1]) {
+        outDir = argv[outDirIndex + 1]
+    }
+    if (srcDirFlag) {
+        srcDir = srcDirFlag.split('=')[1] || srcDir
+    } else if (srcDirIndex !== -1 && argv[srcDirIndex + 1]) {
+        srcDir = argv[srcDirIndex + 1]
+    }
 
-    if (command === 'remove' && argv[1]) {
-        removeComponentName = argv[1]
+    const result: ParsedArgs = {
+        command,
+        outDir,
+        srcDir,
+        append: appendFlag,
     }
 
     if (
@@ -48,412 +194,153 @@ export const parseArgs = (argv: string[]): ParsedArgs => {
             command === 'create') &&
         argv[1]
     ) {
-        createAppName = argv[1]
-    }
-
-    if (command === 'list') {
-        const validFilters: ListFilter[] = [
-            'all',
-            'simple',
-            'complex',
-            'simple-container',
-            'complex-container',
-        ]
-        const filterArg = argv[1] as ListFilter | undefined
-        listFilter =
-            filterArg && validFilters.includes(filterArg) ? filterArg : 'all'
+        result.createAppName = argv[1]
     }
 
     if (command === 'card' && argv[1]) {
-        const validActions: CardAction[] = ['add', 'remote']
-        if (validActions.includes(argv[1] as CardAction)) {
-            cardAction = argv[1] as CardAction
+        const action = argv[1] as CardAction
+        if (!VALID_CARD_ACTIONS.includes(action)) {
+            return result
         }
-    }
+        result.cardAction = action
 
-    if (
-        ((command === 'card' && cardAction === 'add') || command === 'add') &&
-        argv[1]
-    ) {
-        const offset = command === 'card' ? 2 : 1
-        const cardArgv = argv.slice(offset)
-        const positionalArgs = cardArgv.filter((arg) => !cardFlagSet.has(arg))
-        cardIo = cardArgv.includes('--io')
-        cardAjax = cardArgv.includes('--ajax')
+        const tail = argv.slice(2)
+        const { positionals, flags, boolFlags } = consumeFlags(tail)
 
-        // Check if first argument is a component type
-        const validTypes: ComponentType[] = [
-            'simple',
-            'complex',
-            'simple-container',
-            'complex-container',
-        ]
-        if (validTypes.includes(positionalArgs[0] as ComponentType)) {
-            componentType = positionalArgs[0] as ComponentType
-            componentName = positionalArgs[1]
-        } else {
-            // Default to complex-container if no type specified
-            componentType = 'complex-container'
-            componentName = positionalArgs[0]
-        }
-    }
-
-    let historyPage: number | undefined
-    let historyPerPage: number | undefined
-    let historyFrom: number | undefined
-    let historyTo: number | undefined
-
-    if (command === 'card' && cardAction === 'remote' && argv[2]) {
-        const validRemoteActions: CardRemoteAction[] = [
-            'push',
-            'pull',
-            'list',
-            'remove',
-            'history',
-            'public',
-            'private',
-        ]
-        const action = argv[2] as CardRemoteAction
-        if (validRemoteActions.includes(action)) {
-            cardRemoteAction = action
-            const rest = argv.slice(3)
-            const flagIndexes = new Set<number>()
-            const parseIntFlag = (
-                name: string,
-                raw: string
-            ): number | undefined => {
-                if (!/^-?\d+$/.test(raw)) {
-                    throw new Error(
-                        `${name} must be an integer, got ${JSON.stringify(raw)}`
-                    )
-                }
-                return Number(raw)
+        if (action === 'add') {
+            result.cardAjax = boolFlags.ajax
+            result.cardIo = boolFlags.io
+            if (
+                positionals[0] &&
+                VALID_COMPONENT_TYPES.includes(positionals[0] as ComponentType)
+            ) {
+                result.componentType = positionals[0] as ComponentType
+                result.componentName = positionals[1]
+            } else {
+                result.componentType = 'complex-container'
+                result.componentName = positionals[0]
             }
-            for (let i = 0; i < rest.length; i++) {
-                const tok = rest[i]
-                if (tok === '--user' && rest[i + 1]) {
-                    remoteUserId = rest[i + 1]
-                    flagIndexes.add(i)
-                    flagIndexes.add(i + 1)
-                    i++
-                } else if (tok === '--project' && rest[i + 1]) {
-                    remoteProject = rest[i + 1]
-                    flagIndexes.add(i)
-                    flagIndexes.add(i + 1)
-                    i++
-                } else if (tok === '--page' && rest[i + 1]) {
-                    historyPage = parseIntFlag('--page', rest[i + 1])
-                    flagIndexes.add(i)
-                    flagIndexes.add(i + 1)
-                    i++
-                } else if (tok === '--per-page' && rest[i + 1]) {
-                    historyPerPage = parseIntFlag('--per-page', rest[i + 1])
-                    flagIndexes.add(i)
-                    flagIndexes.add(i + 1)
-                    i++
-                } else if (tok === '--from' && rest[i + 1]) {
-                    historyFrom = parseIntFlag('--from', rest[i + 1])
-                    flagIndexes.add(i)
-                    flagIndexes.add(i + 1)
-                    i++
-                } else if (tok === '--to' && rest[i + 1]) {
-                    historyTo = parseIntFlag('--to', rest[i + 1])
-                    flagIndexes.add(i)
-                    flagIndexes.add(i + 1)
-                    i++
-                } else if (tok?.startsWith('--user=')) {
-                    remoteUserId = tok.slice('--user='.length)
-                    flagIndexes.add(i)
-                } else if (tok?.startsWith('--project=')) {
-                    remoteProject = tok.slice('--project='.length)
-                    flagIndexes.add(i)
-                } else if (tok?.startsWith('--page=')) {
-                    historyPage = parseIntFlag(
-                        '--page',
-                        tok.slice('--page='.length)
-                    )
-                    flagIndexes.add(i)
-                } else if (tok?.startsWith('--per-page=')) {
-                    historyPerPage = parseIntFlag(
-                        '--per-page',
-                        tok.slice('--per-page='.length)
-                    )
-                    flagIndexes.add(i)
-                } else if (tok?.startsWith('--from=')) {
-                    historyFrom = parseIntFlag(
-                        '--from',
-                        tok.slice('--from='.length)
-                    )
-                    flagIndexes.add(i)
-                } else if (tok?.startsWith('--to=')) {
-                    historyTo = parseIntFlag(
-                        '--to',
-                        tok.slice('--to='.length)
-                    )
-                    flagIndexes.add(i)
-                }
+        } else if (action === 'list') {
+            const filter = positionals[0] as ListFilter | undefined
+            result.listFilter =
+                filter && VALID_LIST_FILTERS.includes(filter) ? filter : 'all'
+        } else if (action === 'pull') {
+            result.cardPullRef = positionals[0]
+        } else if (action === 'view') {
+            result.componentName = positionals[0]
+        } else if (action === 'remove') {
+            result.componentName = positionals[0]
+        } else if (action === 'list-events') {
+            result.componentName = positionals[0]
+        } else if (action === 'add-event') {
+            result.componentName = positionals[0]
+            result.eventName = positionals[1]
+        } else if (action === 'remote') {
+            const sub = positionals[0] as CardRemoteAction | undefined
+            if (sub && VALID_CARD_REMOTE_ACTIONS.includes(sub)) {
+                result.cardRemoteAction = sub
+                if (positionals[1]) result.componentName = positionals[1]
+                result.remoteUserId = flags.remoteUserId
+                result.remoteProject = flags.remoteProject
+                result.historyPage = flags.historyPage
+                result.historyPerPage = flags.historyPerPage
+                result.historyFrom = flags.historyFrom
+                result.historyTo = flags.historyTo
             }
-            const positionals = rest.filter((_, i) => !flagIndexes.has(i))
-            if (positionals[0]) componentName = positionals[0]
         }
     }
 
     if (command === 'page' && argv[1]) {
-        const validActions: PageAction[] = ['add']
-        if (validActions.includes(argv[1] as PageAction)) {
-            pageAction = argv[1] as PageAction
-            pagePath = argv[2]
+        const action = argv[1] as PageAction
+        if (!VALID_PAGE_ACTIONS.includes(action)) {
+            return result
+        }
+        result.pageAction = action
+        if (action === 'add') {
+            result.pagePath = argv[2]
+        } else if (action === 'view') {
+            result.pageName = argv[2]
+        } else if (action === 'ajax') {
+            result.pageName = argv[2]
+            const sub = argv[3] as PageAjaxAction | undefined
+            if (sub && VALID_PAGE_AJAX_ACTIONS.includes(sub)) {
+                result.pageAjaxAction = sub
+            }
+            result.pageAjaxHandler = argv[4]
         }
     }
 
-    if (command === 'list-events' && argv[1]) {
-        componentName = argv[1]
-    }
-
-    if (command === 'add-event' && argv[1] && argv[2]) {
-        componentName = argv[1]
-        eventName = argv[2]
-    }
-
-    if (outDirFlag) {
-        outDir = outDirFlag.split('=')[1] || outDir
-    } else if (outDirIndex !== -1 && argv[outDirIndex + 1]) {
-        outDir = argv[outDirIndex + 1]
-    }
-
-    if (srcDirFlag) {
-        srcDir = srcDirFlag.split('=')[1] || srcDir
-    } else if (srcDirIndex !== -1 && argv[srcDirIndex + 1]) {
-        srcDir = argv[srcDirIndex + 1]
-    }
-
-    return {
-        command,
-        outDir,
-        srcDir,
-        append: appendFlag,
-        componentName,
-        createAppName,
-        componentType,
-        eventName,
-        removeComponentName,
-        listFilter,
-        cardAction,
-        cardAjax,
-        cardIo,
-        cardRemoteAction,
-        remoteUserId,
-        remoteProject,
-        pageAction,
-        pagePath,
-        historyPage,
-        historyPerPage,
-        historyFrom,
-        historyTo,
-    }
+    return result
 }
 
 export const printUsage = () => {
-    console.log('Usage: pieui <command> [options]')
-    console.log('')
-    console.log('Commands:')
-    console.log(
-        '  create <AppName>                        Create a Next.js app and run pieui init inside it'
-    )
-    console.log(
-        '  create-pie-app <AppName>                Create a blank Next.js web template for PieUI (bun create next-app under the hood)'
-    )
-    console.log(
-        '  create-pieui <AppName>                  Alias for create-pie-app'
-    )
-    console.log(
-        '  login                                   Sign in to PieUI and save credentials to .pie/config.json'
-    )
-    console.log(
-        '  init                                    Initialize piecomponents directory with registry.ts'
-    )
-    console.log(
-        '  card add [type] <ComponentName> [--io] [--ajax] Create a new component in piecomponents directory'
-    )
-    console.log(
-        '  page add <path>                         Create app/<path>/page.tsx from the standard Pie page template'
-    )
-    console.log(
-        '  card remote push <ComponentName>         Upload piecomponents/<Name>/ to PieUI storage (prints new revision)'
-    )
-    console.log(
-        '  card remote pull <ComponentName>[@rev]   Download component from current project (optional @<revision>)'
-    )
-    console.log(
-        '  card remote pull <project>/<ComponentName>[@rev]  Pull from a different project of the current user'
-    )
-    console.log(
-        '  card remote pull r/<user>/<ComponentName>         Pull a public component by another user'
-    )
-    console.log(
-        '  card remote list [--user U] [--project S]  List remote components for the configured or specified user/project'
-    )
-    console.log(
-        '  card remote remove <ComponentName>       Delete component from PieUI storage'
-    )
-    console.log(
-        '  card remote history <ComponentName> [--page N] [--per-page N] [--from R] [--to R]  Show revision history with per-file diff stats'
-    )
-    console.log(
-        '  card remote public <ComponentName>       Mark a component public (readable without API key as r/<user>/<Name>)'
-    )
-    console.log(
-        '  card remote private <ComponentName>      Make a public component private again'
-    )
-    console.log(
-        '  list-events <ComponentName>             List registered methods keys for <PieCard card="ComponentName" ... methods={...} />'
-    )
-    console.log(
-        '  add-event <ComponentName> <event>       Add a new methods key with a default handler to <PieCard card="ComponentName" ... methods={...} />'
-    )
-    console.log(
-        '  remove <ComponentName>                  Remove a component from piecomponents directory'
-    )
-    console.log(
-        '  postbuild                               Scan for components and generate manifest'
-    )
-    console.log(
-        '  list [filter]                            List registered components in a table'
-    )
-    console.log('')
-    console.log('Component types for card add command:')
-    console.log('  simple                  Simple component (only data prop)')
-    console.log(
-        '  complex                 Complex component (data + children props)'
-    )
-    console.log(
-        '  simple-container        Container with single content (data + content)'
-    )
-    console.log(
-        '  complex-container       Container with array content (data + content[])'
-    )
-    console.log('                         (default if type not specified)')
-    console.log('')
-    console.log('Options for card add:')
-    console.log(
-        '  --io                         Add realtime support fields to the generated data interface'
-    )
-    console.log(
-        '  --ajax                       Add AJAX request fields to the generated data interface'
-    )
-    console.log('')
-    console.log('Options for init:')
-    console.log(
-        '  --out-dir <dir>, -o <dir>    Base directory for piecomponents (default: .)'
-    )
-    console.log('')
-    console.log('Options for postbuild:')
-    console.log(
-        '  --out-dir <dir>, -o <dir>    Output directory (default: public)'
-    )
-    console.log(
-        '  --src-dir <dir>, -s <dir>    Source directory (default: src)'
-    )
-    console.log(
-        '  --append                      Include built-in pieui components in the manifest'
-    )
-    console.log('')
-    console.log('Options for list:')
-    console.log(
-        '  --src-dir <dir>, -s <dir>    Source directory (default: src)'
-    )
-    console.log('')
-    console.log('Options for list-events:')
-    console.log(
-        '  --src-dir <dir>, -s <dir>    Source directory to scan (default: .)'
-    )
-    console.log('')
-    console.log('Options for add-event:')
-    console.log(
-        '  --src-dir <dir>, -s <dir>    Source directory to modify (default: .)'
-    )
-    console.log('')
-    console.log('Filters for list:')
-    console.log('  all                 All components (default)')
-    console.log('  simple              Simple components (only data prop)')
-    console.log(
-        '  complex             Complex components (data + children props)'
-    )
-    console.log('  simple-container    Container with single content')
-    console.log('  complex-container   Container with array content')
-    console.log('')
-    console.log('Examples:')
-    console.log('  pieui login')
-    console.log('  pieui init')
-    console.log('  pieui create my-pie-app')
-    console.log('  pieui create-pie-app my-pie-app')
-    console.log('  pieui create-pieui my-pie-app')
-    console.log('  pieui init --out-dir packages/app')
-    console.log(
-        '  pieui card add MyCustomCard                   # Creates complex-container by default'
-    )
-    console.log(
-        '  pieui card add simple MySimpleCard            # Creates simple component'
-    )
-    console.log(
-        '  pieui card add complex-container MyContainerCard # Creates complex container'
-    )
-    console.log(
-        '  pieui card add simple LiveCard --io --ajax    # Adds realtime and AJAX fields'
-    )
-    console.log(
-        '  pieui page add chat                          # Creates app/chat/page.tsx'
-    )
-    console.log('  pieui postbuild --append --out-dir dist')
-    console.log(
-        '  pieui list                                    # List all components'
-    )
-    console.log(
-        '  pieui list simple                             # List only simple components'
-    )
-    console.log(
-        '  pieui list complex-container --src-dir app    # List complex containers in app/'
-    )
-    console.log(
-        '  pieui list-events ExchangeAlertsCard         # Print methods table for that PieCard usage'
-    )
-    console.log(
-        '  pieui add-event ExchangeAlertsCard alert     # Add methods.alert with default handler'
-    )
-    console.log(
-        '  pieui card remote push ExchangeAlertsCard    # Upload component directory (server assigns new revision)'
-    )
-    console.log(
-        '  pieui card remote pull ExchangeAlertsCard    # Download latest revision from current project'
-    )
-    console.log(
-        '  pieui card remote pull ExchangeAlertsCard@7  # Download revision 7 snapshot'
-    )
-    console.log(
-        '  pieui card remote pull other-proj/AlertsCard # Pull from another of your projects'
-    )
-    console.log(
-        '  pieui card remote pull r/delta37/YetAnotherCard  # Pull a public component by user delta37'
-    )
-    console.log(
-        '  pieui card remote list                       # List remote components'
-    )
-    console.log(
-        '  pieui card remote remove ExchangeAlertsCard  # Delete remote component'
-    )
-    console.log(
-        '  pieui card remote history ExchangeAlertsCard                      # Full history (newest first)'
-    )
-    console.log(
-        '  pieui card remote history ExchangeAlertsCard --page 1 --per-page 5 # Paginate'
-    )
-    console.log(
-        '  pieui card remote history ExchangeAlertsCard --from 12 --to 14    # Revision range'
-    )
-    console.log(
-        '  pieui card remote public ExchangeAlertsCard  # Make this component public'
-    )
-    console.log(
-        '  pieui card remote private ExchangeAlertsCard # Revert to private'
-    )
+    const lines: string[] = [
+        'Usage: pieui <command> [options]',
+        '',
+        'Commands:',
+        '  login                                            Sign in to PieUI and save credentials to .pie/config.json',
+        '  create <AppName>                                 Create a Next.js app and run pieui init inside it',
+        '  create-pie-app <AppName>                         Create a blank Next.js web template for PieUI',
+        '  create-pieui <AppName>                           Alias for create-pie-app',
+        '  init                                             Initialize piecomponents dir, registry.ts, tailwind & next.config; prompt for backend dirs',
+        '  postbuild                                        Scan for components and generate manifest',
+        '',
+        'Card management (mirrors `pie card ...`):',
+        '  card add [type] <Name> [--io] [--ajax]           Create a new component in piecomponents/',
+        '  card list [filter]                               List registered components',
+        '  card pull <ref>                                  Pull a card by Name, project/Name, or r/user/Name (public alias)',
+        '  card view <Name>                                 Print card name, props, ajax, IO, and events',
+        '  card remove <Name>                               Remove a component from piecomponents/',
+        '  card list-events <Name>                          List methods keys on the registered PieCard',
+        '  card add-event <Name> <event>                    Add a new methods key with a default handler',
+        '  card remote list [--user U] [--project S]        List remote components',
+        '  card remote push <Name>                          Upload piecomponents/<Name>/ to PieUI storage',
+        '  card remote pull <Name>[@rev]                    Download component from PieUI storage',
+        '  card remote remove <Name>                        Delete component from PieUI storage',
+        '  card remote history <Name> [--page N] [--per-page N] [--from R] [--to R]',
+        '                                                   Show revision history with per-file diff stats',
+        '  card remote public <Name>                        Mark component public (readable as r/<user>/<Name>)',
+        '  card remote private <Name>                       Make a public component private again',
+        '',
+        'Page management (mirrors `pie page ...`):',
+        '  page add <path>                                  Create app/<path>/page.tsx from the standard Pie page template',
+        '  page view <path>                                 Print app/<path>/page.tsx source',
+        '  page ajax <path> <add|remove> <handler>          Add or remove an AJAX handler in app/<path>/page.tsx',
+        '',
+        'Component types for `card add`:',
+        '  simple              Simple component (only data prop)',
+        '  complex             Complex component (data + children props)',
+        '  simple-container    Container with single content (data + content)',
+        '  complex-container   Container with array content (data + content[])  [default]',
+        '',
+        'Options for `card add`:',
+        '  --io                Add realtime support fields to the generated data interface',
+        '  --ajax              Add AJAX request fields to the generated data interface',
+        '',
+        'Options for init:',
+        '  --out-dir <dir>, -o <dir>    Base directory for piecomponents (default: .)',
+        '',
+        'Options for postbuild:',
+        '  --out-dir <dir>, -o <dir>    Output directory (default: public)',
+        '  --src-dir <dir>, -s <dir>    Source directory (default: src)',
+        '  --append                     Include built-in pieui components in the manifest',
+        '',
+        'Options for `card list` / `card list-events` / `card add-event`:',
+        '  --src-dir <dir>, -s <dir>    Source directory (default: .)',
+        '',
+        'Examples:',
+        '  pieui login',
+        '  pieui init',
+        '  pieui create my-pie-app',
+        '  pieui card add MyCustomCard',
+        '  pieui card add simple MySimpleCard',
+        '  pieui card list complex-container',
+        '  pieui card view MyCustomCard',
+        '  pieui card pull r/alice/HeroCard',
+        '  pieui card remote push MyCustomCard',
+        '  pieui page add dashboard',
+        '  pieui page view dashboard',
+        '  pieui page ajax dashboard add refresh',
+    ]
+    for (const line of lines) console.log(line)
 }

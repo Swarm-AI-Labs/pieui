@@ -89,7 +89,7 @@ const runBunCommand = (bunBin: string, args: string[], cwd: string) => {
     }
 }
 
-export const createCommand = (appName: string) => {
+export const createCommand = async (appName: string) => {
     const trimmedAppName = appName.trim()
     if (!trimmedAppName) {
         console.error('[pieui] Error: App name is required for create command')
@@ -130,7 +130,7 @@ export const createCommand = (appName: string) => {
     }
 
     scaffoldCreateAppFiles(appDir)
-    initCommand(trimmedAppName)
+    await initCommand(trimmedAppName)
     writeFile(path.join(appDir, '.env'), envTemplate())
     runBunCommand(bunBin, ['install'], appDir)
     runBunCommand(bunBin, ['run', 'dev'], appDir)

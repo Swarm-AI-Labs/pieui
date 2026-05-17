@@ -10,7 +10,15 @@ export type ComponentType =
     | 'complex-container'
 
 export type ListFilter = 'all' | ComponentType
-export type CardAction = 'add' | 'remote'
+export type CardAction =
+    | 'add'
+    | 'list'
+    | 'pull'
+    | 'view'
+    | 'remove'
+    | 'list-events'
+    | 'add-event'
+    | 'remote'
 export type CardRemoteAction =
     | 'push'
     | 'pull'
@@ -19,7 +27,8 @@ export type CardRemoteAction =
     | 'history'
     | 'public'
     | 'private'
-export type PageAction = 'add'
+export type PageAction = 'add' | 'view' | 'ajax'
+export type PageAjaxAction = 'add' | 'remove'
 
 export type ParsedArgs = {
     command: string
@@ -30,16 +39,19 @@ export type ParsedArgs = {
     createAppName?: string
     componentType?: ComponentType
     eventName?: string
-    removeComponentName?: string
     listFilter?: ListFilter
     cardAction?: CardAction
     cardAjax?: boolean
     cardIo?: boolean
     cardRemoteAction?: CardRemoteAction
+    cardPullRef?: string
     remoteUserId?: string
     remoteProject?: string
     pageAction?: PageAction
     pagePath?: string
+    pageName?: string
+    pageAjaxAction?: PageAjaxAction
+    pageAjaxHandler?: string
     historyPage?: number
     historyPerPage?: number
     historyFrom?: number

@@ -1,8 +1,10 @@
 import fs from 'fs'
+import os from 'os'
 import path from 'path'
+import * as readline from 'readline/promises'
 import { nextConfigTemplate, REQUIRED_NEXT_CONFIG_ENV_KEYS } from '../templates'
 
-export const initCommand = (outDir: string) => {
+export const initCommand = async (outDir: string) => {
     const resolvedOutDir = path.resolve(process.cwd(), outDir)
 
     console.log(
@@ -104,6 +106,8 @@ export const initCommand = (outDir: string) => {
 
     ensureNextConfig(resolvedOutDir)
 
+    await ensureBackendPaths(resolvedOutDir)
+
     console.log('[pieui] Initialization complete!')
     console.log('[pieui] Next steps:')
     console.log(
@@ -112,6 +116,228 @@ export const initCommand = (outDir: string) => {
     console.log(
         '  2. Use "pieui card add <ComponentName>" to create new components'
     )
+}
+
+type PieProjectConfig = {
+    backendPagesDir?: string
+    backendComponentsDir?: string
+    [key: string]: unknown
+}
+
+type BackendCandidate = {
+    project: string
+    pages: string
+    components: string
+}
+
+const PIE_CONFIG_DIR = '.pie'
+const PIE_CONFIG_FILE = 'config.json'
+const MAX_HOMEDIR_SCAN_DEPTH = 2
+
+const ensureBackendPaths = async (resolvedOutDir: string): Promise<void> => {
+    const existing = readPieConfig(resolvedOutDir)
+    if (existing.backendPagesDir && existing.backendComponentsDir) {
+        console.log(
+            `[pieui] Backend dirs already configured in .pie/${PIE_CONFIG_FILE}:`
+        )
+        console.log(`[pieui]   pages:      ${existing.backendPagesDir}`)
+        console.log(`[pieui]   components: ${existing.backendComponentsDir}`)
+        return
+    }
+
+    if (!process.stdin.isTTY) {
+        console.log(
+            '[pieui] Non-interactive shell — skipping backend pages/components prompt.'
+        )
+        console.log(
+            `[pieui] To configure, add "backendPagesDir" and "backendComponentsDir" to ${path.join(resolvedOutDir, PIE_CONFIG_DIR, PIE_CONFIG_FILE)}`
+        )
+        return
+    }
+
+    const home = os.homedir()
+    console.log(
+        `[pieui] Searching ${home} for backend projects with pages/ and components/ directories...`
+    )
+    const candidates = findBackendCandidates(home, MAX_HOMEDIR_SCAN_DEPTH)
+
+    const rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout,
+    })
+
+    try {
+        let pagesDir = existing.backendPagesDir
+        let componentsDir = existing.backendComponentsDir
+
+        if (!pagesDir || !componentsDir) {
+            const picked = await pickBackendPair(rl, candidates, home)
+            if (picked) {
+                pagesDir = pagesDir || picked.pages
+                componentsDir = componentsDir || picked.components
+            }
+        }
+
+        if (!pagesDir) {
+            pagesDir = await promptAbsoluteDir(
+                rl,
+                'Path to backend pages directory',
+                home
+            )
+        }
+        if (!componentsDir) {
+            componentsDir = await promptAbsoluteDir(
+                rl,
+                'Path to backend components directory',
+                home
+            )
+        }
+
+        if (!pagesDir || !componentsDir) {
+            console.log(
+                '[pieui] Skipped backend paths — neither directory was provided.'
+            )
+            return
+        }
+
+        writePieConfig(resolvedOutDir, {
+            ...existing,
+            backendPagesDir: pagesDir,
+            backendComponentsDir: componentsDir,
+        })
+
+        const configPath = path.join(
+            resolvedOutDir,
+            PIE_CONFIG_DIR,
+            PIE_CONFIG_FILE
+        )
+        console.log(`[pieui] Saved backend paths to ${configPath}`)
+        console.log(`[pieui]   pages:      ${pagesDir}`)
+        console.log(`[pieui]   components: ${componentsDir}`)
+    } finally {
+        rl.close()
+    }
+}
+
+const findBackendCandidates = (
+    home: string,
+    maxDepth: number
+): BackendCandidate[] => {
+    const found: BackendCandidate[] = []
+    const visit = (dir: string, depth: number): void => {
+        if (depth > maxDepth) return
+        let entries: fs.Dirent[]
+        try {
+            entries = fs.readdirSync(dir, { withFileTypes: true })
+        } catch {
+            return
+        }
+
+        const subdirs = entries.filter(
+            (e) => e.isDirectory() && !e.name.startsWith('.')
+        )
+        const subdirNames = new Set(subdirs.map((e) => e.name))
+
+        if (subdirNames.has('pages') && subdirNames.has('components')) {
+            found.push({
+                project: dir,
+                pages: path.join(dir, 'pages'),
+                components: path.join(dir, 'components'),
+            })
+        }
+
+        for (const sub of subdirs) {
+            if (sub.name === 'node_modules' || sub.name === '.git') continue
+            visit(path.join(dir, sub.name), depth + 1)
+        }
+    }
+    visit(home, 0)
+    return found
+}
+
+const pickBackendPair = async (
+    rl: readline.Interface,
+    candidates: BackendCandidate[],
+    home: string
+): Promise<BackendCandidate | null> => {
+    if (candidates.length === 0) {
+        console.log(
+            '[pieui] No matching backend projects found under home directory.'
+        )
+        return null
+    }
+    console.log('[pieui] Found backend candidates:')
+    candidates.forEach((c, i) => {
+        const rel = path.relative(home, c.project) || '.'
+        console.log(`  ${i + 1}. ~/${rel}`)
+    })
+    const answer = (
+        await rl.question(
+            `[pieui] Pick a candidate [1-${candidates.length}] or press Enter to type paths manually: `
+        )
+    ).trim()
+    if (!answer) return null
+    const idx = Number.parseInt(answer, 10)
+    if (Number.isNaN(idx) || idx < 1 || idx > candidates.length) {
+        console.log('[pieui] Invalid selection — falling back to manual input.')
+        return null
+    }
+    return candidates[idx - 1]
+}
+
+const promptAbsoluteDir = async (
+    rl: readline.Interface,
+    label: string,
+    home: string
+): Promise<string | undefined> => {
+    while (true) {
+        const raw = (await rl.question(`[pieui] ${label} (absolute or ~/...): `))
+            .trim()
+        if (!raw) return undefined
+        const expanded = raw.startsWith('~')
+            ? path.join(home, raw.slice(1).replace(/^[\\/]/, ''))
+            : raw
+        const absolute = path.resolve(expanded)
+        if (!absolute.startsWith(home + path.sep) && absolute !== home) {
+            console.log(
+                `[pieui] Warning: ${absolute} is outside ${home}. Continuing anyway.`
+            )
+        }
+        if (!fs.existsSync(absolute) || !fs.statSync(absolute).isDirectory()) {
+            console.log(`[pieui] Not a directory: ${absolute}. Try again.`)
+            continue
+        }
+        return absolute
+    }
+}
+
+const readPieConfig = (resolvedOutDir: string): PieProjectConfig => {
+    const configPath = path.join(
+        resolvedOutDir,
+        PIE_CONFIG_DIR,
+        PIE_CONFIG_FILE
+    )
+    if (!fs.existsSync(configPath)) return {}
+    try {
+        const parsed: unknown = JSON.parse(fs.readFileSync(configPath, 'utf8'))
+        if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed))
+            return {}
+        return parsed as PieProjectConfig
+    } catch {
+        return {}
+    }
+}
+
+const writePieConfig = (
+    resolvedOutDir: string,
+    config: PieProjectConfig
+): void => {
+    const pieDir = path.join(resolvedOutDir, PIE_CONFIG_DIR)
+    if (!fs.existsSync(pieDir)) {
+        fs.mkdirSync(pieDir, { recursive: true })
+    }
+    const configPath = path.join(pieDir, PIE_CONFIG_FILE)
+    fs.writeFileSync(configPath, `${JSON.stringify(config, null, 2)}\n`, 'utf8')
 }
 
 const ensureNextConfig = (resolvedOutDir: string) => {

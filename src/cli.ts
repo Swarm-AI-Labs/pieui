@@ -15,12 +15,29 @@ import { cardRemoteRemoveCommand } from './code/commands/cardRemote/remove'
 import { cardRemoteHistoryCommand } from './code/commands/cardRemote/history'
 import { cardRemotePublicCommand } from './code/commands/cardRemote/public'
 import { cardRemotePrivateCommand } from './code/commands/cardRemote/private'
+import { cardPullCommand } from './code/commands/cardPull'
+import { cardViewCommand } from './code/commands/cardView'
 import { pageAddCommand } from './code/commands/pageAdd'
+import { pageViewCommand } from './code/commands/pageView'
+import { pageAjaxCommand } from './code/commands/pageAjax'
 import { createCommand } from './code/commands/create'
 import { createPieAppCommand } from './code/commands/createPieApp'
 import { loginCommand } from './code/commands/login'
 
+const requireName = (
+    value: string | undefined,
+    label: string
+): string => {
+    if (!value) {
+        console.error(`[pieui] Error: ${label} is required`)
+        printUsage()
+        process.exit(1)
+    }
+    return value
+}
+
 const main = async () => {
+    const args = parseArgs(process.argv.slice(2))
     const {
         command,
         outDir,
@@ -29,65 +46,104 @@ const main = async () => {
         componentName,
         createAppName,
         componentType,
-        removeComponentName,
         listFilter,
         eventName,
         cardAction,
         cardAjax,
         cardIo,
         cardRemoteAction,
+        cardPullRef,
         remoteUserId,
         remoteProject,
         pageAction,
         pagePath,
+        pageName,
+        pageAjaxAction,
+        pageAjaxHandler,
         historyPage,
         historyPerPage,
         historyFrom,
         historyTo,
-    } = parseArgs(process.argv.slice(2))
+    } = args
 
     console.log(`[pieui] CLI started with command: "${command}"`)
 
     switch (command) {
         case 'init':
-            initCommand(outDir)
+            await initCommand(outDir)
             return
 
-        case 'create':
-            if (!createAppName) {
-                console.error(
-                    '[pieui] Error: App name is required for create command'
-                )
-                printUsage()
-                process.exit(1)
-            }
-            createCommand(createAppName)
+        case 'create': {
+            const name = requireName(createAppName, 'App name')
+            await createCommand(name)
             return
+        }
         case 'create-pie-app':
-        case 'create-pieui':
-            if (!createAppName) {
+        case 'create-pieui': {
+            const name = requireName(createAppName, 'App name')
+            createPieAppCommand(name)
+            return
+        }
+
+        case 'login':
+            await loginCommand()
+            return
+
+        case 'postbuild':
+            console.log(`[pieui] Source directory: ${srcDir}`)
+            console.log(`[pieui] Output directory: ${outDir}`)
+            console.log(`[pieui] Append mode: ${append}`)
+            await postbuildCommand(srcDir, outDir, append)
+            return
+
+        case 'card': {
+            if (!cardAction) {
                 console.error(
-                    '[pieui] Error: App name is required for create-pie-app command'
+                    '[pieui] Error: Supported card subcommands: add, list, pull, view, remove, list-events, add-event, remote'
                 )
                 printUsage()
                 process.exit(1)
             }
-            createPieAppCommand(createAppName)
-            return
-
-        case 'card':
             if (cardAction === 'add') {
-                if (!componentName) {
-                    console.error(
-                        '[pieui] Error: Component name is required for card add command'
-                    )
-                    printUsage()
-                    process.exit(1)
-                }
-                addCommand(componentName, componentType, {
+                const name = requireName(componentName, 'Component name')
+                addCommand(name, componentType, {
                     ajax: cardAjax,
                     io: cardIo,
                 })
+                return
+            }
+            if (cardAction === 'list') {
+                listCommand(srcDir, listFilter || 'all')
+                return
+            }
+            if (cardAction === 'pull') {
+                const ref = requireName(cardPullRef, 'Card reference')
+                await cardPullCommand(ref)
+                return
+            }
+            if (cardAction === 'view') {
+                const name = requireName(componentName, 'Component name')
+                cardViewCommand(name)
+                return
+            }
+            if (cardAction === 'remove') {
+                const name = requireName(componentName, 'Component name')
+                removeCommand(name)
+                return
+            }
+            if (cardAction === 'list-events') {
+                const name = requireName(componentName, 'Component name')
+                listEventsCommand(srcDir, name)
+                return
+            }
+            if (cardAction === 'add-event') {
+                const name = requireName(componentName, 'Component name')
+                if (!eventName) {
+                    console.error('[pieui] Error: Event name is required')
+                    printUsage()
+                    process.exit(1)
+                }
+                addEventCommand(srcDir, name, eventName)
                 return
             }
             if (cardAction === 'remote') {
@@ -98,28 +154,25 @@ const main = async () => {
                     })
                     return
                 }
-                if (!componentName) {
-                    console.error(
-                        `[pieui] Error: Component name is required for card remote ${cardRemoteAction ?? ''} command`
-                    )
-                    printUsage()
-                    process.exit(1)
-                }
+                const name = requireName(
+                    componentName,
+                    `Component name (for card remote ${cardRemoteAction ?? ''})`
+                )
                 if (cardRemoteAction === 'push') {
-                    await cardRemotePushCommand(componentName)
+                    await cardRemotePushCommand(name)
                     return
                 }
                 if (cardRemoteAction === 'pull') {
-                    await cardRemotePullCommand(componentName)
+                    await cardRemotePullCommand(name)
                     return
                 }
                 if (cardRemoteAction === 'remove') {
-                    await cardRemoteRemoveCommand(componentName)
+                    await cardRemoteRemoveCommand(name)
                     return
                 }
                 if (cardRemoteAction === 'history') {
                     await cardRemoteHistoryCommand({
-                        componentName,
+                        componentName: name,
                         page: historyPage,
                         perPage: historyPerPage,
                         from: historyFrom,
@@ -128,102 +181,55 @@ const main = async () => {
                     return
                 }
                 if (cardRemoteAction === 'public') {
-                    await cardRemotePublicCommand(componentName)
+                    await cardRemotePublicCommand(name)
                     return
                 }
                 if (cardRemoteAction === 'private') {
-                    await cardRemotePrivateCommand(componentName)
+                    await cardRemotePrivateCommand(name)
                     return
                 }
                 console.error(
-                    '[pieui] Error: Supported card remote subcommands: push, pull, list, remove, history, public, private'
+                    '[pieui] Error: Supported card remote subcommands: list, push, pull, remove, history, public, private'
                 )
                 printUsage()
                 process.exit(1)
             }
-            console.error(
-                '[pieui] Error: Supported card subcommands: add, remote'
-            )
-            printUsage()
-            process.exit(1)
+            return
+        }
 
-        case 'add':
-            if (!componentName) {
+        case 'page': {
+            if (!pageAction) {
                 console.error(
-                    '[pieui] Error: Component name is required for card add command'
+                    '[pieui] Error: Supported page subcommands: add, view, ajax'
                 )
                 printUsage()
                 process.exit(1)
             }
-            addCommand(componentName, componentType, {
-                ajax: cardAjax,
-                io: cardIo,
-            })
-            return
-
-        case 'page':
-            if (pageAction !== 'add') {
-                console.error('[pieui] Error: Supported page subcommands: add')
-                printUsage()
-                process.exit(1)
+            if (pageAction === 'add') {
+                const p = requireName(pagePath, 'Path')
+                pageAddCommand(p)
+                return
             }
-            if (!pagePath) {
-                console.error(
-                    '[pieui] Error: Path is required for page add command'
-                )
-                printUsage()
-                process.exit(1)
+            if (pageAction === 'view') {
+                const name = requireName(pageName, 'Path')
+                pageViewCommand(name)
+                return
             }
-            pageAddCommand(pagePath)
-            return
-
-        case 'remove':
-            if (!removeComponentName) {
-                console.error(
-                    '[pieui] Error: Component name is required for remove command'
-                )
-                printUsage()
-                process.exit(1)
+            if (pageAction === 'ajax') {
+                const name = requireName(pageName, 'Page name')
+                if (!pageAjaxAction) {
+                    console.error(
+                        '[pieui] Error: page ajax action must be `add` or `remove`'
+                    )
+                    printUsage()
+                    process.exit(1)
+                }
+                const handler = requireName(pageAjaxHandler, 'Handler name')
+                pageAjaxCommand(name, pageAjaxAction, handler)
+                return
             }
-            removeCommand(removeComponentName)
             return
-
-        case 'list':
-            listCommand(srcDir, listFilter || 'all')
-            return
-
-        case 'list-events':
-            if (!componentName) {
-                console.error(
-                    '[pieui] Error: Component name is required for list-events command'
-                )
-                printUsage()
-                process.exit(1)
-            }
-            listEventsCommand(srcDir, componentName)
-            return
-
-        case 'add-event':
-            if (!componentName || !eventName) {
-                console.error(
-                    '[pieui] Error: Component name and event name are required for add-event command'
-                )
-                printUsage()
-                process.exit(1)
-            }
-            addEventCommand(srcDir, componentName, eventName)
-            return
-
-        case 'postbuild':
-            console.log(`[pieui] Source directory: ${srcDir}`)
-            console.log(`[pieui] Output directory: ${outDir}`)
-            console.log(`[pieui] Append mode: ${append}`)
-            await postbuildCommand(srcDir, outDir, append)
-            return
-
-        case 'login':
-            await loginCommand()
-            return
+        }
 
         default:
             printUsage()

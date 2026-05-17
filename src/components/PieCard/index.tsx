@@ -34,6 +34,7 @@ const PieCard = ({
     useMittSupport = false,
     centrifugeChannel = undefined,
     methods = undefined,
+    stored = undefined,
 }: PieCardProps) => {
     const renderingLogEnabled = isRenderingLogEnabled()
     const methodsRef = useRef(methods)
@@ -211,6 +212,19 @@ const PieCard = ({
 
     if (renderingLogEnabled) {
         console.log('[PieCard] Rendering complete, returning children')
+    }
+
+    if (stored !== undefined) {
+        return (
+            <>
+                <input
+                    type="hidden"
+                    name={data.name}
+                    value={JSON.stringify(stored)}
+                />
+                {children}
+            </>
+        )
     }
 
     return children
