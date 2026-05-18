@@ -60,26 +60,29 @@ const initProject = (projectDir) => {
 }
 
 const baseMeta = (overrides = {}) => ({
-    name: 'OrdersCard',
-    files: [],
-    packages: [],
-    relativeImports: [],
-    events: [],
-    propsSchema: {
-        type: 'object',
-        properties: {
-            title: { type: 'string' },
-            limit: { type: 'integer' },
+    typescript: {
+        name: 'OrdersCard',
+        files: [],
+        packages: [],
+        relativeImports: [],
+        events: [],
+        propsSchema: {
+            type: 'object',
+            properties: {
+                title: { type: 'string' },
+                limit: { type: 'integer' },
+            },
+            required: ['title', 'limit'],
         },
-        required: ['title', 'limit'],
+        propsCode:
+            '@dataclass\nclass OrdersCard(Card):\n    title: str\n    limit: int',
+        eventsPropsSchema: {},
+        eventsPropsCode: {},
+        inputPropsCode: null,
+        inputPropsSchema: null,
+        ajaxList: [],
+        ...overrides,
     },
-    propsCode: '@dataclass\nclass OrdersCard(Card):\n    title: str\n    limit: int',
-    eventsPropsSchema: {},
-    eventsPropsCode: {},
-    inputPropsCode: null,
-    inputPropsSchema: null,
-    ajaxList: [],
-    ...overrides,
 })
 
 test('card add --from json-file scaffolds types and ui from metadata', () => {

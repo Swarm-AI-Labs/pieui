@@ -1,7 +1,7 @@
 import path from 'path'
 import { glob } from 'glob'
-import { ts } from './ts'
-import { ComponentInfo, ComponentType, REGISTER_FUNCTION } from './types'
+import { ts } from '../ts'
+import { ComponentInfo, ComponentType, REGISTER_FUNCTION } from '../types'
 
 const defaultCompilerOptions = () => ({
     allowJs: true,

@@ -992,7 +992,10 @@ exit 3
     const result = runCli({
         cwd: projectDir,
         args: ['create', 'my-create-app'],
-        env: { PIEUI_CREATE_BUN_BIN: fakeBunPath },
+        env: {
+            PIEUI_CREATE_BUN_BIN: fakeBunPath,
+            PIEUI_CREATE_SKIP_STORYBOOK: '1',
+        },
     })
 
     assertSucceeded(result, 'create should finish scaffolding with fake bun')

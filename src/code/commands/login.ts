@@ -3,6 +3,8 @@ import { randomInt } from 'node:crypto'
 import fs from 'node:fs'
 import path from 'node:path'
 
+import { ensureBackendDir, mergeConfig } from '../services/projectLinks'
+
 export const CONNECT_BASE = 'https://pieui.swarm.ing/connect'
 export const CREDENTIALS_API =
     'https://api-pieui.swarm.ing/api/external/credentials'
@@ -162,14 +164,29 @@ export async function loginCommand(
                     "Login succeeded but response had no 'config' field"
                 )
             }
+            // Merge credentials into local config (preserve existing
+            // keys like backendProjectDir).
+            const credBlob =
+                typeof record.config === 'object' &&
+                record.config !== null &&
+                !Array.isArray(record.config)
+                    ? (record.config as Record<string, unknown>)
+                    : {}
             fs.mkdirSync(pieDir, { recursive: true })
-            fs.writeFileSync(
-                configPath,
-                `${JSON.stringify(record.config, null, 2)}\n`,
-                'utf8'
-            )
+            mergeConfig(cwd, credBlob)
             console.log(`[pie] Saved credentials to ${configPath}`)
             appendPieCredentialsToEnv(cwd, record.config)
+
+            // Mirror credentials into the linked backend project, so
+            // `pie` and `pieui` share login. Prompt for the backend
+            // path if not yet stored.
+            const backendDir = await ensureBackendDir(cwd)
+            if (backendDir) {
+                mergeConfig(backendDir, credBlob)
+                console.log(
+                    `[pie] Mirrored credentials to backend .pie/config.json (${backendDir})`
+                )
+            }
             return
         }
     }

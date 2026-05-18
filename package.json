@@ -39,10 +39,7 @@
             "require": "./dist/storybook/addon/index.js",
             "types": "./dist/storybook/addon/index.d.ts"
         },
-        "./storybook/addon/preset": {
-            "import": "./dist/storybook/addon/preset.js",
-            "require": "./dist/storybook/addon/preset.js"
-        },
+        "./storybook/addon/preset": "./dist/storybook/addon/preset.js",
         "./storybook/addon/manager": {
             "import": "./dist/storybook/addon/manager.esm.js",
             "require": "./dist/storybook/addon/manager.js"
@@ -60,9 +57,9 @@
         "build:storybook:cjs": "bun build src/storybook/index.tsx --outfile dist/storybook/index.js --format cjs --target node --jsx=automatic --jsx-import-source=react --minify --packages=external",
         "build:storybook:addon:esm": "bun build src/storybook/addon/index.tsx --outfile dist/storybook/addon/index.esm.js --format esm --target browser --jsx=automatic --jsx-import-source=react --minify --packages=external",
         "build:storybook:addon:cjs": "bun build src/storybook/addon/index.tsx --outfile dist/storybook/addon/index.js --format cjs --target node --jsx=automatic --jsx-import-source=react --minify --packages=external",
-        "build:storybook:addon:preset": "bun build src/storybook/addon/preset.ts --outfile dist/storybook/addon/preset.js --format cjs --target node --minify --packages=external",
-        "build:storybook:addon:manager:esm": "bun build src/storybook/addon/manager.tsx --outfile dist/storybook/addon/manager.esm.js --format esm --target browser --jsx=automatic --jsx-import-source=react --minify --packages=external",
-        "build:storybook:addon:manager:cjs": "bun build src/storybook/addon/manager.tsx --outfile dist/storybook/addon/manager.js --format cjs --target node --jsx=automatic --jsx-import-source=react --minify --packages=external",
+        "build:storybook:addon:preset": "mkdir -p dist/storybook/addon && cp src/storybook/addon/preset.cjs dist/storybook/addon/preset.js",
+        "build:storybook:addon:manager:esm": "bun build src/storybook/addon/manager.tsx --outfile dist/storybook/addon/manager.esm.js --format esm --target browser --jsx-runtime=classic --minify --packages=external",
+        "build:storybook:addon:manager:cjs": "bun build src/storybook/addon/manager.tsx --outfile dist/storybook/addon/manager.js --format cjs --target node --jsx-runtime=classic --minify --packages=external",
         "build:esm:debug": "bun build src/index.ts --outfile dist/index.esm.js --format esm --target browser --jsx=automatic --jsx-import-source=react --packages=external",
         "build:cjs:debug": "bun build src/index.ts --outfile dist/index.js --format cjs --target node --jsx=automatic --jsx-import-source=react --packages=external",
         "build:components:esm:debug": "bun build src/components/index.ts --outfile dist/components/index.esm.js --format esm --target browser --jsx=automatic --jsx-import-source=react --packages=external",

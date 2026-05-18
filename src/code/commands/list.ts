@@ -2,7 +2,7 @@ import path from 'path'
 import { glob } from 'glob'
 import { ts } from '../ts'
 import { ComponentType, ListFilter, REGISTER_FUNCTION } from '../types'
-import { detectComponentType } from '../scan'
+import { detectComponentType } from '../introspection/scan'
 
 type ComponentListEntry = {
     name: string

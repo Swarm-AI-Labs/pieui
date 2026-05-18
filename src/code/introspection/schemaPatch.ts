@@ -1,4 +1,4 @@
-import { ts } from './ts'
+import { ts } from '../ts'
 
 export const isCssPropertiesType = (type: any, checker: any): boolean => {
     if (type.isUnion()) {

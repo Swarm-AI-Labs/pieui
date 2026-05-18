@@ -21,7 +21,7 @@ import {
     findStoredAttributeType,
     typeToSchema,
 } from '../introspection'
-import type { JSONSchema, PieMetadata } from '../types'
+import type { JSONSchema, PieFileEntry, PieMetadata } from '../types'
 
 const COMPONENT_EXTS = ['.ts', '.tsx']
 
@@ -88,6 +88,12 @@ export const buildCardMetadata = (componentName: string): PieMetadata => {
     )
     const ctx = createSchemaContext(tsFiles)
 
+    const componentsDir = settings.componentsDir
+    const fileEntries: PieFileEntry[] = files.map((absPath) => ({
+        path: path.relative(componentsDir, absPath),
+        content: fs.readFileSync(absPath, 'utf8'),
+    }))
+
     const dataType = findComponentDataTypeForName(ctx, componentName)
     const propsCode = dataType.declaration.getText()
     const propsSchema = buildSchemaForType(ctx, dataType.typeName)
@@ -120,7 +126,7 @@ export const buildCardMetadata = (componentName: string): PieMetadata => {
 
     return {
         name: componentName,
-        files,
+        files: fileEntries,
         packages,
         relativeImports,
         events,
@@ -137,19 +143,65 @@ export const buildCardMetadata = (componentName: string): PieMetadata => {
 export const stringifyPieMetadata = (meta: PieMetadata): string =>
     stableStringify(meta)
 
+/**
+ * Top-level wrap envelope. Each CLI side wraps its metadata under
+ * `typescript` / `python` so a consumer can combine both ecosystems
+ * into one document for cross-side comparison.
+ */
+export const DUMP_METADATA_ENVELOPE_KEY = 'typescript' as const
+
+/**
+ * Merge our envelope key into the existing JSON at `target` (if any),
+ * preserving sibling top-level keys (e.g. the `python` envelope written
+ * by `pie card dump-metadata --out <same-file>`).
+ *
+ * Top-level merge is intentionally shallow: re-running `pieui` on the
+ * same file replaces our `typescript` key in full but never touches
+ * `python` (or future keys).
+ */
+const mergeEnvelopeIntoFile = (
+    target: string,
+    envelope: Record<string, unknown>
+): Record<string, unknown> => {
+    if (!fs.existsSync(target)) return envelope
+    let existing: unknown
+    try {
+        existing = JSON.parse(fs.readFileSync(target, 'utf8'))
+    } catch (e) {
+        throw new Error(
+            `[pieui] Cannot merge: existing file ${target} is not valid JSON ` +
+                `(${(e as Error).message})`
+        )
+    }
+    if (
+        existing === null ||
+        typeof existing !== 'object' ||
+        Array.isArray(existing)
+    ) {
+        throw new Error(
+            `[pieui] Cannot merge: existing file ${target} is not a JSON object`
+        )
+    }
+    return { ...(existing as Record<string, unknown>), ...envelope }
+}
+
 /** CLI entry point. Builds metadata, writes to `outFile` or stdout. */
 export const cardDumpMetadataCommand = (
     componentName: string,
     outFile: string | undefined
 ): void => {
     const meta = buildCardMetadata(componentName)
-    const json = stringifyPieMetadata(meta)
+    const envelope: Record<string, unknown> = {
+        [DUMP_METADATA_ENVELOPE_KEY]: meta,
+    }
     if (outFile) {
         const resolved = path.resolve(process.cwd(), outFile)
+        const merged = mergeEnvelopeIntoFile(resolved, envelope)
+        const json = stableStringify(merged)
         fs.mkdirSync(path.dirname(resolved), { recursive: true })
         fs.writeFileSync(resolved, json, 'utf8')
         console.log(`[pieui] Wrote metadata: ${resolved}`)
     } else {
-        process.stdout.write(json)
+        process.stdout.write(stableStringify(envelope))
     }
 }

@@ -12,6 +12,10 @@ import {
     cardAddStoryRequirements,
     printRequirements,
 } from '../printRequirements'
+import {
+    detectCardIsIO,
+    patchPieCardForwarding,
+} from '../patchPieCardForwarding'
 
 const COMPONENT_EXTS = ['.ts', '.tsx']
 
@@ -38,6 +42,26 @@ const collectComponentFiles = (componentDir: string): string[] => {
     return Array.from(out).sort()
 }
 
+const sampleValueFor = (schema: unknown): unknown => {
+    if (!schema || typeof schema !== 'object') return null
+    const s = schema as Record<string, unknown>
+    if (Array.isArray(s.enum) && s.enum.length > 0) return s.enum[0]
+    if ('const' in s) return s.const
+    const t = s.type
+    if (t === 'string') return ''
+    if (t === 'number' || t === 'integer') return 0
+    if (t === 'boolean') return false
+    if (t === 'array') return []
+    if (t === 'object') return {}
+    if (Array.isArray(s.anyOf) && s.anyOf.length > 0) {
+        return sampleValueFor(s.anyOf[0])
+    }
+    if (Array.isArray(s.oneOf) && s.oneOf.length > 0) {
+        return sampleValueFor(s.oneOf[0])
+    }
+    return null
+}
+
 const samplePayloadFromSchema = (
     schema: JSONSchema | undefined
 ): unknown => {
@@ -47,14 +71,7 @@ const samplePayloadFromSchema = (
     if (!properties || typeof properties !== 'object') return null
     const out: Record<string, unknown> = {}
     for (const [key, raw] of Object.entries(properties)) {
-        if (!raw || typeof raw !== 'object') continue
-        const t = (raw as { type?: string }).type
-        if (t === 'string') out[key] = ''
-        else if (t === 'number' || t === 'integer') out[key] = 0
-        else if (t === 'boolean') out[key] = false
-        else if (t === 'array') out[key] = []
-        else if (t === 'object') out[key] = {}
-        else out[key] = null
+        out[key] = sampleValueFor(raw)
     }
     return out
 }
@@ -177,6 +194,26 @@ export const cardAddStoryCommand = (componentName: string): void => {
     } else {
         console.log(
             `[pieui] No <PieCard methods={{…}}/> found — story has no method triggers yet.`
+        )
+    }
+
+    // Patch the card's UI so its <PieCard> forwards useMittSupport (plus the
+    // full IO quartet if the data interface already opts in). Without this the
+    // addon's "Fire" buttons emit mitt events nobody is listening to.
+    const typesPath = path.join(componentDir, 'types', 'index.ts')
+    const uiPath = path.join(componentDir, 'ui', `${componentName}.tsx`)
+    const io = detectCardIsIO(typesPath)
+    const result = patchPieCardForwarding(uiPath, { io })
+    if (result.patched) {
+        const allAdded = Array.from(
+            new Set(result.addedPerSite.flatMap((s) => s.added))
+        )
+        console.log(
+            `[pieui] Forwarding props added to <PieCard> in ${uiPath}: ${allAdded.join(', ')}${io ? ' (IO card)' : ''}`
+        )
+    } else if (result.addedPerSite.length === 0) {
+        console.log(
+            `[pieui] <PieCard> forwarding already complete in ${uiPath}`
         )
     }
 

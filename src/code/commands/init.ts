@@ -4,6 +4,13 @@ import path from 'path'
 import * as readline from 'readline/promises'
 import { nextConfigTemplate, REQUIRED_NEXT_CONFIG_ENV_KEYS } from '../templates'
 import { initRequirements, printRequirements } from '../printRequirements'
+import {
+    findStorybookMainPath,
+    patchStorybookMainAddons,
+    patchStorybookMainStories,
+    PIEUI_STORYBOOK_ADDON,
+    PIEUI_STORYBOOK_STORIES_GLOB,
+} from '../storybookIntegration'
 
 export const initCommand = async (outDir: string) => {
     const resolvedOutDir = path.resolve(process.cwd(), outDir)
@@ -110,6 +117,26 @@ export const initCommand = async (outDir: string) => {
     ensureNextConfig(resolvedOutDir)
 
     await ensureBackendPaths(resolvedOutDir)
+
+    const sbMain = findStorybookMainPath(resolvedOutDir)
+    if (sbMain) {
+        const patchedAddons = patchStorybookMainAddons(sbMain)
+        if (patchedAddons) {
+            console.log(
+                `[pieui] Added '${PIEUI_STORYBOOK_ADDON}' to ${sbMain}`
+            )
+        } else {
+            console.log(
+                `[pieui] Storybook addon already wired in ${sbMain}`
+            )
+        }
+        const patchedStories = patchStorybookMainStories(sbMain)
+        if (patchedStories) {
+            console.log(
+                `[pieui] Added '${PIEUI_STORYBOOK_STORIES_GLOB}' to stories in ${sbMain}`
+            )
+        }
+    }
 
     console.log('[pieui] Initialization complete!')
     console.log('[pieui] Next steps:')

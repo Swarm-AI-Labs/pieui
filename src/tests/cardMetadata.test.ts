@@ -2,7 +2,7 @@ import { describe, test, expect } from 'bun:test'
 import {
     extractCardMetadata,
     serializeCardMetadata,
-} from '../code/cardMetadata'
+} from '../code/introspection/cardMetadata'
 
 describe('extractCardMetadata', () => {
     test('plain scaffold → ajax=false, io=false', () => {

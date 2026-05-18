@@ -11,11 +11,19 @@ import {
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import mitt, { Emitter } from 'mitt'
 
-import MittContext from '../util/mitt'
-import SocketIOContext from '../util/socket'
-import CentrifugeIOContext from '../util/centrifuge'
-import FallbackContext from '../util/fallback'
-import { PieConfigContext } from '../util/pieConfig'
+// IMPORTANT: import contexts via the package name (not relative paths).
+// The bun build runs with `--packages=external`, which keeps the
+// `@swarm.ing/pieui` import unbundled — so at runtime there is exactly ONE
+// React context object shared by PieCard (from `@swarm.ing/pieui`) and the
+// storybook decorator. Relative imports would inline a duplicate copy and
+// `usePieConfig` would fail with "must be used within PieConfigProvider".
+import {
+    MittContext,
+    SocketIOContext,
+    CentrifugeIOContext,
+    FallbackContext,
+    PieConfigContext,
+} from '@swarm.ing/pieui'
 
 const STORYBOOK_PIE_CONFIG = {
     apiServer: '',
@@ -146,21 +154,16 @@ export const PieMethodTrigger = ({
     )
 }
 
-export type PieMethodSpec = {
-    name: string
-    payloadSchema?: Record<string, unknown> | null
-    payloadCode?: string | null
-    samplePayload?: unknown
-}
+export {
+    PIECARD_PARAM_KEY,
+    PIE_STORYBOOK_FIRE_EVENT,
+} from './addon/constants'
+export type {
+    PieMethodSpec,
+    PieCardParams,
+} from './addon/constants'
 
-export type PieCardParams = {
-    card: string
-    methods?: PieMethodSpec[]
-}
-
-export const PIECARD_PARAM_KEY = 'piecard'
-
-const STORYBOOK_CHANNEL_FIRE_EVENT = 'piecard/fire'
+import { PIE_STORYBOOK_FIRE_EVENT as STORYBOOK_CHANNEL_FIRE_EVENT } from './addon/constants'
 
 type ChannelLike = {
     on: (event: string, listener: (...args: unknown[]) => void) => void
@@ -201,4 +204,3 @@ export const PieStorybookChannelBridge = () => {
     return null
 }
 
-export const PIE_STORYBOOK_FIRE_EVENT = STORYBOOK_CHANNEL_FIRE_EVENT

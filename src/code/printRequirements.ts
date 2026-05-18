@@ -122,11 +122,24 @@ export const pageAddRequirements = (pagePath: string): string[] => {
 
 export const initRequirements = (): string[] => {
     const cfg = readPieConfig()
-    if (cfg.backendPagesDir && cfg.backendComponentsDir) return []
-    return [
-        `Link the Python (pie) project: set "backendPagesDir" and "backendComponentsDir" (absolute paths) in ${PIE_CONFIG_REL}. They enable auto-resolve for \`pieui card add --from\` and subprocess delegation for \`pieui page ajax\`.`,
-        `On the backend side, \`pie init\` should likewise set "frontendProjectDir" to this directory.`,
-    ]
+    const sbMain =
+        fs.existsSync(path.join(process.cwd(), '.storybook')) &&
+        fs.statSync(path.join(process.cwd(), '.storybook')).isDirectory()
+    const out: string[] = []
+    if (!cfg.backendPagesDir || !cfg.backendComponentsDir) {
+        out.push(
+            `Link the Python (pie) project: set "backendPagesDir" and "backendComponentsDir" (absolute paths) in ${PIE_CONFIG_REL}. They enable auto-resolve for \`pieui card add --from\` and subprocess delegation for \`pieui page ajax\`.`
+        )
+        out.push(
+            `On the backend side, \`pie init\` should likewise set "frontendProjectDir" to this directory.`
+        )
+    }
+    if (!sbMain && process.env.PIEUI_INIT_SKIP_STORYBOOK_HINT !== '1') {
+        out.push(
+            `Install Storybook for the PieCard methods panel: \`bunx storybook@latest init --yes --no-dev\`. Then re-run \`pieui init\` to wire \`'@swarm.ing/pieui/storybook/addon'\` into \`.storybook/main.ts\`.`
+        )
+    }
+    return out
 }
 
 export const cardAddStoryRequirements = (componentName: string): string[] => {
@@ -141,5 +154,6 @@ export const createRequirements = (appName: string): string[] => {
     return [
         `Bootstrap the Python backend: in your pie repo, run \`pie init\` and set "frontendProjectDir" to the new app directory (./${appName}).`,
         `Verify the two sides see each other: \`pieui card add <Name> --from\` (TS ← Python) and \`pie card add <type> <Name> --from\` (Python ← TS) both rely on these links.`,
+        `Storybook is wired by default (\`.storybook/main.ts\` already includes \`'@swarm.ing/pieui/storybook/addon'\`). Run \`bun storybook\` inside ./${appName} to launch it, and \`pieui card add-story <Name>\` to scaffold stories per card. Skip with PIEUI_CREATE_SKIP_STORYBOOK=1 next time.`,
     ]
 }

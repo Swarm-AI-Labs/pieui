@@ -107,10 +107,35 @@ const resolveSource = (
     return { kind: 'name', backendRoot, cardName }
 }
 
+/** Strictly unwrap a `{typescript: {...}}` envelope. Throws when the
+ * envelope is absent or wrong-keyed. TS reads only TS-shaped data. */
+const unwrapTypescriptEnvelope = (parsed: unknown): unknown => {
+    if (
+        !parsed ||
+        typeof parsed !== 'object' ||
+        Array.isArray(parsed)
+    ) {
+        throw new Error(
+            'dump-metadata payload is not a JSON object — expected ' +
+                '{"typescript": {...}}'
+        )
+    }
+    const obj = parsed as Record<string, unknown>
+    const inner = obj.typescript
+    if (!inner || typeof inner !== 'object' || Array.isArray(inner)) {
+        const keys = Object.keys(obj).join(', ')
+        throw new Error(
+            `dump-metadata payload is missing the "typescript" envelope ` +
+                `(top-level keys: ${keys || '(none)'})`
+        )
+    }
+    return inner
+}
+
 const fetchMetadata = (source: ResolvedSource): PieMetadata => {
     if (source.kind === 'json-file') {
         const raw = fs.readFileSync(source.path, 'utf8')
-        return JSON.parse(raw) as PieMetadata
+        return unwrapTypescriptEnvelope(JSON.parse(raw)) as PieMetadata
     }
     console.log(
         `[pieui] Invoking: pie card dump-metadata ${source.cardName} (cwd: ${source.backendRoot})`
@@ -136,7 +161,7 @@ const fetchMetadata = (source: ResolvedSource): PieMetadata => {
         )
     }
     const stdout = result.stdout ? result.stdout.toString() : ''
-    return JSON.parse(stdout) as PieMetadata
+    return unwrapTypescriptEnvelope(JSON.parse(stdout)) as PieMetadata
 }
 
 const extractTypeName = (code: string | null | undefined): string | null => {

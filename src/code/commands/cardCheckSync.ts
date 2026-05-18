@@ -3,13 +3,6 @@ import path from 'node:path'
 import { spawnSync } from 'node:child_process'
 import * as readline from 'node:readline/promises'
 
-import { buildCardMetadata } from './cardDumpMetadata'
-import {
-    compareMetadata,
-    formatFindings,
-    type PieMetadataLike,
-} from '../metadataCompare'
-
 const PIE_CONFIG_DIR = '.pie'
 const PIE_CONFIG_FILE = 'config.json'
 
@@ -114,10 +107,30 @@ const findVenvPython = (project: string): string => {
     return 'python3'
 }
 
-const runPieDump = (
-    backendDir: string,
-    cardName: string
-): PieMetadataLike | null => {
+/**
+ * TS check-sync delegates the comparison to `pie card check-sync`,
+ * because the comparator must read both sides and TS code is forbidden
+ * from reading `{python: …}` envelopes. The pie side orchestrates:
+ *   - reads its own `{python}` data via `build_card_metadata`
+ *   - spawns `pieui card dump-metadata`, unwraps `{typescript: …}`,
+ *     and runs `compare_metadata` on both.
+ *
+ * On TS side we just relay stdout/stderr and exit code.
+ */
+export const cardCheckSyncCommand = async (
+    componentName: string
+): Promise<number> => {
+    const cwd = process.cwd()
+    const backendDir = await ensureBackendDir(cwd)
+    if (!backendDir) {
+        console.error('[pieui] backend project path required to run check-sync')
+        return 1
+    }
+
+    console.log(
+        `[pieui] Delegating check-sync to \`pie card check-sync\` in ${backendDir}`
+    )
+
     const python = findVenvPython(backendDir)
     const envOverride: Record<string, string> = { ...process.env } as Record<
         string,
@@ -130,56 +143,16 @@ const runPieDump = (
     }
     const result = spawnSync(
         python,
-        ['-m', 'pie', 'card', 'dump-metadata', cardName],
+        ['-m', 'pie', 'card', 'check-sync', componentName],
         {
             cwd: backendDir,
-            encoding: 'utf8',
+            stdio: 'inherit',
             env: envOverride,
         }
     )
     if (result.error) {
         console.error(`[pieui] Failed to run python: ${result.error.message}`)
-        return null
-    }
-    if (result.status !== 0) {
-        console.error(
-            `[pieui] pie dump-metadata failed (exit ${result.status})\n${result.stderr}`
-        )
-        return null
-    }
-    const text = result.stdout
-    const start = text.indexOf('{')
-    if (start < 0) {
-        console.error(`[pieui] could not locate JSON in pie output:\n${text}`)
-        return null
-    }
-    try {
-        return JSON.parse(text.slice(start)) as PieMetadataLike
-    } catch (e) {
-        console.error(`[pieui] invalid JSON from pie: ${(e as Error).message}`)
-        return null
-    }
-}
-
-export const cardCheckSyncCommand = async (
-    componentName: string
-): Promise<number> => {
-    const cwd = process.cwd()
-    const backendDir = await ensureBackendDir(cwd)
-    if (!backendDir) {
-        console.error('[pieui] backend project path required to run check-sync')
         return 1
     }
-
-    console.log(
-        `[pieui] Comparing ${componentName} (TS) ↔ ${componentName} (Python in ${backendDir})`
-    )
-
-    const tsMeta = buildCardMetadata(componentName)
-    const pyMeta = runPieDump(backendDir, componentName)
-    if (!pyMeta) return 1
-
-    const findings = compareMetadata(pyMeta, tsMeta as PieMetadataLike)
-    console.log(formatFindings(componentName, findings))
-    return findings.length === 0 ? 0 : 1
+    return result.status ?? 1
 }

@@ -6,6 +6,7 @@ import {
     createRequirements,
     printRequirements,
 } from '../printRequirements'
+import { installAndWireStorybook } from '../storybookIntegration'
 import {
     envTemplate,
     homePageTemplate,
@@ -139,7 +140,19 @@ export const createCommand = async (appName: string) => {
     scaffoldCreateAppFiles(appDir)
     writeFile(path.join(appDir, '.env'), envTemplate())
     runBunCommand(bunBin, ['add', pieuiPackageSpec], appDir)
-    await initCommand(trimmedAppName)
+    const willInstallStorybook =
+        process.env.PIEUI_CREATE_SKIP_STORYBOOK !== '1'
+    if (willInstallStorybook) {
+        process.env.PIEUI_INIT_SKIP_STORYBOOK_HINT = '1'
+    }
+    try {
+        await initCommand(trimmedAppName)
+    } finally {
+        delete process.env.PIEUI_INIT_SKIP_STORYBOOK_HINT
+    }
+    if (willInstallStorybook) {
+        installAndWireStorybook(appDir, bunBin)
+    }
     runBunCommand(bunBin, ['run', 'dev'], appDir)
 
     printRequirements(createRequirements(trimmedAppName))

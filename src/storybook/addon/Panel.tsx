@@ -1,3 +1,4 @@
+import * as React from 'react'
 import {
     ChangeEvent,
     ReactElement,
@@ -5,6 +6,8 @@ import {
     useMemo,
     useState,
 } from 'react'
+
+void React
 import {
     addons,
     useParameter,
@@ -14,7 +17,7 @@ import {
     PIE_STORYBOOK_FIRE_EVENT,
     PieCardParams,
     PieMethodSpec,
-} from '../index'
+} from './constants'
 
 const Pre = ({
     children,

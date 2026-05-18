@@ -41,6 +41,11 @@ export type { PieQueryOptions } from './components/PieRoot/types'
 export { useAjaxSubmit, readAjaxKey } from './util/ajaxCommonUtils'
 export type { RetryPolicy } from './util/ajaxCommonUtils'
 export { usePieEmit } from './util/mitt'
+export { default as MittContext, getEmitter } from './util/mitt'
+export { default as SocketIOContext } from './util/socket'
+export { default as CentrifugeIOContext } from './util/centrifuge'
+export { default as FallbackContext } from './util/fallback'
+export { PieConfigContext } from './util/pieConfig'
 export {
     getMittAgentTools,
     usePieMittAgentTools,

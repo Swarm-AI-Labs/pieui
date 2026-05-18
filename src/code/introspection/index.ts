@@ -38,6 +38,23 @@
 
 export { IntrospectionError } from './errors'
 export {
+    compareMetadata,
+    formatFindings,
+    type Finding,
+    type PieMetadataLike,
+} from './compare'
+export {
+    extractCardMetadata,
+    serializeCardMetadata,
+    type CardMetadata,
+} from './cardMetadata'
+export { findComponentRegistrations, detectComponentType } from './scan'
+export {
+    patchSchemaForType,
+    isCssPropertiesType,
+    schemaForIndexType,
+} from './schemaPatch'
+export {
     createSchemaContext,
     findTypeDeclaration,
     buildSchemaForType,

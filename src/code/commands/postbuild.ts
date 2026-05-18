@@ -6,8 +6,8 @@ import {
     ComponentManifestEntry,
     MANIFEST_FILENAME,
 } from '../types'
-import { findComponentRegistrations } from '../scan'
-import { patchSchemaForType } from '../schema'
+import { findComponentRegistrations } from '../introspection/scan'
+import { patchSchemaForType } from '../introspection/schemaPatch'
 
 export const postbuildCommand = async (
     srcDir: string,

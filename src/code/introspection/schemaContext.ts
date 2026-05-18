@@ -11,7 +11,7 @@
 
 import path from 'node:path'
 import { ts, TJS } from '../ts'
-import { patchSchemaForType } from '../schema'
+import { patchSchemaForType } from './schemaPatch'
 import type { JSONSchema } from '../types'
 
 export type SchemaContext = {

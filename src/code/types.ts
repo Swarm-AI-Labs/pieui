@@ -82,9 +82,18 @@ export type ComponentInfo = {
 
 export type JSONSchema = Record<string, unknown>
 
+export type PieFileEntry = {
+    /** Path relative to the components dir (`piecomponents/` on TS,
+     *  `pages/components/` on Python). E.g. `BoxCard/index.ts`,
+     *  `box_card.py`. */
+    path: string
+    /** Full text contents of the file, utf-8. */
+    content: string
+}
+
 export type PieMetadata = {
     name: string
-    files: string[]
+    files: PieFileEntry[]
     packages: string[]
     relativeImports: string[]
     events: string[]

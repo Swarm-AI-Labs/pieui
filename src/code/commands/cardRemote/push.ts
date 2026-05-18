@@ -1,6 +1,6 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import { extractCardMetadata, serializeCardMetadata } from '../../cardMetadata'
+import { extractCardMetadata, serializeCardMetadata } from '../../introspection/cardMetadata'
 import { loadSettings } from '../../services/settings'
 import { PieStorageError, PieStorageService } from '../../services/storage'
 import { parseCardRef } from './cardRef'

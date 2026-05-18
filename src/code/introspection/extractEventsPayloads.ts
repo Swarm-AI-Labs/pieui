@@ -28,6 +28,84 @@ const PIE_CARD_TAG = 'PieCard'
 const COMPONENT_EXTS = ['.ts', '.tsx']
 
 /**
+ * React hooks that take a function as their first argument and return
+ * the same function reference (just memoized). Their first arg is the
+ * actual handler.
+ */
+const FUNCTION_WRAPPER_HOOKS = new Set([
+    'useCallback',
+    'useEvent',
+    'useEventCallback',
+    'useMemoizedFn',
+    'useStableCallback',
+])
+
+/**
+ * Strip wrappers that don't change the function shape and return the
+ * underlying ArrowFunction / FunctionExpression — or `null` if the
+ * expression doesn't reduce to one.
+ *
+ * Unwraps:
+ *   - `(expr)`                                  ParenthesizedExpression
+ *   - `expr as T`                               AsExpression
+ *   - `expr satisfies T`                        SatisfiesExpression
+ *   - `<T>expr`                                 TypeAssertionExpression
+ *   - `useCallback(expr, deps)` / `useEvent(expr)` / ... — CallExpression
+ *     whose callee is a known wrapper hook
+ *
+ * Returns null when the expression isn't a function-shaped thing we can
+ * peel back to an Arrow / Function expression statically.
+ */
+const unwrapToFunctionExpression = (expr: any): any | null => {
+    let current = expr
+    while (current) {
+        if (
+            ts.isArrowFunction(current) ||
+            ts.isFunctionExpression(current)
+        ) {
+            return current
+        }
+        if (ts.isParenthesizedExpression(current)) {
+            current = current.expression
+            continue
+        }
+        if (ts.isAsExpression(current)) {
+            current = current.expression
+            continue
+        }
+        // `satisfies` lives on SatisfiesExpression in TS 4.9+
+        if (
+            (ts as any).isSatisfiesExpression &&
+            (ts as any).isSatisfiesExpression(current)
+        ) {
+            current = current.expression
+            continue
+        }
+        if (ts.isTypeAssertionExpression(current)) {
+            current = current.expression
+            continue
+        }
+        if (ts.isCallExpression(current)) {
+            const callee = current.expression
+            const calleeName = ts.isIdentifier(callee)
+                ? callee.text
+                : ts.isPropertyAccessExpression(callee) &&
+                    ts.isIdentifier(callee.name)
+                  ? callee.name.text
+                  : null
+            if (calleeName && FUNCTION_WRAPPER_HOOKS.has(calleeName)) {
+                if (current.arguments.length === 0) return null
+                current = current.arguments[0]
+                continue
+            }
+            return null
+        }
+        return null
+    }
+    return null
+}
+
+/**
  * Follow a JSX shorthand or identifier reference back to the function
  * declaration and return its first parameter node.
  *
@@ -35,25 +113,61 @@ const COMPONENT_EXTS = ['.ts', '.tsx']
  *
  * RETURNS: the `Parameter` AST node, or `null` if:
  *   - the symbol can't be resolved by the checker.
- *   - the declaration isn't a function-like form we recognize.
+ *   - the declaration isn't a function-like form we recognize even
+ *     after unwrapping known wrappers.
  *
  * RESOLVES:
  *   - `FunctionDeclaration` — `function foo(p) {}`
- *   - `VariableDeclaration` initializer = ArrowFunction/FunctionExpr
- *     — `const foo = (p) => …`
+ *   - `VariableDeclaration` initializer reducible to ArrowFunction /
+ *     FunctionExpr via `unwrapToFunctionExpression`. That covers:
+ *       const f = (e) => ...
+ *       const f = useCallback((e) => ..., [])
+ *       const f = ((e) => ...) as Handler
+ *       const f = ((e) => ...) satisfies Handler
+ *       const f = (<Handler>((e) => ...))
  *   - `MethodDeclaration` / `MethodSignature`
  *   - Alias symbols (re-exports) are unwrapped via `getAliasedSymbol`.
+ */
+/**
+ * Result of resolving a handler reference to its declared function shape.
  *
- * KNOWN GAPS: `useCallback(fn)`, type-asserted (`fn as F`), wrapped in
- * `useMemo` etc. — these reach a non-recognized declaration and return
- * `null`. The event still appears in `events[]` but its schema/code
- * stays empty.
+ *  - `{ kind: 'parameter', node }` — function has at least one parameter;
+ *    `node` is the first one (we use its type as the event payload type).
+ *  - `{ kind: 'no-payload' }` — function takes zero parameters; the event
+ *    is legitimate but has no payload (schema = empty object).
+ *  - `null` — couldn't resolve the reference back to a function shape
+ *    we recognize (the caller decides whether to error).
+ */
+export type HandlerResolution =
+    | { kind: 'parameter'; node: any }
+    | { kind: 'no-payload' }
+    | null
+
+const fromFunctionLike = (fn: any): HandlerResolution => {
+    if (fn.parameters.length === 0) return { kind: 'no-payload' }
+    return { kind: 'parameter', node: fn.parameters[0] }
+}
+
+/**
+ * Follow an identifier (shorthand or initializer reference) back to the
+ * declaring function and report its handler shape.
+ *
+ * `shorthandParent` should be the `ShorthandPropertyAssignment` itself
+ * when the identifier comes from a `{ name }` shorthand — required for
+ * `getShorthandAssignmentValueSymbol` to resolve the variable.
  */
 export const followIdentifierToFunction = (
     ctx: SchemaContext,
-    identifier: any
-): any | null => {
-    const symbol = ctx.checker.getSymbolAtLocation(identifier)
+    identifier: any,
+    shorthandParent: any = null
+): HandlerResolution => {
+    let symbol: any = null
+    if (shorthandParent) {
+        symbol = ctx.checker.getShorthandAssignmentValueSymbol(shorthandParent)
+    }
+    if (!symbol) {
+        symbol = ctx.checker.getSymbolAtLocation(identifier)
+    }
     if (!symbol) return null
     const realSymbol =
         symbol.flags & ts.SymbolFlags.Alias
@@ -62,28 +176,21 @@ export const followIdentifierToFunction = (
     const decls = realSymbol.declarations
     if (!decls || decls.length === 0) return null
     for (const decl of decls) {
-        if (ts.isFunctionDeclaration(decl) && decl.parameters.length > 0) {
-            return decl.parameters[0]
+        if (ts.isFunctionDeclaration(decl)) {
+            return fromFunctionLike(decl)
         }
         if (ts.isVariableDeclaration(decl) && decl.initializer) {
-            if (
-                ts.isArrowFunction(decl.initializer) ||
-                ts.isFunctionExpression(decl.initializer)
-            ) {
-                if (decl.initializer.parameters.length > 0) {
-                    return decl.initializer.parameters[0]
-                }
-            }
+            const unwrapped = unwrapToFunctionExpression(decl.initializer)
+            if (unwrapped) return fromFunctionLike(unwrapped)
         }
         if (
-            (ts.isMethodDeclaration(decl) ||
-                ts.isMethodSignature(decl)) &&
-            decl.parameters.length > 0
+            ts.isMethodDeclaration(decl) ||
+            ts.isMethodSignature(decl)
         ) {
-            return decl.parameters[0]
+            return fromFunctionLike(decl)
         }
         if (ts.isParameter(decl) && decl.type) {
-            return decl
+            return { kind: 'parameter', node: decl }
         }
     }
     return null
@@ -201,29 +308,44 @@ export const extractEventsPayloads = (
                             else if (nameNode && ts.isStringLiteral(nameNode))
                                 key = nameNode.text
                             if (!key || !eventSet.has(key)) continue
-                            let parameter: any = null
+                            let resolution: HandlerResolution = null
                             if (ts.isPropertyAssignment(prop)) {
                                 const init = prop.initializer
-                                if (
-                                    ts.isArrowFunction(init) ||
-                                    ts.isFunctionExpression(init)
-                                ) {
-                                    parameter = init.parameters[0] ?? null
-                                } else if (ts.isIdentifier(init)) {
-                                    parameter = followIdentifierToFunction(
+                                if (ts.isIdentifier(init)) {
+                                    resolution = followIdentifierToFunction(
                                         ctx,
                                         init
                                     )
+                                } else {
+                                    const unwrapped =
+                                        unwrapToFunctionExpression(init)
+                                    if (unwrapped) {
+                                        resolution =
+                                            unwrapped.parameters.length === 0
+                                                ? { kind: 'no-payload' }
+                                                : {
+                                                      kind: 'parameter',
+                                                      node: unwrapped
+                                                          .parameters[0],
+                                                  }
+                                    }
                                 }
                             } else if (ts.isShorthandPropertyAssignment(prop)) {
-                                parameter = followIdentifierToFunction(
+                                resolution = followIdentifierToFunction(
                                     ctx,
-                                    prop.name
+                                    prop.name,
+                                    prop
                                 )
                             } else if (ts.isMethodDeclaration(prop)) {
-                                parameter = prop.parameters[0] ?? null
+                                resolution =
+                                    prop.parameters.length === 0
+                                        ? { kind: 'no-payload' }
+                                        : {
+                                              kind: 'parameter',
+                                              node: prop.parameters[0],
+                                          }
                             }
-                            if (!parameter) {
+                            if (!resolution) {
                                 throw new IntrospectionError(
                                     `event "${key}" handler is not a ` +
                                         'statically-resolvable function',
@@ -238,20 +360,29 @@ export const extractEventsPayloads = (
                                             'typed parameter, a top-level ' +
                                             'function declaration, or a ' +
                                             'const = (e: T) => ... in the ' +
-                                            'same module. useCallback-' +
-                                            'wrapped, as-cast, satisfies, ' +
-                                            'or object-method handlers are ' +
+                                            'same module. Destructured-' +
+                                            'from-hook handlers and ' +
+                                            'object-method references are ' +
                                             'not supported.',
                                     }
                                 )
                             }
-                            const { code, schema } = schemaForParameter(
-                                ctx,
-                                parameter,
-                                sourceFile
-                            )
-                            codeMap[key] = code
-                            if (schema) schemaMap[key] = schema
+                            if (resolution.kind === 'no-payload') {
+                                codeMap[key] = 'void'
+                                schemaMap[key] = {
+                                    type: 'object',
+                                    properties: {},
+                                    additionalProperties: false,
+                                }
+                            } else {
+                                const { code, schema } = schemaForParameter(
+                                    ctx,
+                                    resolution.node,
+                                    sourceFile
+                                )
+                                codeMap[key] = code
+                                if (schema) schemaMap[key] = schema
+                            }
                         }
                     }
                 }
