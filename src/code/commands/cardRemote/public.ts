@@ -22,9 +22,7 @@ export const cardRemotePublicCommand = async (
     )
     console.log(`[pieui] is_public: ${state.isPublic}`)
     if (state.publicRegistryName) {
-        console.log(
-            `[pieui] Public registry name: ${state.publicRegistryName}`
-        )
+        console.log(`[pieui] Public registry name: ${state.publicRegistryName}`)
     }
     console.log(
         `[pieui] Public read URL: <api>/public-components/${state.userId}/${state.componentName}`

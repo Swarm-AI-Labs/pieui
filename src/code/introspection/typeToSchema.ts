@@ -83,7 +83,9 @@ export const typeToSchema = (
         const variants = (type.types ?? []).map((t: any) =>
             typeToSchema(t, checker, depth + 1, visited)
         )
-        const stringLiterals = variants.filter((v: any) => v.const !== undefined)
+        const stringLiterals = variants.filter(
+            (v: any) => v.const !== undefined
+        )
         if (
             stringLiterals.length === variants.length &&
             variants.every((v: any) => typeof v.const === 'string')

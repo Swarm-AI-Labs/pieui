@@ -41,7 +41,9 @@ const toCamel = (name: string): string => {
 const normalizeAjax = (names: string[]): string[] =>
     Array.from(new Set(names.map(toCamel))).sort()
 
-const baseType = (schema: unknown): { types: Set<string>; nullable: boolean } => {
+const baseType = (
+    schema: unknown
+): { types: Set<string>; nullable: boolean } => {
     if (!schema || typeof schema !== 'object') {
         return { types: new Set(), nullable: false }
     }
@@ -61,9 +63,7 @@ const baseType = (schema: unknown): { types: Set<string>; nullable: boolean } =>
     const t = s.type
     if (Array.isArray(t)) {
         if ((t as unknown[]).includes('null')) nullable = true
-        const types = new Set(
-            (t as string[]).filter((x) => x !== 'null')
-        )
+        const types = new Set((t as string[]).filter((x) => x !== 'null'))
         return { types, nullable }
     }
     if (typeof t === 'string') {
@@ -73,13 +73,15 @@ const baseType = (schema: unknown): { types: Set<string>; nullable: boolean } =>
 
     if ('const' in s) {
         const v = s.const
-        if (typeof v === 'boolean') return { types: new Set(['boolean']), nullable: false }
+        if (typeof v === 'boolean')
+            return { types: new Set(['boolean']), nullable: false }
         if (typeof v === 'number')
             return {
                 types: new Set([Number.isInteger(v) ? 'integer' : 'number']),
                 nullable: false,
             }
-        if (typeof v === 'string') return { types: new Set(['string']), nullable: false }
+        if (typeof v === 'string')
+            return { types: new Set(['string']), nullable: false }
         if (v === null) return { types: new Set(), nullable: true }
     }
     return { types: new Set(), nullable: false }

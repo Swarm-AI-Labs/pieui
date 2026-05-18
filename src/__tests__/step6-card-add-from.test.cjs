@@ -167,7 +167,13 @@ test('card add --from json-file generates input interface when inputPropsSchema 
     assert.equal(result.status, 0, result.stderr)
 
     const typesText = fs.readFileSync(
-        path.join(projectDir, 'piecomponents', 'OrdersCard', 'types', 'index.ts'),
+        path.join(
+            projectDir,
+            'piecomponents',
+            'OrdersCard',
+            'types',
+            'index.ts'
+        ),
         'utf8'
     )
     assert.match(typesText, /export interface OrdersStoredInput \{/)
@@ -175,7 +181,13 @@ test('card add --from json-file generates input interface when inputPropsSchema 
     assert.match(typesText, /role\?: "admin" \| "user"/)
 
     const uiText = fs.readFileSync(
-        path.join(projectDir, 'piecomponents', 'OrdersCard', 'ui', 'OrdersCard.tsx'),
+        path.join(
+            projectDir,
+            'piecomponents',
+            'OrdersCard',
+            'ui',
+            'OrdersCard.tsx'
+        ),
         'utf8'
     )
     assert.match(uiText, /const stored: OrdersStoredInput \| undefined/)
@@ -217,7 +229,13 @@ test('card add --from json-file scaffolds methods with typed payloads from event
     assert.equal(result.status, 0, result.stderr)
 
     const uiText = fs.readFileSync(
-        path.join(projectDir, 'piecomponents', 'OrdersCard', 'ui', 'OrdersCard.tsx'),
+        path.join(
+            projectDir,
+            'piecomponents',
+            'OrdersCard',
+            'ui',
+            'OrdersCard.tsx'
+        ),
         'utf8'
     )
     assert.match(uiText, /type OrdersCardRefreshPayload =/)
@@ -261,7 +279,13 @@ test('card add --from preserves type name from propsCode when present', () => {
     })
     assert.equal(result.status, 0, result.stderr)
     const typesText = fs.readFileSync(
-        path.join(projectDir, 'piecomponents', 'OrdersCard', 'types', 'index.ts'),
+        path.join(
+            projectDir,
+            'piecomponents',
+            'OrdersCard',
+            'types',
+            'index.ts'
+        ),
         'utf8'
     )
     assert.match(typesText, /export interface MySpecialName \{/)

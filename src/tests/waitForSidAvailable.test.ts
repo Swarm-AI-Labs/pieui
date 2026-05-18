@@ -18,7 +18,9 @@
  */
 
 import { describe, test, expect } from 'bun:test'
-import waitForSidAvailable, { markSidAvailable } from '../util/waitForSidAvailable'
+import waitForSidAvailable, {
+    markSidAvailable,
+} from '../util/waitForSidAvailable'
 
 describe('waitForSidAvailable()', () => {
     // When the sid is already on window the returned promise should resolve
@@ -32,7 +34,9 @@ describe('waitForSidAvailable()', () => {
                 waitForSidAvailable(),
                 // A 100 ms timeout — if it does not resolve immediately the
                 // race winner will be the timeout signal instead.
-                new Promise<'timeout'>((r) => setTimeout(() => r('timeout'), 100)),
+                new Promise<'timeout'>((r) =>
+                    setTimeout(() => r('timeout'), 100)
+                ),
             ])
             expect(result).not.toBe('timeout')
         } finally {
@@ -71,7 +75,9 @@ describe('markSidAvailable()', () => {
 
             const result = await Promise.race([
                 pending.then(() => 'resolved'),
-                new Promise<'timeout'>((r) => setTimeout(() => r('timeout'), 500)),
+                new Promise<'timeout'>((r) =>
+                    setTimeout(() => r('timeout'), 500)
+                ),
             ])
 
             expect(result).toBe('resolved')

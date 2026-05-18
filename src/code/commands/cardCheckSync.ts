@@ -17,7 +17,9 @@ const readConfig = (cwd: string): PieConfig => {
     if (!fs.existsSync(configPath)) return {}
     try {
         const parsed = JSON.parse(fs.readFileSync(configPath, 'utf8'))
-        return typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed)
+        return typeof parsed === 'object' &&
+            parsed !== null &&
+            !Array.isArray(parsed)
             ? (parsed as PieConfig)
             : {}
     } catch {
@@ -46,12 +48,12 @@ const ensureBackendDir = async (cwd: string): Promise<string | null> => {
     if (config.backendProjectDir) {
         const dir = path.resolve(cwd, config.backendProjectDir as string)
         if (fs.existsSync(dir) && fs.statSync(dir).isDirectory()) return dir
-        console.error(
-            `[pieui] Configured backendProjectDir not found: ${dir}`
-        )
+        console.error(`[pieui] Configured backendProjectDir not found: ${dir}`)
     }
     if (config.backendComponentsDir) {
-        const derived = walkUpForPyproject(config.backendComponentsDir as string)
+        const derived = walkUpForPyproject(
+            config.backendComponentsDir as string
+        )
         if (derived) {
             config.backendProjectDir = derived
             writeConfig(cwd, config)
@@ -79,7 +81,10 @@ const ensureBackendDir = async (cwd: string): Promise<string | null> => {
         ).trim()
         if (!raw) return null
         const expanded = raw.startsWith('~')
-            ? path.join(process.env.HOME || '', raw.slice(1).replace(/^[\\/]/, ''))
+            ? path.join(
+                  process.env.HOME || '',
+                  raw.slice(1).replace(/^[\\/]/, '')
+              )
             : raw
         const absolute = path.resolve(expanded)
         if (!fs.existsSync(absolute) || !fs.statSync(absolute).isDirectory()) {

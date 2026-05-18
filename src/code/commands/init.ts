@@ -24,7 +24,9 @@ export const initCommand = async (outDir: string) => {
     // Create piecomponents directory
     if (!fs.existsSync(pieComponentsDir)) {
         fs.mkdirSync(pieComponentsDir, { recursive: true })
-        console.log(`[pieui] Created piecomponents directory: ${pieComponentsDir}`)
+        console.log(
+            `[pieui] Created piecomponents directory: ${pieComponentsDir}`
+        )
     } else {
         console.log(
             `[pieui] piecomponents directory already exists: ${pieComponentsDir}`
@@ -122,13 +124,9 @@ export const initCommand = async (outDir: string) => {
     if (sbMain) {
         const patchedAddons = patchStorybookMainAddons(sbMain)
         if (patchedAddons) {
-            console.log(
-                `[pieui] Added '${PIEUI_STORYBOOK_ADDON}' to ${sbMain}`
-            )
+            console.log(`[pieui] Added '${PIEUI_STORYBOOK_ADDON}' to ${sbMain}`)
         } else {
-            console.log(
-                `[pieui] Storybook addon already wired in ${sbMain}`
-            )
+            console.log(`[pieui] Storybook addon already wired in ${sbMain}`)
         }
         const patchedStories = patchStorybookMainStories(sbMain)
         if (patchedStories) {
@@ -323,8 +321,9 @@ const promptAbsoluteDir = async (
     home: string
 ): Promise<string | undefined> => {
     while (true) {
-        const raw = (await rl.question(`[pieui] ${label} (absolute or ~/...): `))
-            .trim()
+        const raw = (
+            await rl.question(`[pieui] ${label} (absolute or ~/...): `)
+        ).trim()
         if (!raw) return undefined
         const expanded = raw.startsWith('~')
             ? path.join(home, raw.slice(1).replace(/^[\\/]/, ''))
@@ -352,7 +351,11 @@ const readPieConfig = (resolvedOutDir: string): PieProjectConfig => {
     if (!fs.existsSync(configPath)) return {}
     try {
         const parsed: unknown = JSON.parse(fs.readFileSync(configPath, 'utf8'))
-        if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed))
+        if (
+            typeof parsed !== 'object' ||
+            parsed === null ||
+            Array.isArray(parsed)
+        )
             return {}
         return parsed as PieProjectConfig
     } catch {

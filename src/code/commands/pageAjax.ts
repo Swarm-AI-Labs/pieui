@@ -14,9 +14,7 @@ const readBackendRoot = (): string | undefined => {
     const configPath = path.join(process.cwd(), PIE_CONFIG_PATH)
     if (!fs.existsSync(configPath)) return undefined
     try {
-        const parsed: unknown = JSON.parse(
-            fs.readFileSync(configPath, 'utf8')
-        )
+        const parsed: unknown = JSON.parse(fs.readFileSync(configPath, 'utf8'))
         if (typeof parsed !== 'object' || parsed === null) return undefined
         const config = parsed as PieProjectConfig
         if (!config.backendPagesDir) return undefined
@@ -35,7 +33,8 @@ export const pageAjaxCommand = (
     action: PageAjaxAction,
     handlerName: string
 ): void => {
-    if (!pageName) throw new Error('Page name is required for page ajax command')
+    if (!pageName)
+        throw new Error('Page name is required for page ajax command')
     if (!handlerName) {
         throw new Error('Handler name is required for page ajax command')
     }

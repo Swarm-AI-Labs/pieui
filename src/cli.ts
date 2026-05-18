@@ -33,10 +33,7 @@ import { createPieAppCommand } from './code/commands/createPieApp'
 import { loginCommand } from './code/commands/login'
 import { selfUpgradeCommand } from './code/commands/selfUpgrade'
 
-const requireName = (
-    value: string | undefined,
-    label: string
-): string => {
+const requireName = (value: string | undefined, label: string): string => {
     if (!value) {
         console.error(`[pieui] Error: ${label} is required`)
         printUsage()

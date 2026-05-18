@@ -224,7 +224,11 @@ const parseHistoryEntry = (raw: unknown): HistoryEntry | null => {
         .filter((f): f is HistoryFileEntry => f !== null)
     return {
         revision,
-        previousRevision: pickNumber(obj, 'previous_revision', 'previousRevision'),
+        previousRevision: pickNumber(
+            obj,
+            'previous_revision',
+            'previousRevision'
+        ),
         createdAt: pickString(obj, 'created_at', 'createdAt'),
         mutation: pickString(obj, 'mutation'),
         deleted: obj.deleted === true,
@@ -244,7 +248,8 @@ export const parseComponentHistory = (raw: unknown): ComponentHistory => {
         componentName: pickString(obj, 'component_name', 'componentName'),
         page: pickNumber(obj, 'page') ?? 1,
         perPage: pickNumber(obj, 'per_page', 'perPage') ?? 10,
-        totalRevisions: pickNumber(obj, 'total_revisions', 'totalRevisions') ?? 0,
+        totalRevisions:
+            pickNumber(obj, 'total_revisions', 'totalRevisions') ?? 0,
         fromRevision: pickNumber(obj, 'from_revision', 'fromRevision'),
         toRevision: pickNumber(obj, 'to_revision', 'toRevision'),
         entries,

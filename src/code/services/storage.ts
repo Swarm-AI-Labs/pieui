@@ -196,7 +196,8 @@ export class PieStorageService {
         const base = `${this.componentUrl(args)}/history`
         const params = new URLSearchParams()
         if (args.page !== undefined) params.set('page', String(args.page))
-        if (args.perPage !== undefined) params.set('per_page', String(args.perPage))
+        if (args.perPage !== undefined)
+            params.set('per_page', String(args.perPage))
         if (args.from !== undefined) params.set('from', String(args.from))
         if (args.to !== undefined) params.set('to', String(args.to))
         const qs = params.toString()

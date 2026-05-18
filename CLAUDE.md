@@ -19,6 +19,7 @@ When you edit any of these files in this repo:
 3. **Feature has no semantic frontend analog (e.g., AJAX handlers live server-side)?** Expose the symmetric subcommand anyway and delegate to the backend via subprocess (see `src/code/commands/pageAjax.ts`).
 
 Quick parity check:
+
 ```bash
 diff <(node ./dist/cli.js --help | grep -E '^  [a-z]') \
      <(cd ../pie && /Users/kaspar_george/pie/.venv/bin/python -m pie --help | grep -E '^    [a-z]')

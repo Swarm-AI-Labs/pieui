@@ -1,10 +1,7 @@
 import fs from 'fs'
 import path from 'path'
 import { spawnSync } from 'child_process'
-import {
-    createRequirements,
-    printRequirements,
-} from '../printRequirements'
+import { createRequirements, printRequirements } from '../printRequirements'
 
 const DEFAULT_TEMPLATE_SPEC = 'next-app@latest'
 const SHARED_TEMPLATE_DIR_ENV = 'PIEUI_SHARED_TEMPLATE_DIR'

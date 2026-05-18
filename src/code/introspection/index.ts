@@ -69,8 +69,5 @@ export {
     schemaForParameter,
     extractEventsPayloads,
 } from './extractEventsPayloads'
-export {
-    findComponentDataTypeForName,
-    extractAjaxList,
-} from './findDataType'
+export { findComponentDataTypeForName, extractAjaxList } from './findDataType'
 export { findStoredAttributeType } from './findInputType'

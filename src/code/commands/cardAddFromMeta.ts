@@ -4,14 +4,8 @@ import { spawnSync } from 'node:child_process'
 import type { ComponentType, PieMetadata, JSONSchema } from '../types'
 import { jsonSchemaToTsInterface, jsonSchemaToTsType } from '../jsonSchemaToTs'
 import { resolveRegistryPath } from '../registryPath'
-import {
-    baseInterfaceFor,
-    componentIndexTemplate,
-} from '../templates'
-import {
-    cardAddRequirements,
-    printRequirements,
-} from '../printRequirements'
+import { baseInterfaceFor, componentIndexTemplate } from '../templates'
+import { cardAddRequirements, printRequirements } from '../printRequirements'
 
 const PIE_CONFIG_PATH = '.pie/config.json'
 
@@ -29,9 +23,7 @@ const readBackendConfig = (): BackendConfig | null => {
     const configPath = path.join(process.cwd(), PIE_CONFIG_PATH)
     if (!fs.existsSync(configPath)) return null
     try {
-        const parsed: unknown = JSON.parse(
-            fs.readFileSync(configPath, 'utf8')
-        )
+        const parsed: unknown = JSON.parse(fs.readFileSync(configPath, 'utf8'))
         if (typeof parsed !== 'object' || parsed === null) return null
         return parsed as BackendConfig
     } catch {
@@ -110,11 +102,7 @@ const resolveSource = (
 /** Strictly unwrap a `{typescript: {...}}` envelope. Throws when the
  * envelope is absent or wrong-keyed. TS reads only TS-shaped data. */
 const unwrapTypescriptEnvelope = (parsed: unknown): unknown => {
-    if (
-        !parsed ||
-        typeof parsed !== 'object' ||
-        Array.isArray(parsed)
-    ) {
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
         throw new Error(
             'dump-metadata payload is not a JSON object — expected ' +
                 '{"typescript": {...}}'
@@ -181,13 +169,13 @@ const renderTypes = (
     inputInterfaceName: string | null
 ): string => {
     const baseInterface = baseInterfaceFor(componentType)
-    const dataIface = jsonSchemaToTsInterface(meta.propsSchema, dataInterfaceName)
+    const dataIface = jsonSchemaToTsInterface(
+        meta.propsSchema,
+        dataInterfaceName
+    )
     const inputIface =
         inputInterfaceName && meta.inputPropsSchema
-            ? jsonSchemaToTsInterface(
-                  meta.inputPropsSchema,
-                  inputInterfaceName
-              )
+            ? jsonSchemaToTsInterface(meta.inputPropsSchema, inputInterfaceName)
             : null
     const blocks = [
         `import { ${baseInterface} } from '@swarm.ing/pieui'`,
@@ -204,7 +192,10 @@ const renderTypes = (
     return blocks.join('\n') + '\n'
 }
 
-const eventPayloadAliasName = (componentName: string, event: string): string => {
+const eventPayloadAliasName = (
+    componentName: string,
+    event: string
+): string => {
     const cap = event[0].toUpperCase() + event.slice(1)
     return `${componentName}${cap}Payload`
 }
@@ -298,9 +289,7 @@ const updateRegistryFile = (
 ): void => {
     const registryPath = resolveRegistryPath(componentsDir)
     if (!fs.existsSync(registryPath)) {
-        throw new Error(
-            'registry.ts not found. Run "pieui init" first.'
-        )
+        throw new Error('registry.ts not found. Run "pieui init" first.')
     }
     let registryContent = fs.readFileSync(registryPath, 'utf8')
     const importRegex = new RegExp(`["']@/piecomponents/${componentName}["']`)
@@ -363,8 +352,7 @@ export const cardAddFromMetaCommand = (
     const dataInterfaceName =
         extractTypeName(meta.propsCode) || `${componentName}Data`
     const inputInterfaceName = meta.inputPropsCode
-        ? extractTypeName(meta.inputPropsCode) ||
-          `${componentName}StoredInput`
+        ? extractTypeName(meta.inputPropsCode) || `${componentName}StoredInput`
         : null
 
     const pieComponentsDir = path.join(process.cwd(), 'piecomponents')

@@ -3,8 +3,7 @@ import path from 'node:path'
 import { cardRemotePullCommand } from './cardRemote/pull'
 import { loadSettings } from '../services/settings'
 
-const isHttpUrl = (ref: string): boolean =>
-    /^https?:\/\//i.test(ref)
+const isHttpUrl = (ref: string): boolean => /^https?:\/\//i.test(ref)
 
 const isLocalJsonPath = (ref: string): boolean => {
     if (
@@ -64,9 +63,7 @@ const pullFromDumpJson = (raw: string, label: string): void => {
     try {
         parsed = JSON.parse(raw)
     } catch (e) {
-        throw new Error(
-            `${label} is not valid JSON: ${(e as Error).message}`
-        )
+        throw new Error(`${label} is not valid JSON: ${(e as Error).message}`)
     }
     const inner = unwrapTypescript(parsed)
     const componentName = inner.name

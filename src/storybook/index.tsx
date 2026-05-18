@@ -84,9 +84,7 @@ export const PieStorybookProviders = ({
                 <FallbackContext.Provider value={<></>}>
                     <SBEmitterContext.Provider value={localEmitter}>
                         <MittContext.Provider value={localEmitter}>
-                            <SocketIOContext.Provider
-                                value={null as never}
-                            >
+                            <SocketIOContext.Provider value={null as never}>
                                 <CentrifugeIOContext.Provider
                                     value={null as never}
                                 >
@@ -154,14 +152,8 @@ export const PieMethodTrigger = ({
     )
 }
 
-export {
-    PIECARD_PARAM_KEY,
-    PIE_STORYBOOK_FIRE_EVENT,
-} from './addon/constants'
-export type {
-    PieMethodSpec,
-    PieCardParams,
-} from './addon/constants'
+export { PIECARD_PARAM_KEY, PIE_STORYBOOK_FIRE_EVENT } from './addon/constants'
+export type { PieMethodSpec, PieCardParams } from './addon/constants'
 
 import { PIE_STORYBOOK_FIRE_EVENT as STORYBOOK_CHANNEL_FIRE_EVENT } from './addon/constants'
 
@@ -203,4 +195,3 @@ export const PieStorybookChannelBridge = () => {
 
     return null
 }
-

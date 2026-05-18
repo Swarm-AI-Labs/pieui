@@ -326,11 +326,7 @@ export const detectHelpScope = (argv: string[]): HelpScope | null => {
     if (c0 === 'postbuild') return 'postbuild'
     if (c0 === 'login') return 'login'
     if (c0 === 'self-upgrade') return 'self-upgrade'
-    if (
-        c0 === 'create' ||
-        c0 === 'create-pie-app' ||
-        c0 === 'create-pieui'
-    ) {
+    if (c0 === 'create' || c0 === 'create-pie-app' || c0 === 'create-pieui') {
         return 'create'
     }
     return 'all'

@@ -15,8 +15,7 @@ import path from 'node:path'
 import { spawnSync } from 'node:child_process'
 import { ts } from './ts'
 
-export const PIEUI_STORYBOOK_ADDON =
-    '@swarm.ing/pieui/storybook/addon/preset'
+export const PIEUI_STORYBOOK_ADDON = '@swarm.ing/pieui/storybook/addon/preset'
 export const PIEUI_STORYBOOK_STORIES_GLOB =
     '../piecomponents/**/*.stories.@(js|jsx|mjs|ts|tsx)'
 
@@ -49,8 +48,7 @@ const findStringArrayProperty = (
         if (result) return
         if (
             ts.isPropertyAssignment(node) &&
-            ((ts.isIdentifier(node.name) &&
-                node.name.text === propertyName) ||
+            ((ts.isIdentifier(node.name) && node.name.text === propertyName) ||
                 (ts.isStringLiteral(node.name) &&
                     node.name.text === propertyName)) &&
             ts.isArrayLiteralExpression(node.initializer)
@@ -72,10 +70,7 @@ const addEntryToArrayProperty = (
     if (!fs.existsSync(mainPath)) return false
     const source = fs.readFileSync(mainPath, 'utf8')
 
-    if (
-        source.includes(`'${entry}'`) ||
-        source.includes(`"${entry}"`)
-    ) {
+    if (source.includes(`'${entry}'`) || source.includes(`"${entry}"`)) {
         return false
     }
 
@@ -224,15 +219,13 @@ export const installAndWireStorybook = (
     const mainPath = findStorybookMainPath(projectDir)
     if (!mainPath) {
         console.warn(
-            "[pieui] Warning: Storybook install reported success but .storybook/main.* was not found. Addon not wired."
+            '[pieui] Warning: Storybook install reported success but .storybook/main.* was not found. Addon not wired.'
         )
         return { installed: true, mainPath: null, patched: false }
     }
     const patchedAddons = patchStorybookMainAddons(mainPath)
     if (patchedAddons) {
-        console.log(
-            `[pieui] Added '${PIEUI_STORYBOOK_ADDON}' to ${mainPath}`
-        )
+        console.log(`[pieui] Added '${PIEUI_STORYBOOK_ADDON}' to ${mainPath}`)
     } else {
         console.log(
             `[pieui] '${PIEUI_STORYBOOK_ADDON}' already present in ${mainPath}`

@@ -56,9 +56,7 @@ const createHost = (cwd: string): ResolveHost => {
                         .map((e) => e.name)
                   : [],
         getCurrentDirectory: () => cwd,
-        useCaseSensitiveFileNames: sys
-            ? sys.useCaseSensitiveFileNames
-            : true,
+        useCaseSensitiveFileNames: sys ? sys.useCaseSensitiveFileNames : true,
         realpath: sys?.realpath,
     }
 }
@@ -98,9 +96,7 @@ const resolveByTsconfigPaths = (
     tsconfig: TsconfigInfo
 ): string | null => {
     if (!tsconfig.paths) return null
-    const base = tsconfig.baseUrl
-        ? path.resolve(cwd, tsconfig.baseUrl)
-        : cwd
+    const base = tsconfig.baseUrl ? path.resolve(cwd, tsconfig.baseUrl) : cwd
     for (const pattern of Object.keys(tsconfig.paths)) {
         const targets = tsconfig.paths[pattern]
         if (!targets || targets.length === 0) continue
@@ -157,9 +153,7 @@ const COMPILER_OPTIONS = (cwd: string): any => {
         esModuleInterop: true,
         allowSyntheticDefaultImports: true,
         skipLibCheck: true,
-        baseUrl: tsconfig.baseUrl
-            ? path.resolve(cwd, tsconfig.baseUrl)
-            : cwd,
+        baseUrl: tsconfig.baseUrl ? path.resolve(cwd, tsconfig.baseUrl) : cwd,
         paths: tsconfig.paths,
     }
 }

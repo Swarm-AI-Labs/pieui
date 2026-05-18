@@ -2,9 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { glob } from 'glob'
 import { extractEvents } from '../introspection/extractEvents'
-import {
-    createSchemaContext,
-} from '../introspection/schemaContext'
+import { createSchemaContext } from '../introspection/schemaContext'
 import { extractEventsPayloads } from '../introspection/extractEventsPayloads'
 import { loadSettings } from '../services/settings'
 import type { JSONSchema } from '../types'
@@ -20,10 +18,7 @@ import {
 const COMPONENT_EXTS = ['.ts', '.tsx']
 
 const collectComponentFiles = (componentDir: string): string[] => {
-    const patterns = [
-        `${componentDir}/**/*.ts`,
-        `${componentDir}/**/*.tsx`,
-    ]
+    const patterns = [`${componentDir}/**/*.ts`, `${componentDir}/**/*.tsx`]
     const ignore = [
         '**/__tests__/**',
         '**/*.test.ts',
@@ -62,9 +57,7 @@ const sampleValueFor = (schema: unknown): unknown => {
     return null
 }
 
-const samplePayloadFromSchema = (
-    schema: JSONSchema | undefined
-): unknown => {
+const samplePayloadFromSchema = (schema: JSONSchema | undefined): unknown => {
     if (!schema || typeof schema !== 'object') return null
     const properties = (schema as { properties?: Record<string, unknown> })
         .properties
@@ -79,7 +72,10 @@ const samplePayloadFromSchema = (
 const renderStoryFile = (
     componentName: string,
     events: string[],
-    payloads: { code: Record<string, string>; schema: Record<string, JSONSchema> }
+    payloads: {
+        code: Record<string, string>
+        schema: Record<string, JSONSchema>
+    }
 ): string => {
     const methodsJson: Array<{
         name: string

@@ -53,7 +53,9 @@ const formatTable = (headers: string[], rows: string[][]): string => {
         `|${cells
             .map((cell, i) => ` ${(cell ?? '').padEnd(widths[i])} `)
             .join('|')}|`
-    return [hline, fmtRow(headers), hline, ...rows.map(fmtRow), hline].join('\n')
+    return [hline, fmtRow(headers), hline, ...rows.map(fmtRow), hline].join(
+        '\n'
+    )
 }
 
 export const cardViewCommand = (componentName: string): void => {
@@ -124,13 +126,23 @@ export const cardViewCommand = (componentName: string): void => {
     if (ioFields.length === 0) {
         console.log('no')
     } else {
-        console.log(formatTable(['name'], ioFields.map((n) => [n])))
+        console.log(
+            formatTable(
+                ['name'],
+                ioFields.map((n) => [n])
+            )
+        )
     }
     console.log('')
     console.log('Events:')
     if (events.length === 0) {
         console.log('no (run `pieui card list-events ' + componentName + '`)')
     } else {
-        console.log(formatTable(['event'], events.map((e) => [e])))
+        console.log(
+            formatTable(
+                ['event'],
+                events.map((e) => [e])
+            )
+        )
     }
 }

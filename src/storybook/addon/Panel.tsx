@@ -1,17 +1,8 @@
 import * as React from 'react'
-import {
-    ChangeEvent,
-    ReactElement,
-    useEffect,
-    useMemo,
-    useState,
-} from 'react'
+import { ChangeEvent, ReactElement, useEffect, useMemo, useState } from 'react'
 
 void React
-import {
-    addons,
-    useParameter,
-} from 'storybook/manager-api'
+import { addons, useParameter } from 'storybook/manager-api'
 import {
     PIECARD_PARAM_KEY,
     PIE_STORYBOOK_FIRE_EVENT,
@@ -182,15 +173,18 @@ const MethodRow = ({
                         fontSize: 11,
                     }}
                 >
-                    Fired at{' '}
-                    {new Date(lastFiredAt).toLocaleTimeString()}
+                    Fired at {new Date(lastFiredAt).toLocaleTimeString()}
                 </div>
             ) : null}
         </div>
     )
 }
 
-export const Panel = ({ active }: { active?: boolean }): ReactElement | null => {
+export const Panel = ({
+    active,
+}: {
+    active?: boolean
+}): ReactElement | null => {
     const params = useParameter<PieCardParams | null>(PIECARD_PARAM_KEY, null)
 
     useEffect(() => {
@@ -205,7 +199,8 @@ export const Panel = ({ active }: { active?: boolean }): ReactElement | null => 
                 <p style={{ marginTop: 8 }}>
                     Add{' '}
                     <code>
-                        parameters.{PIECARD_PARAM_KEY} = {'{'} card, methods {'}'}
+                        parameters.{PIECARD_PARAM_KEY} = {'{'} card, methods{' '}
+                        {'}'}
                     </code>{' '}
                     to your story to surface method triggers here.
                 </p>

@@ -26,9 +26,7 @@ const formatFileBlock = (
     const after = file.status === 'deleted' ? 'b//dev/null' : `b/${path}`
     const lines: string[] = []
     lines.push(`diff --git ${before} ${after}`)
-    lines.push(
-        `${file.status} +${file.additions} -${file.deletions} ${path}`
-    )
+    lines.push(`${file.status} +${file.additions} -${file.deletions} ${path}`)
     if (file.isBinary) {
         lines.push('Binary files differ')
     } else if (file.patch) {

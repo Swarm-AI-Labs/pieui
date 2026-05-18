@@ -59,10 +59,7 @@ const FUNCTION_WRAPPER_HOOKS = new Set([
 const unwrapToFunctionExpression = (expr: any): any | null => {
     let current = expr
     while (current) {
-        if (
-            ts.isArrowFunction(current) ||
-            ts.isFunctionExpression(current)
-        ) {
+        if (ts.isArrowFunction(current) || ts.isFunctionExpression(current)) {
             return current
         }
         if (ts.isParenthesizedExpression(current)) {
@@ -183,10 +180,7 @@ export const followIdentifierToFunction = (
             const unwrapped = unwrapToFunctionExpression(decl.initializer)
             if (unwrapped) return fromFunctionLike(unwrapped)
         }
-        if (
-            ts.isMethodDeclaration(decl) ||
-            ts.isMethodSignature(decl)
-        ) {
+        if (ts.isMethodDeclaration(decl) || ts.isMethodSignature(decl)) {
             return fromFunctionLike(decl)
         }
         if (ts.isParameter(decl) && decl.type) {
@@ -350,10 +344,7 @@ export const extractEventsPayloads = (
                                     `event "${key}" handler is not a ` +
                                         'statically-resolvable function',
                                     {
-                                        ...errorOptsFromNode(
-                                            sourceFile,
-                                            prop
-                                        ),
+                                        ...errorOptsFromNode(sourceFile, prop),
                                         context: [`event "${key}"`],
                                         hint:
                                             'use an inline arrow with a ' +

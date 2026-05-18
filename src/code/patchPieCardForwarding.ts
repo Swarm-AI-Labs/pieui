@@ -124,9 +124,7 @@ export const patchPieCardForwarding = (
                 }
             }
             if (!hasSpread) {
-                const missing = required.filter(
-                    (p) => !existing.has(p.name)
-                )
+                const missing = required.filter((p) => !existing.has(p.name))
                 if (missing.length > 0) {
                     const { indent, multiline } = indentOfFirstAttr(
                         source,

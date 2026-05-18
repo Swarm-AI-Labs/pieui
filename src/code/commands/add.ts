@@ -8,10 +8,7 @@ import {
     componentTemplateFor,
     componentTypesTemplate,
 } from '../templates'
-import {
-    cardAddRequirements,
-    printRequirements,
-} from '../printRequirements'
+import { cardAddRequirements, printRequirements } from '../printRequirements'
 
 const updateRegistryFile = (
     registryPath: string,

@@ -1,10 +1,7 @@
 import fs from 'fs'
 import path from 'path'
 import { resolveRegistryPath } from '../registryPath'
-import {
-    cardRemoveRequirements,
-    printRequirements,
-} from '../printRequirements'
+import { cardRemoveRequirements, printRequirements } from '../printRequirements'
 
 export const removeCommand = (componentName: string) => {
     if (!componentName) {

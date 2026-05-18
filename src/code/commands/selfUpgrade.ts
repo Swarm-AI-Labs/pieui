@@ -38,7 +38,10 @@ const readInstalledVersion = (): string | null => {
     for (const file of candidates) {
         try {
             const raw = fs.readFileSync(file, 'utf8')
-            const parsed = JSON.parse(raw) as { name?: string; version?: string }
+            const parsed = JSON.parse(raw) as {
+                name?: string
+                version?: string
+            }
             if (parsed.name === PACKAGE_NAME && parsed.version) {
                 return parsed.version
             }

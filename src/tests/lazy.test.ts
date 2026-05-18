@@ -15,8 +15,7 @@ import { describe, test, expect } from 'bun:test'
 import { trackLazy, preloadComponent } from '../util/lazy'
 
 // A minimal module-shape used as the resolved value in every loader below.
-const makeDummyLoader = () =>
-    Promise.resolve({ default: () => null as any })
+const makeDummyLoader = () => Promise.resolve({ default: () => null as any })
 
 describe('trackLazy()', () => {
     // The return value must be a React.lazy component — Bun does not provide a
@@ -66,7 +65,10 @@ describe('preloadComponent()', () => {
 
     // Calling with undefined loader explicitly also returns undefined.
     test('returns undefined when loader is explicitly undefined', async () => {
-        const result = await preloadComponent('PreloadExplicitUndefined', undefined)
+        const result = await preloadComponent(
+            'PreloadExplicitUndefined',
+            undefined
+        )
         expect(result).toBeUndefined()
     })
 

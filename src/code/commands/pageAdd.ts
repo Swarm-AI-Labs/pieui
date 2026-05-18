@@ -1,10 +1,7 @@
 import fs from 'fs'
 import path from 'path'
 import { pageTemplate } from '../templates'
-import {
-    pageAddRequirements,
-    printRequirements,
-} from '../printRequirements'
+import { pageAddRequirements, printRequirements } from '../printRequirements'
 
 const normalizePagePath = (pagePath: string): string => {
     const trimmed = pagePath.trim()

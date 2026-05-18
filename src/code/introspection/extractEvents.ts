@@ -30,10 +30,7 @@ const isPieCardJsx = (node: any): boolean => {
     return false
 }
 
-const findMethodsAttribute = (
-    openingOrSelf: any,
-    sourceFile: any
-): any => {
+const findMethodsAttribute = (openingOrSelf: any, sourceFile: any): any => {
     const attributes = openingOrSelf.attributes
     if (!attributes || !attributes.properties) return null
     for (const attr of attributes.properties) {

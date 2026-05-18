@@ -158,11 +158,17 @@ test('list prints components and supports type filter', () => {
         'init should succeed'
     )
     assertSucceeded(
-        runCli({ cwd: projectDir, args: ['card', 'add', 'simple', 'SimpleCard'] }),
+        runCli({
+            cwd: projectDir,
+            args: ['card', 'add', 'simple', 'SimpleCard'],
+        }),
         'add simple should succeed'
     )
     assertSucceeded(
-        runCli({ cwd: projectDir, args: ['card', 'add', 'complex', 'ComplexCard'] }),
+        runCli({
+            cwd: projectDir,
+            args: ['card', 'add', 'complex', 'ComplexCard'],
+        }),
         'add complex should succeed'
     )
 
@@ -171,7 +177,10 @@ test('list prints components and supports type filter', () => {
     assert.match(listAll.stdout, /SimpleCard/)
     assert.match(listAll.stdout, /ComplexCard/)
 
-    const listSimple = runCli({ cwd: projectDir, args: ['card', 'list', 'simple'] })
+    const listSimple = runCli({
+        cwd: projectDir,
+        args: ['card', 'list', 'simple'],
+    })
     assertSucceeded(listSimple, 'list simple should succeed')
     assert.match(listSimple.stdout, /SimpleCard/)
     assert.match(listSimple.stdout, /\(filtered by: simple\)/)
@@ -323,7 +332,13 @@ test('list-events covers built-in component methods in repository source', () =>
     for (const testCase of cases) {
         const result = runCli({
             cwd: repoRoot,
-            args: ['card', 'list-events', testCase.component, '--src-dir', './src'],
+            args: [
+                'card',
+                'list-events',
+                testCase.component,
+                '--src-dir',
+                './src',
+            ],
         })
 
         assertSucceeded(
@@ -368,7 +383,14 @@ test('add-event appends a methods handler for inline object literal', () => {
 
     const addInvalid = runCli({
         cwd: projectDir,
-        args: ['card', 'add-event', 'AlertsCard', 'invalid key', '--src-dir', 'src'],
+        args: [
+            'card',
+            'add-event',
+            'AlertsCard',
+            'invalid key',
+            '--src-dir',
+            'src',
+        ],
     })
     assert.equal(addInvalid.status, 1)
     assert.match(addInvalid.stderr, /Invalid event key/)
@@ -526,7 +548,10 @@ test('add fails when component already exists', () => {
         'init should succeed'
     )
     assertSucceeded(
-        runCli({ cwd: projectDir, args: ['card', 'add', 'simple', 'AlphaCard'] }),
+        runCli({
+            cwd: projectDir,
+            args: ['card', 'add', 'simple', 'AlphaCard'],
+        }),
         'first add should succeed'
     )
 
@@ -1196,7 +1221,10 @@ test('add reports correct component type label for all four type arguments', () 
     ]
 
     for (const { type, name, expectedProp } of cases) {
-        const result = runCli({ cwd: projectDir, args: ['card', 'add', type, name] })
+        const result = runCli({
+            cwd: projectDir,
+            args: ['card', 'add', type, name],
+        })
         assertSucceeded(result, `add ${type} ${name} should succeed`)
 
         assert.match(
@@ -1250,7 +1278,10 @@ test('list simple in a temp project finds all added components due to type-resol
         'add simple'
     )
     assertSucceeded(
-        runCli({ cwd: projectDir, args: ['card', 'add', 'complex', 'TwoCard'] }),
+        runCli({
+            cwd: projectDir,
+            args: ['card', 'add', 'complex', 'TwoCard'],
+        }),
         'add complex'
     )
     assertSucceeded(

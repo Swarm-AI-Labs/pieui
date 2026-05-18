@@ -175,7 +175,10 @@ test('patchStorybookMainAddons seeds an empty addons array', () => {
     const sb = requireFresh(STORYBOOK_INTEGRATION)
     assert.equal(sb.patchStorybookMainAddons(mainPath), true)
     const after = fs.readFileSync(mainPath, 'utf8')
-    assert.match(after, /addons:\s*\['@swarm\.ing\/pieui\/storybook\/addon\/preset'\]/)
+    assert.match(
+        after,
+        /addons:\s*\['@swarm\.ing\/pieui\/storybook\/addon\/preset'\]/
+    )
 })
 
 // Verifies absence of .storybook/main.* is handled silently.
@@ -211,7 +214,10 @@ export default config;
         'utf8'
     )
     assert.match(main, /'@swarm\.ing\/pieui\/storybook\/addon\/preset'/)
-    assert.match(result.stdout, /Added '@swarm\.ing\/pieui\/storybook\/addon\/preset'/)
+    assert.match(
+        result.stdout,
+        /Added '@swarm\.ing\/pieui\/storybook\/addon\/preset'/
+    )
 })
 
 // Verifies `pieui init` is silent (no error) when no storybook is configured.
@@ -220,7 +226,10 @@ test('pieui init does not fail when no .storybook directory exists', () => {
     const result = runCli({ cwd: projectDir, args: ['init'] })
     assert.equal(result.status, 0, result.stderr)
     assert.doesNotMatch(result.stdout, /Storybook addon already wired/)
-    assert.doesNotMatch(result.stdout, /Added '@swarm\.ing\/pieui\/storybook\/addon\/preset'/)
+    assert.doesNotMatch(
+        result.stdout,
+        /Added '@swarm\.ing\/pieui\/storybook\/addon\/preset'/
+    )
 })
 
 // Verifies `pieui create` invokes the configured storybook init binary and wires the addon.
@@ -303,7 +312,10 @@ exit 0
     )
 
     // Storybook fake binary was invoked.
-    assert.ok(fs.existsSync(sbLogPath), 'fake storybook should have been called')
+    assert.ok(
+        fs.existsSync(sbLogPath),
+        'fake storybook should have been called'
+    )
     // .storybook/main.ts inside the new app contains our addon.
     const main = fs.readFileSync(
         path.join(projectDir, 'my-app', '.storybook', 'main.ts'),
@@ -391,10 +403,7 @@ test('card add-story forwards useMittSupport on a non-IO card', () => {
         'SimpleFwd.tsx'
     )
     // Sanity: default scaffold does NOT forward useMittSupport.
-    assert.doesNotMatch(
-        fs.readFileSync(uiPath, 'utf8'),
-        /useMittSupport=/
-    )
+    assert.doesNotMatch(fs.readFileSync(uiPath, 'utf8'), /useMittSupport=/)
 
     const result = runCli({
         cwd: projectDir,
@@ -457,7 +466,13 @@ test('detectCardIsIO + patchPieCardForwarding work on a hand-crafted card', () =
     const projectDir = makeProjectDir('pieui-step7-fwd-direct-')
 
     // Non-IO types
-    const typesPath = path.join(projectDir, 'piecomponents', 'X', 'types', 'index.ts')
+    const typesPath = path.join(
+        projectDir,
+        'piecomponents',
+        'X',
+        'types',
+        'index.ts'
+    )
     writeFile(
         typesPath,
         `export interface XData { name: string; title: string }\n`
@@ -485,7 +500,10 @@ export default function X({ data }: any) {
     const ui1 = fs.readFileSync(uiPath, 'utf8')
     assert.match(ui1, /useMittSupport=\{data\.useMittSupport \?\? false\}/)
     // Idempotent
-    assert.equal(sb.patchPieCardForwarding(uiPath, { io: false }).patched, false)
+    assert.equal(
+        sb.patchPieCardForwarding(uiPath, { io: false }).patched,
+        false
+    )
 
     // IO types
     const ioTypesPath = path.join(
@@ -523,8 +541,14 @@ export default function Y({ data }: any) {
     const r2 = sb.patchPieCardForwarding(ioUiPath, { io: true })
     assert.equal(r2.patched, true)
     const ui2 = fs.readFileSync(ioUiPath, 'utf8')
-    assert.match(ui2, /useSocketioSupport=\{data\.useSocketioSupport \?\? false\}/)
-    assert.match(ui2, /useCentrifugeSupport=\{data\.useCentrifugeSupport \?\? false\}/)
+    assert.match(
+        ui2,
+        /useSocketioSupport=\{data\.useSocketioSupport \?\? false\}/
+    )
+    assert.match(
+        ui2,
+        /useCentrifugeSupport=\{data\.useCentrifugeSupport \?\? false\}/
+    )
     assert.match(ui2, /useMittSupport=\{data\.useMittSupport \?\? false\}/)
     assert.match(ui2, /centrifugeChannel=\{data\.centrifugeChannel\}/)
 })

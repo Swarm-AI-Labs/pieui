@@ -9,10 +9,7 @@
 
 import { ts } from '../ts'
 import { IntrospectionError } from './errors'
-import {
-    findTypeDeclaration,
-    type SchemaContext,
-} from './schemaContext'
+import { findTypeDeclaration, type SchemaContext } from './schemaContext'
 
 /**
  * Try to find the card's data type by naming convention.

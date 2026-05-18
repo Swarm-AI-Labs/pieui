@@ -66,19 +66,17 @@ const walkUpForPyproject = (start: string): string | null => {
  *   3. Else if TTY → prompt the user, persist, return.
  *   4. Else → return `null` (caller decides whether to error).
  */
-export const ensureBackendDir = async (
-    cwd: string
-): Promise<string | null> => {
+export const ensureBackendDir = async (cwd: string): Promise<string | null> => {
     const config = readConfig(cwd)
     if (config.backendProjectDir) {
         const dir = path.resolve(cwd, config.backendProjectDir as string)
         if (fs.existsSync(dir) && fs.statSync(dir).isDirectory()) return dir
-        console.error(
-            `[pieui] Configured backendProjectDir not found: ${dir}`
-        )
+        console.error(`[pieui] Configured backendProjectDir not found: ${dir}`)
     }
     if (config.backendComponentsDir) {
-        const derived = walkUpForPyproject(config.backendComponentsDir as string)
+        const derived = walkUpForPyproject(
+            config.backendComponentsDir as string
+        )
         if (derived) {
             config.backendProjectDir = derived
             writeConfig(cwd, config)
@@ -106,7 +104,10 @@ export const ensureBackendDir = async (
         ).trim()
         if (!raw) return null
         const expanded = raw.startsWith('~')
-            ? path.join(process.env.HOME || '', raw.slice(1).replace(/^[\\/]/, ''))
+            ? path.join(
+                  process.env.HOME || '',
+                  raw.slice(1).replace(/^[\\/]/, '')
+              )
             : raw
         const absolute = path.resolve(expanded)
         if (!fs.existsSync(absolute) || !fs.statSync(absolute).isDirectory()) {
@@ -115,9 +116,7 @@ export const ensureBackendDir = async (
         }
         config.backendProjectDir = absolute
         writeConfig(cwd, config)
-        console.log(
-            `[pieui] Saved backendProjectDir → ${configPathFor(cwd)}`
-        )
+        console.log(`[pieui] Saved backendProjectDir → ${configPathFor(cwd)}`)
         return absolute
     } finally {
         rl.close()

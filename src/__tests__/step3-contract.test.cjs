@@ -298,7 +298,10 @@ test('list short -s flag sets source directory used in scan output', () => {
     const projectDir = makeProjectDir('pieui-step3-list-short-flag-')
     fs.mkdirSync(path.join(projectDir, 'appsrc'), { recursive: true })
 
-    const result = runCli({ cwd: projectDir, args: ['card', 'list', '-s', 'appsrc'] })
+    const result = runCli({
+        cwd: projectDir,
+        args: ['card', 'list', '-s', 'appsrc'],
+    })
     assertSucceeded(result, 'list with short source flag should succeed')
 
     assert.match(result.stdout, /Scanning components in: .*appsrc/)
@@ -311,7 +314,10 @@ test('list invalid filter keeps unfiltered total wording contract', () => {
     runCli({ cwd: projectDir, args: ['init'] })
     runCli({ cwd: projectDir, args: ['card', 'add', 'simple', 'OneCard'] })
 
-    const result = runCli({ cwd: projectDir, args: ['card', 'list', 'not-a-filter'] })
+    const result = runCli({
+        cwd: projectDir,
+        args: ['card', 'list', 'not-a-filter'],
+    })
     assertSucceeded(result, 'list should succeed with invalid filter')
 
     assert.match(result.stdout, /\[pieui\] Total: 1 component/)
@@ -326,7 +332,10 @@ test('add default type contract reports complex-container', () => {
         'init should succeed'
     )
 
-    const result = runCli({ cwd: projectDir, args: ['card', 'add', 'ContractCard'] })
+    const result = runCli({
+        cwd: projectDir,
+        args: ['card', 'add', 'ContractCard'],
+    })
     assertSucceeded(result, 'add should succeed with default type')
 
     assert.match(result.stdout, /Component type: complex-container/)
@@ -372,7 +381,10 @@ test('init short -o flag creates piecomponents in provided directory', () => {
 // Verifies remove error contract when piecomponents root does not exist.
 test('remove without piecomponents returns stable error contract', () => {
     const projectDir = makeProjectDir('pieui-step3-remove-missing-root-')
-    const result = runCli({ cwd: projectDir, args: ['card', 'remove', 'GhostCard'] })
+    const result = runCli({
+        cwd: projectDir,
+        args: ['card', 'remove', 'GhostCard'],
+    })
 
     assert.equal(result.status, 1)
     assert.match(

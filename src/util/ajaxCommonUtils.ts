@@ -56,8 +56,7 @@ export const readAjaxKey = (
     renderingLogEnabled: boolean = false
 ): Array<string | File> => {
     if (depName === 'sid') {
-        if (!window.sid)
-            throw new Error("SocketIO isn't initialized properly")
+        if (!window.sid) throw new Error("SocketIO isn't initialized properly")
         return [window.sid]
     }
 

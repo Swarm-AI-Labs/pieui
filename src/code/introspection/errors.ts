@@ -79,16 +79,18 @@ export class IntrospectionError extends Error {
     }
 }
 
-const lineCol = (sourceFile: any, node: any): {
+const lineCol = (
+    sourceFile: any,
+    node: any
+): {
     line?: number
     column?: number
 } => {
     if (!sourceFile || !node || typeof node.getStart !== 'function') return {}
     try {
         const start = node.getStart(sourceFile)
-        const { line, character } = sourceFile.getLineAndCharacterOfPosition(
-            start
-        )
+        const { line, character } =
+            sourceFile.getLineAndCharacterOfPosition(start)
         return { line: line + 1, column: character + 1 }
     } catch {
         return {}

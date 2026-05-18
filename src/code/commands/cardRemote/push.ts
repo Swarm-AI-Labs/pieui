@@ -1,13 +1,14 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import { extractCardMetadata, serializeCardMetadata } from '../../introspection/cardMetadata'
+import {
+    extractCardMetadata,
+    serializeCardMetadata,
+} from '../../introspection/cardMetadata'
 import { loadSettings } from '../../services/settings'
 import { PieStorageError, PieStorageService } from '../../services/storage'
 import { parseCardRef } from './cardRef'
 
-export const cardRemotePushCommand = async (
-    cardRef: string
-): Promise<void> => {
+export const cardRemotePushCommand = async (cardRef: string): Promise<void> => {
     const ref = parseCardRef(cardRef)
     if (ref.revision !== undefined) {
         throw new Error('push does not accept a revision suffix')
