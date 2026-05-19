@@ -75,10 +75,15 @@ const extractKeysFromObjectLiteral = (
                 sourceFile,
                 prop.getStart()
             )
-            throw new Error(
-                `${sourceFile.fileName}:${start.line + 1}: ` +
-                    `<PieCard methods={…}> must be an inline object literal — ` +
-                    `spread/rest is not allowed`
+            throw new IntrospectionError(
+                '<PieCard methods={…}> must be an inline object literal — ' +
+                    'spread/rest is not allowed',
+                {
+                    sourceFile: sourceFile.fileName,
+                    line: start.line + 1,
+                    column: start.character + 1,
+                    hint: 'list all handler keys explicitly: methods={{ key: fn }}',
+                }
             )
         }
         if (
@@ -96,10 +101,15 @@ const extractKeysFromObjectLiteral = (
                     sourceFile,
                     name.getStart()
                 )
-                throw new Error(
-                    `${sourceFile.fileName}:${start.line + 1}: ` +
-                        `<PieCard methods={…}> keys must be static identifiers ` +
-                        `or string literals — computed keys are not allowed`
+                throw new IntrospectionError(
+                    '<PieCard methods={…}> keys must be static identifiers ' +
+                        'or string literals — computed keys are not allowed',
+                    {
+                        sourceFile: sourceFile.fileName,
+                        line: start.line + 1,
+                        column: start.character + 1,
+                        hint: 'use a plain identifier or string literal as the key',
+                    }
                 )
             }
         }
@@ -115,7 +125,7 @@ const extractKeysFromObjectLiteral = (
  *
  * RETURNS: sorted array of unique event names (object-literal keys).
  *
- * THROWS: Error with file:line if `methods={…}` is anything other than
+ * THROWS: IntrospectionError with file:line if `methods={…}` is anything other than
  * a plain inline object literal with static keys. Specifically:
  *   - `methods={spread}` (Identifier initializer) — throws.
  *   - `methods={{ ...other }}` (spread element) — throws.
@@ -155,9 +165,13 @@ export const extractEvents = (files: string[]): string[] => {
                             sourceFile,
                             init.getStart()
                         )
-                        throw new Error(
-                            `${file}:${start.line + 1}: ` +
-                                `<PieCard methods={…}> must be set with an inline object literal`
+                        throw new IntrospectionError(
+                            '<PieCard methods={…}> must be set with an inline object literal',
+                            {
+                                sourceFile: file,
+                                line: start.line + 1,
+                                hint: 'use methods={{...}} directly on the PieCard element',
+                            }
                         )
                     }
                     if (!ts.isObjectLiteralExpression(init.expression)) {
@@ -165,10 +179,14 @@ export const extractEvents = (files: string[]): string[] => {
                             sourceFile,
                             init.expression.getStart()
                         )
-                        throw new Error(
-                            `${file}:${start.line + 1}: ` +
-                                `<PieCard methods={…}> must be an inline object literal ` +
-                                `(found ${ts.SyntaxKind[init.expression.kind]})`
+                        throw new IntrospectionError(
+                            `<PieCard methods={…}> must be an inline object literal ` +
+                                `(found ${ts.SyntaxKind[init.expression.kind]})`,
+                            {
+                                sourceFile: file,
+                                line: start.line + 1,
+                                hint: 'inline the handler map directly: methods={{ click: (p) => ... }}',
+                            }
                         )
                     }
                     for (const k of extractKeysFromObjectLiteral(
