@@ -73,12 +73,13 @@ const consumeFlags = (
 ): {
     positionals: string[]
     flags: FlagState
-    boolFlags: { ajax: boolean; io: boolean }
+    boolFlags: { ajax: boolean; io: boolean; force: boolean }
 } => {
     const flags: FlagState = {}
     const positionals: string[] = []
     let ajax = false
     let io = false
+    let force = false
 
     for (let i = 0; i < tokens.length; i++) {
         const tok = tokens[i]
@@ -88,6 +89,10 @@ const consumeFlags = (
         }
         if (tok === '--io') {
             io = true
+            continue
+        }
+        if (tok === '--force' || tok === '-f') {
+            force = true
             continue
         }
         if (tok === '--user' && tokens[i + 1]) {
@@ -162,7 +167,7 @@ const consumeFlags = (
         positionals.push(tok)
     }
 
-    return { positionals, flags, boolFlags: { ajax, io } }
+    return { positionals, flags, boolFlags: { ajax, io, force } }
 }
 
 export const parseArgs = (argv: string[]): ParsedArgs => {
@@ -264,6 +269,7 @@ export const parseArgs = (argv: string[]): ParsedArgs => {
             result.componentName = positionals[0]
         } else if (action === 'add-story') {
             result.componentName = positionals[0]
+            result.cardAddStoryForce = boolFlags.force
         } else if (action === 'remote') {
             const sub = positionals[0] as CardRemoteAction | undefined
             if (sub && VALID_CARD_REMOTE_ACTIONS.includes(sub)) {
@@ -353,7 +359,7 @@ const ALL_LINES: string[] = [
     '  card remove <Name>                               Remove a component from piecomponents/',
     '  card list-events <Name>                          List methods keys on the registered PieCard',
     '  card add-event <Name> <event>                    Add a new methods key with a default handler',
-    '  card add-story <Name>                            Generate a Storybook stories.tsx wired to PieCard methods',
+    '  card add-story <Name> [--force]                  Generate a Storybook stories.tsx wired to PieCard methods',
     '  card dump-metadata <Name> [--out file.json]      Dump full PieMetadata JSON for the component',
     '  card check-sync <Name>                           Compare TS ↔ Python metadata; prompt for backend project path if not configured',
     '  card remote list [--user U] [--project S]        List remote components',
@@ -424,7 +430,7 @@ const CARD_LINES: string[] = [
     '  remove <Name>                               Remove a component from piecomponents/',
     '  list-events <Name>                          List methods keys on the registered PieCard',
     '  add-event <Name> <event>                    Add a new methods key with a default handler',
-    '  add-story <Name>                            Generate a Storybook stories.tsx wired to PieCard methods',
+    '  add-story <Name> [--force]                  Generate a Storybook stories.tsx wired to PieCard methods (--force overwrites)',
     '  dump-metadata <Name> [--out file.json]      Dump full PieMetadata JSON for the component',
     '  check-sync <Name>                           Compare TS ↔ Python metadata; prompts for backend project path',
     '  remote ...                                  Remote storage operations (see `pieui card remote --help`)',

@@ -47,6 +47,7 @@ export type ParsedArgs = {
     cardAjax?: boolean
     cardIo?: boolean
     cardAddFrom?: string
+    cardAddStoryForce?: boolean
     cardRemoteAction?: CardRemoteAction
     cardPullRef?: string
     remoteUserId?: string

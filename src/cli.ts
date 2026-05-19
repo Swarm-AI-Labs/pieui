@@ -65,6 +65,7 @@ const main = async () => {
         cardAction,
         cardAjax,
         cardIo,
+        cardAddStoryForce,
         cardRemoteAction,
         cardPullRef,
         remoteUserId,
@@ -195,7 +196,7 @@ const main = async () => {
             }
             if (cardAction === 'add-story') {
                 const name = requireName(componentName, 'Component name')
-                cardAddStoryCommand(name)
+                cardAddStoryCommand(name, { force: cardAddStoryForce })
                 return
             }
             if (cardAction === 'remote') {

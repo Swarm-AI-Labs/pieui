@@ -95,9 +95,10 @@ const renderStoryFile = (
 
     return `import type { Meta, StoryObj } from '@storybook/react'
 import { withPieCard } from '@swarm.ing/pieui/storybook'
-import ${componentName} from './${componentName}'
+import ${componentName} from './ui/${componentName}'
 
 const meta: Meta<typeof ${componentName}> = {
+    title: 'PieComponents/${componentName}',
     component: ${componentName},
     decorators: [withPieCard],
     parameters: {
@@ -125,7 +126,10 @@ export const Default: Story = {
 `
 }
 
-export const cardAddStoryCommand = (componentName: string): void => {
+export const cardAddStoryCommand = (
+    componentName: string,
+    options: { force?: boolean } = {}
+): void => {
     if (!componentName) {
         throw new Error('Component name is required')
     }
@@ -169,22 +173,23 @@ export const cardAddStoryCommand = (componentName: string): void => {
         }
     }
 
-    const storyPath = path.join(
-        componentDir,
-        'ui',
-        `${componentName}.stories.tsx`
-    )
-    if (fs.existsSync(storyPath)) {
-        throw new Error(`Story file already exists: ${storyPath}`)
+    const storyPath = path.join(componentDir, `${componentName}.stories.tsx`)
+    const storyExists = fs.existsSync(storyPath)
+    if (storyExists && !options.force) {
+        throw new Error(
+            `Story file already exists: ${storyPath}\n` +
+                `Pass --force to overwrite.`
+        )
     }
-    fs.mkdirSync(path.dirname(storyPath), { recursive: true })
     fs.writeFileSync(
         storyPath,
         renderStoryFile(componentName, events, payloads),
         'utf8'
     )
 
-    console.log(`[pieui] Story created: ${storyPath}`)
+    console.log(
+        `[pieui] Story ${storyExists ? 'overwritten' : 'created'}: ${storyPath}`
+    )
     if (events.length > 0) {
         console.log(`[pieui] Methods wired: ${events.join(', ')}`)
     } else {
