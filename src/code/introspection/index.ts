@@ -71,3 +71,4 @@ export {
 } from './extractEventsPayloads'
 export { findComponentDataTypeForName, extractAjaxList } from './findDataType'
 export { findStoredAttributeType } from './findInputType'
+export { extractDescription } from './extractDescription'

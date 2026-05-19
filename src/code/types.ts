@@ -99,6 +99,7 @@ export type PieMetadata = {
     events: string[]
     propsSchema: JSONSchema | null
     propsCode: string
+    description: string
     eventsPropsSchema: Record<string, JSONSchema>
     eventsPropsCode: Record<string, string>
     inputPropsCode: string | null
