@@ -108,15 +108,18 @@ const assertOk = (result, msg) =>
         `${msg}\nSTATUS:${result.status}\nSTDOUT:\n${result.stdout}\nSTDERR:\n${result.stderr}`
     )
 
-test('card remote push uploads all files + eventSchema metadata', async () => {
+test('card remote push sends v2 envelope with full PieMetadata', async () => {
     const projectDir = mkTempDir('pieui-cr-push-')
     writeFile(
         path.join(projectDir, 'piecomponents', 'AlertsCard', 'index.ts'),
-        'export {}\n'
+        "export { default as AlertsCard } from './ui/view'\n"
     )
     writeFile(
         path.join(projectDir, 'piecomponents', 'AlertsCard', 'ui', 'view.tsx'),
-        'export default null\n'
+        "import { PieCard } from '@swarm.ing/pieui'\n" +
+            "import type { AlertsCardProps } from '../types'\n" +
+            'const AlertsCard = ({ data: _data }: AlertsCardProps) => <PieCard card="AlertsCard" />\n' +
+            'export default AlertsCard\n'
     )
     writeFile(
         path.join(
@@ -126,7 +129,9 @@ test('card remote push uploads all files + eventSchema metadata', async () => {
             'types',
             'index.ts'
         ),
-        'export interface AlertsCardData { pathname?: string; depsNames: string[]; kwargs: Record<string,string> }\n'
+        "import { SimpleContainerCardProps } from '@swarm.ing/pieui'\n" +
+            'export interface AlertsCardData { pathname?: string }\n' +
+            'export type AlertsCardProps = SimpleContainerCardProps<AlertsCardData>\n'
     )
 
     const requests = []
@@ -137,12 +142,8 @@ test('card remote push uploads all files + eventSchema metadata', async () => {
             headers: req.headers,
             body,
         })
-        if (req.url?.endsWith('/batch/typescript')) {
-            res.end(
-                JSON.stringify({
-                    objects: [{ key: 'k1' }, { key: 'k2' }, { key: 'k3' }],
-                })
-            )
+        if (req.url?.endsWith('/envelope')) {
+            res.end(JSON.stringify({ ok: true }))
         } else if (req.url?.endsWith('/revisions')) {
             res.end(
                 JSON.stringify({
@@ -153,18 +154,19 @@ test('card remote push uploads all files + eventSchema metadata', async () => {
                         {
                             revision: 7,
                             created_at: '2026-04-22T10:00:00Z',
-                            mutation: 'write_metadata',
+                            mutation: 'write_envelope',
                         },
                         {
                             revision: 6,
                             created_at: '2026-04-22T09:59:59Z',
-                            mutation: 'write_language_files_batch',
+                            mutation: 'write_envelope',
                         },
                     ],
                 })
             )
         } else {
-            res.end(JSON.stringify({ key: 'meta-key' }))
+            res.statusCode = 404
+            res.end()
         }
     })
 
@@ -180,35 +182,44 @@ test('card remote push uploads all files + eventSchema metadata', async () => {
             },
         })
         assertOk(result, 'push should succeed')
-        assert.equal(requests.length, 3)
+        assert.equal(requests.length, 2)
         assert.match(result.stdout, /Revision: AlertsCard@7/)
+        assert.match(result.stdout, /Files: 3/)
 
-        const batch = requests[0]
-        assert.equal(batch.method, 'PUT')
+        const envelope = requests[0]
+        assert.equal(envelope.method, 'PUT')
         assert.equal(
-            batch.url,
-            '/api/components/u1/proj/AlertsCard/batch/typescript'
+            envelope.url,
+            '/api/v2/components/u1/proj/AlertsCard/envelope'
         )
-        assert.equal(batch.headers['x-api-key'], 'k')
-        const parts = parseMultipart(batch.body, batch.headers['content-type'])
-        const paths = parts
-            .filter((p) => p.name === 'object_paths')
-            .map((p) => p.value)
-            .sort()
-        assert.deepEqual(paths, ['index.ts', 'types/index.ts', 'ui/view.tsx'])
+        assert.equal(envelope.headers['x-api-key'], 'k')
+        assert.equal(envelope.headers['content-type'], 'application/json')
 
-        const meta = requests[1]
-        assert.equal(meta.method, 'PUT')
+        const body = JSON.parse(envelope.body.toString('utf8'))
+        assert.deepEqual(Object.keys(body), ['typescript'])
+        const ts = body.typescript
+        assert.equal(ts.name, 'AlertsCard')
+        assert.ok(Array.isArray(ts.files))
+        const sortedPaths = ts.files.map((f) => f.path).sort()
+        assert.deepEqual(sortedPaths, [
+            'AlertsCard/index.ts',
+            'AlertsCard/types/index.ts',
+            'AlertsCard/ui/view.tsx',
+        ])
+        for (const f of ts.files) {
+            assert.equal(typeof f.content, 'string')
+            assert.ok(f.content.length > 0)
+        }
+        assert.ok(Array.isArray(ts.packages))
+        assert.ok(Array.isArray(ts.events))
+        assert.deepEqual(ts.ajaxList, ['pathname'])
+
+        const revisions = requests[1]
+        assert.equal(revisions.method, 'GET')
         assert.equal(
-            meta.url,
-            '/api/components/u1/proj/AlertsCard/metadata/eventSchema'
+            revisions.url,
+            '/api/components/u1/proj/AlertsCard/revisions'
         )
-        assert.equal(meta.headers['content-type'], 'application/json')
-        const metaObj = JSON.parse(meta.body.toString('utf8').trim())
-        assert.equal(metaObj.component, 'AlertsCard')
-        assert.equal(metaObj.ajax, true)
-        assert.equal(metaObj.io, false)
-        assert.equal(metaObj.input, false)
     } finally {
         await stopServer(server)
     }
@@ -241,38 +252,33 @@ test('card remote push fails when PIE_USER_ID not set', async () => {
     assert.match(result.stderr, /user_id is required/)
 })
 
-test('card remote pull downloads dir and swaps atomically', async () => {
+test('card remote pull HEAD fetches v2 envelope and writes files', async () => {
     const projectDir = mkTempDir('pieui-cr-pull-')
     writeFile(
         path.join(projectDir, 'piecomponents', 'SyncCard', 'old.txt'),
         'old\n'
     )
 
+    let capturedUrl
     const { server, baseUrl } = await startServer((req, res) => {
-        if (req.url?.endsWith('/SyncCard')) {
-            res.end(
-                JSON.stringify({
-                    prefix: 'p/',
-                    typescript: {
-                        objects: [
-                            { key: 'p/typescript/index.ts' },
-                            { key: 'p/typescript/ui/view.tsx' },
-                        ],
-                    },
-                })
-            )
-            return
-        }
-        if (req.url?.endsWith('/typescript/index.ts')) {
-            res.end('export const value = 1\n')
-            return
-        }
-        if (req.url?.endsWith('/typescript/ui/view.tsx')) {
-            res.end('export default null\n')
-            return
-        }
-        res.statusCode = 404
-        res.end()
+        capturedUrl = req.url
+        res.end(
+            JSON.stringify({
+                typescript: {
+                    name: 'SyncCard',
+                    files: [
+                        {
+                            path: 'SyncCard/index.ts',
+                            content: 'export const value = 1\n',
+                        },
+                        {
+                            path: 'SyncCard/ui/view.tsx',
+                            content: 'export default null\n',
+                        },
+                    ],
+                },
+            })
+        )
     })
 
     try {
@@ -286,6 +292,10 @@ test('card remote pull downloads dir and swaps atomically', async () => {
             },
         })
         assertOk(result, 'pull should succeed')
+        assert.equal(
+            capturedUrl,
+            '/api/v2/components/u/s/SyncCard/envelope'
+        )
         assert.equal(
             fs.existsSync(
                 path.join(projectDir, 'piecomponents', 'SyncCard', 'old.txt')
@@ -317,10 +327,56 @@ test('card remote pull downloads dir and swaps atomically', async () => {
     }
 })
 
-test('card remote pull errors when no typescript files present', async () => {
+test('card remote pull @revision hits revision envelope endpoint', async () => {
+    const projectDir = mkTempDir('pieui-cr-pull-rev-')
+    let capturedUrl
+    const { server, baseUrl } = await startServer((req, res) => {
+        capturedUrl = req.url
+        res.end(
+            JSON.stringify({
+                typescript: {
+                    name: 'SyncCard',
+                    files: [
+                        {
+                            path: 'SyncCard/index.ts',
+                            content: 'rev5\n',
+                        },
+                    ],
+                },
+            })
+        )
+    })
+    try {
+        const result = await runCli({
+            cwd: projectDir,
+            args: ['card', 'remote', 'pull', 'SyncCard@5'],
+            env: {
+                PIE_USER_ID: 'u',
+                PIE_PROJECT: 's',
+                PIE_API_BASE_URL: `${baseUrl}/api`,
+            },
+        })
+        assertOk(result, 'pull @5 should succeed')
+        assert.equal(
+            capturedUrl,
+            '/api/v2/components/u/s/SyncCard/revisions/5/envelope'
+        )
+        assert.equal(
+            fs.readFileSync(
+                path.join(projectDir, 'piecomponents', 'SyncCard', 'index.ts'),
+                'utf8'
+            ),
+            'rev5\n'
+        )
+    } finally {
+        await stopServer(server)
+    }
+})
+
+test('card remote pull errors when envelope lacks typescript key', async () => {
     const projectDir = mkTempDir('pieui-cr-pull-empty-')
     const { server, baseUrl } = await startServer((_req, res) => {
-        res.end(JSON.stringify({ prefix: 'p/', typescript: { objects: [] } }))
+        res.end(JSON.stringify({ python: { name: 'Nothing', files: [] } }))
     })
     try {
         const result = await runCli({
@@ -333,7 +389,7 @@ test('card remote pull errors when no typescript files present', async () => {
             },
         })
         assert.equal(result.status, 1)
-        assert.match(result.stderr, /No typescript files found/)
+        assert.match(result.stderr, /missing the "typescript" envelope/)
     } finally {
         await stopServer(server)
     }

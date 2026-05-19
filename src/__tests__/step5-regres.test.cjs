@@ -125,8 +125,8 @@ test('add without registry exits cleanly and rolls back created component direct
     assert.equal(fs.existsSync(componentDir), false)
 })
 
-// Verifies pull does not delete existing local component when the remote tree includes an unsafe object path.
-test('pull keeps existing component when remote tree contains unsafe object path', async () => {
+// Verifies pull does not delete existing local component when the remote envelope contains an unsafe file path.
+test('pull keeps existing component when remote envelope contains unsafe file path', async () => {
     const projectDir = makeProjectDir('pieui-step5-pull-rollback-')
     const existingPath = path.join(
         projectDir,
@@ -141,11 +141,12 @@ test('pull keeps existing component when remote tree contains unsafe object path
         res.setHeader('content-type', 'application/json')
         res.end(
             JSON.stringify({
-                prefix: 'demo/proj/SafeCard/',
                 typescript: {
-                    objects: [
+                    name: 'SafeCard',
+                    files: [
                         {
-                            key: 'demo/proj/SafeCard/typescript/../escape.ts',
+                            path: '../escape.ts',
+                            content: 'pwned\n',
                         },
                     ],
                 },
@@ -158,17 +159,14 @@ test('pull keeps existing component when remote tree contains unsafe object path
             cwd: projectDir,
             args: ['card', 'remote', 'pull', 'SafeCard'],
             env: {
-                PIE_API_BASE_URL: baseUrl,
+                PIE_API_BASE_URL: `${baseUrl}/api`,
                 PIE_USER_ID: 'demo',
                 PIE_PROJECT: 'proj',
             },
         })
 
         assert.equal(result.status, 1)
-        assert.match(
-            result.stderr,
-            /object path must be relative and must not contain/
-        )
+        assert.match(result.stderr, /escapes componentsDir/)
 
         const kept = fs.readFileSync(existingPath, 'utf8')
         assert.match(kept, /stable = true/)
@@ -186,7 +184,20 @@ test('async command errors are surfaced with stable top-level error formatting',
     const projectDir = makeProjectDir('pieui-step5-cli-errors-')
     writeFile(
         path.join(projectDir, 'piecomponents', 'ErrCard', 'index.ts'),
-        'export {}\n'
+        "export { default as ErrCard } from './ui/view'\n"
+    )
+    writeFile(
+        path.join(projectDir, 'piecomponents', 'ErrCard', 'ui', 'view.tsx'),
+        "import { PieCard } from '@swarm.ing/pieui'\n" +
+            "import type { ErrCardProps } from '../types'\n" +
+            'const ErrCard = ({ data: _data }: ErrCardProps) => <PieCard card="ErrCard" />\n' +
+            'export default ErrCard\n'
+    )
+    writeFile(
+        path.join(projectDir, 'piecomponents', 'ErrCard', 'types', 'index.ts'),
+        "import { SimpleContainerCardProps } from '@swarm.ing/pieui'\n" +
+            'export interface ErrCardData { id: string }\n' +
+            'export type ErrCardProps = SimpleContainerCardProps<ErrCardData>\n'
     )
 
     const { server, baseUrl } = await startServer(async (_req, res) => {
@@ -197,7 +208,7 @@ test('async command errors are surfaced with stable top-level error formatting',
 
     try {
         const env = {
-            PIE_API_BASE_URL: baseUrl,
+            PIE_API_BASE_URL: `${baseUrl}/api`,
             PIE_USER_ID: 'demo',
             PIE_PROJECT: 'proj',
         }

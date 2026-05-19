@@ -99,10 +99,14 @@ const cleanFetchError = (
 export class PieStorageService {
     private readonly settings: Settings
     private readonly baseUrl: string
+    private readonly v2BaseUrl: string
 
     constructor(settings: Settings) {
         this.settings = settings
         this.baseUrl = settings.apiBaseUrl.replace(/\/+$/, '')
+        this.v2BaseUrl = /\/api$/.test(this.baseUrl)
+            ? this.baseUrl.replace(/\/api$/, '/api/v2')
+            : `${this.baseUrl}/v2`
     }
 
     projectComponentsUrl(args: { userId: string; project: string }): string {
@@ -219,6 +223,55 @@ export class PieStorageService {
         project?: string
     }): string {
         return `${this.componentUrl(args)}/metadata/${encodeURIComponent(args.schemaKind)}`
+    }
+
+    envelopeUrl(args: {
+        componentName: string
+        userId?: string
+        project?: string
+        revision?: number
+    }): string {
+        const userId = args.userId ?? this.settings.userId
+        if (!userId) {
+            throw new PieStorageError(
+                'user_id is required (configure PIE_USER_ID or pass user_id)'
+            )
+        }
+        const slug = args.project ?? this.settings.project
+        const base =
+            `${this.v2BaseUrl}/components/${pathPart(userId)}` +
+            `/${pathPart(slug)}/${pathPart(args.componentName)}`
+        if (args.revision !== undefined) {
+            return `${base}/revisions/${args.revision}/envelope`
+        }
+        return `${base}/envelope`
+    }
+
+    async pushEnvelope(args: {
+        componentName: string
+        body: Record<string, unknown>
+        userId?: string
+        project?: string
+    }): Promise<Record<string, unknown>> {
+        const url = this.envelopeUrl(args)
+        const response = await this.request({
+            method: 'PUT',
+            url,
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify(args.body),
+        })
+        return (await response.json()) as Record<string, unknown>
+    }
+
+    async fetchEnvelope(args: {
+        componentName: string
+        userId?: string
+        project?: string
+        revision?: number
+    }): Promise<Record<string, unknown>> {
+        const url = this.envelopeUrl(args)
+        const response = await this.request({ method: 'GET', url })
+        return (await response.json()) as Record<string, unknown>
     }
 
     async listProjectComponents(args: {
