@@ -97,7 +97,7 @@ export const addCommand = (
             path.join(componentDir, 'types', 'index.ts'),
             componentTypesTemplate(
                 componentName,
-                baseInterfaceFor(componentType),
+                baseInterfaceFor(componentType, options),
                 options
             ),
             'utf8'
@@ -131,6 +131,7 @@ export const addCommand = (
     console.log(`[pieui] Component type: ${componentType}`)
     console.log(`[pieui] IO fields: ${options.io ? 'enabled' : 'disabled'}`)
     console.log(`[pieui] AJAX fields: ${options.ajax ? 'enabled' : 'disabled'}`)
+    console.log(`[pieui] Input (stored): ${options.input ? 'enabled' : 'disabled'}`)
     switch (componentType) {
         case 'simple':
             console.log('  - Props: data only')

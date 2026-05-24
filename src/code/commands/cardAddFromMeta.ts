@@ -168,15 +168,15 @@ const renderTypes = (
     dataInterfaceName: string,
     inputInterfaceName: string | null
 ): string => {
-    const baseInterface = baseInterfaceFor(componentType)
+    const hasInput = !!(inputInterfaceName && meta.inputPropsSchema)
+    const baseInterface = baseInterfaceFor(componentType, { input: hasInput })
     const dataIface = jsonSchemaToTsInterface(
         meta.propsSchema,
         dataInterfaceName
     )
-    const inputIface =
-        inputInterfaceName && meta.inputPropsSchema
-            ? jsonSchemaToTsInterface(meta.inputPropsSchema, inputInterfaceName)
-            : null
+    const inputIface = hasInput
+        ? jsonSchemaToTsInterface(meta.inputPropsSchema!, inputInterfaceName!)
+        : null
     const blocks = [
         `import { ${baseInterface} } from '@swarm.ing/pieui'`,
         '',
@@ -185,10 +185,10 @@ const renderTypes = (
     if (inputIface) {
         blocks.push('', inputIface)
     }
-    blocks.push(
-        '',
-        `export type ${componentName}Props = ${baseInterface}<${dataInterfaceName}>`
-    )
+    const propsAlias = hasInput
+        ? `export type ${componentName}Props = ${baseInterface}<${dataInterfaceName}, ${inputInterfaceName}>`
+        : `export type ${componentName}Props = ${baseInterface}<${dataInterfaceName}>`
+    blocks.push('', propsAlias)
     return blocks.join('\n') + '\n'
 }
 
@@ -257,10 +257,10 @@ const renderUI = (
     const hasInput = !!inputInterfaceName
     const cardLabel = JSON.stringify(componentName)
 
-    let body = `const ${componentName} = ({ data: _data }: ${componentName}Props) => {\n`
-    if (hasInput) {
-        body += `    const stored: ${inputInterfaceName} | undefined = undefined\n\n`
-    }
+    const destructure = hasInput
+        ? `{ data: _data, stored }`
+        : `{ data: _data }`
+    let body = `const ${componentName} = (${destructure}: ${componentName}Props) => {\n`
     body += '    return (\n'
     body += `        <PieCard\n`
     body += `            card={${cardLabel}}\n`

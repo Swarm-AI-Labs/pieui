@@ -8,12 +8,15 @@ import {
 export const complexComponentTemplate = (
     componentName: string,
     options: CardScaffoldOptions = {}
-): string =>
-    `import React from 'react'
+): string => {
+    const propsDestructure = options.input
+        ? `{ data, stored${options.ajax ? ', setUiAjaxConfiguration' : ''} }`
+        : `{ data${options.ajax ? ', setUiAjaxConfiguration' : ''} }`
+    return `import React from 'react'
 import { PieCard${options.ajax ? ', useAjaxSubmit' : ''} } from '@swarm.ing/pieui'
 import { ${componentName}Props } from '../types'
 
-const ${componentName} = ({ data${options.ajax ? ', setUiAjaxConfiguration' : ''} }: ${componentName}Props) => {
+const ${componentName} = (${propsDestructure}: ${componentName}Props) => {
     ${dataDestructureFor(options)}
     ${ajaxSubmitDeclarationFor(options)}
 
@@ -29,3 +32,4 @@ const ${componentName} = ({ data${options.ajax ? ', setUiAjaxConfiguration' : ''
 
 export default ${componentName}
 `
+}

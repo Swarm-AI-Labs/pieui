@@ -14,10 +14,22 @@ const BASE_INTERFACE_BY_TYPE: Record<ComponentType, string> = {
     'complex-container': 'PieComplexContainerComponentProps',
 }
 
+const INPUT_BASE_INTERFACE_BY_TYPE: Record<ComponentType, string> = {
+    simple: 'InputPieSimpleComponentProps',
+    complex: 'InputPieComplexComponentProps',
+    'simple-container': 'InputPieContainerComponentProps',
+    'complex-container': 'InputPieComplexContainerComponentProps',
+}
+
 export { pageTemplate }
 
-export const baseInterfaceFor = (componentType: ComponentType): string =>
-    BASE_INTERFACE_BY_TYPE[componentType]
+export const baseInterfaceFor = (
+    componentType: ComponentType,
+    options: CardScaffoldOptions = {}
+): string =>
+    options.input
+        ? INPUT_BASE_INTERFACE_BY_TYPE[componentType]
+        : BASE_INTERFACE_BY_TYPE[componentType]
 
 export const componentTemplateFor = (
     componentType: ComponentType,

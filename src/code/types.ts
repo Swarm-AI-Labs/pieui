@@ -46,6 +46,7 @@ export type ParsedArgs = {
     cardAction?: CardAction
     cardAjax?: boolean
     cardIo?: boolean
+    cardInput?: boolean
     cardAddFrom?: string
     cardAddStoryForce?: boolean
     cardRemoteAction?: CardRemoteAction
@@ -68,6 +69,7 @@ export type ParsedArgs = {
 export type CardScaffoldOptions = {
     ajax?: boolean
     io?: boolean
+    input?: boolean
 }
 
 export type ComponentManifestEntry = {

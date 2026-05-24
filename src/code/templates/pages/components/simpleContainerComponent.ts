@@ -8,16 +8,24 @@ import {
 export const simpleContainerComponentTemplate = (
     componentName: string,
     options: CardScaffoldOptions = {}
-): string =>
-    `import React, { useContext } from 'react'
-import { PieCard, UI, UIRendererContext${options.ajax ? ', useAjaxSubmit' : ''} } from '@swarm.ing/pieui'
-import { ${componentName}Props } from '../types'
-
-const ${componentName} = ({
+): string => {
+    const propsDestructure = options.input
+        ? `{
+    data,
+    stored,
+    content,
+    setUiAjaxConfiguration,
+}`
+        : `{
     data,
     content,
     setUiAjaxConfiguration,
-}: ${componentName}Props) => {
+}`
+    return `import React, { useContext } from 'react'
+import { PieCard, UI, UIRendererContext${options.ajax ? ', useAjaxSubmit' : ''} } from '@swarm.ing/pieui'
+import { ${componentName}Props } from '../types'
+
+const ${componentName} = (${propsDestructure}: ${componentName}Props) => {
     ${dataDestructureFor(options)}
     ${ajaxSubmitDeclarationFor(options)}
     const Renderer = useContext(UIRendererContext) ?? UI
@@ -40,3 +48,4 @@ const ${componentName} = ({
 
 export default ${componentName}
 `
+}

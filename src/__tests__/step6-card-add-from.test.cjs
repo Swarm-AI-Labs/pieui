@@ -190,8 +190,15 @@ test('card add --from json-file generates input interface when inputPropsSchema 
         ),
         'utf8'
     )
-    assert.match(uiText, /const stored: OrdersStoredInput \| undefined/)
+    // Input-flavored ports destructure `stored` from props (typed via the
+    // InputPie*ComponentProps base) and forward it to <PieCard>.
+    assert.match(uiText, /\{ data: _data, stored \}: OrdersCardProps/)
     assert.match(uiText, /stored=\{stored\}/)
+    // The Props alias uses the InputPie* base with both Data and Stored params.
+    assert.match(
+        typesText,
+        /InputPieSimpleComponentProps<\w+, OrdersStoredInput>/
+    )
 })
 
 test('card add --from json-file scaffolds methods with typed payloads from events', () => {

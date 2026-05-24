@@ -75,7 +75,8 @@ const renderStoryFile = (
     payloads: {
         code: Record<string, string>
         schema: Record<string, JSONSchema>
-    }
+    },
+    options: { io: boolean }
 ): string => {
     const methodsJson: Array<{
         name: string
@@ -92,6 +93,13 @@ const renderStoryFile = (
         .split('\n')
         .map((line, i) => (i === 0 ? line : '    ' + line))
         .join('\n')
+
+    const dataBody = options.io
+        ? `            // Storybook addon fires mitt events; PieCard subscribes only when
+            // useMittSupport === true. Leave this on for the in-storybook play.
+            name: '${componentName}',
+            useMittSupport: true,`
+        : `            name: '${componentName}',`
 
     return `import type { Meta, StoryObj } from '@storybook/react'
 import { withPieCard } from '@swarm.ing/pieui/storybook'
@@ -115,11 +123,7 @@ type Story = StoryObj<typeof ${componentName}>
 export const Default: Story = {
     args: {
         data: {
-            // Storybook addon fires mitt events; PieCard subscribes only when
-            // useMittSupport === true. Leave this on for the in-storybook play.
-            // @ts-expect-error — base props vary by component type.
-            name: '${componentName}',
-            useMittSupport: true,
+${dataBody}
         },
     },
 }
@@ -173,6 +177,10 @@ export const cardAddStoryCommand = (
         }
     }
 
+    const typesPath = path.join(componentDir, 'types', 'index.ts')
+    const uiPath = path.join(componentDir, 'ui', `${componentName}.tsx`)
+    const io = detectCardIsIO(typesPath)
+
     const storyPath = path.join(componentDir, `${componentName}.stories.tsx`)
     const storyExists = fs.existsSync(storyPath)
     if (storyExists && !options.force) {
@@ -183,7 +191,7 @@ export const cardAddStoryCommand = (
     }
     fs.writeFileSync(
         storyPath,
-        renderStoryFile(componentName, events, payloads),
+        renderStoryFile(componentName, events, payloads, { io }),
         'utf8'
     )
 
@@ -198,12 +206,10 @@ export const cardAddStoryCommand = (
         )
     }
 
-    // Patch the card's UI so its <PieCard> forwards useMittSupport (plus the
-    // full IO quartet if the data interface already opts in). Without this the
-    // addon's "Fire" buttons emit mitt events nobody is listening to.
-    const typesPath = path.join(componentDir, 'types', 'index.ts')
-    const uiPath = path.join(componentDir, 'ui', `${componentName}.tsx`)
-    const io = detectCardIsIO(typesPath)
+    // Patch the card's UI so its <PieCard> forwards the IO quartet when the
+    // data interface opts into IO. Non-IO cards skip the patch entirely:
+    // adding `useMittSupport={data.useMittSupport ?? false}` would tunnel a
+    // field that doesn't exist on the data interface and break typechecking.
     const result = patchPieCardForwarding(uiPath, { io })
     if (result.patched) {
         const allAdded = Array.from(

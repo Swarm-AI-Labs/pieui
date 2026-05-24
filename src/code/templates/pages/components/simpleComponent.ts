@@ -8,12 +8,18 @@ import {
 export const simpleComponentTemplate = (
     componentName: string,
     options: CardScaffoldOptions = {}
-): string =>
-    `import React from 'react'
+): string => {
+    const propsDestructure = options.input
+        ? `{ data, stored${options.ajax ? ', setUiAjaxConfiguration' : ''} }`
+        : `{ data${options.ajax ? ', setUiAjaxConfiguration' : ''} }`
+    const propsAnnotation = options.ajax
+        ? `${componentName}Props & { setUiAjaxConfiguration?: SetUiAjaxConfigurationType }`
+        : `${componentName}Props`
+    return `import React from 'react'
 import { PieCard${options.ajax ? ', useAjaxSubmit, type SetUiAjaxConfigurationType' : ''} } from '@swarm.ing/pieui'
 import { ${componentName}Props } from '../types'
 
-const ${componentName} = ({ data${options.ajax ? ', setUiAjaxConfiguration' : ''} }: ${componentName}Props${options.ajax ? ' & { setUiAjaxConfiguration?: SetUiAjaxConfigurationType }' : ''}) => {
+const ${componentName} = (${propsDestructure}: ${propsAnnotation}) => {
     ${dataDestructureFor(options)}
     ${ajaxSubmitDeclarationFor(options)}
 
@@ -29,3 +35,4 @@ const ${componentName} = ({ data${options.ajax ? ', setUiAjaxConfiguration' : ''
 
 export default ${componentName}
 `
+}

@@ -386,8 +386,10 @@ exit 0
     )
 })
 
-// Verifies `pieui card add-story` patches a non-IO card's <PieCard> to forward useMittSupport.
-test('card add-story forwards useMittSupport on a non-IO card', () => {
+// Verifies `pieui card add-story` does NOT add IO forwarding on a non-IO card.
+// (Forwarding `useMittSupport` etc. would tunnel fields the data interface
+// doesn't declare and break typechecking.)
+test('card add-story leaves non-IO <PieCard> alone', () => {
     const projectDir = makeProjectDir('pieui-step7-fwd-simple-')
     runCli({ cwd: projectDir, args: ['init'] })
     runCli({
@@ -416,14 +418,22 @@ test('card add-story forwards useMittSupport on a non-IO card', () => {
     )
 
     const ui = fs.readFileSync(uiPath, 'utf8')
-    assert.match(ui, /useMittSupport=\{data\.useMittSupport \?\? false\}/)
-    // Non-IO: only useMittSupport is added.
+    // Non-IO: NONE of the IO forwarding attrs are added.
+    assert.doesNotMatch(ui, /useMittSupport=/)
     assert.doesNotMatch(ui, /useSocketioSupport=/)
     assert.doesNotMatch(ui, /useCentrifugeSupport=/)
     assert.doesNotMatch(ui, /centrifugeChannel=/)
 
-    // Re-running add-story is rejected (story already exists), but the
-    // patcher should remain idempotent — verify by calling it manually.
+    // The story file also omits useMittSupport in args.data.
+    const storyPath = path.join(
+        projectDir,
+        'piecomponents',
+        'SimpleFwd',
+        'SimpleFwd.stories.tsx'
+    )
+    assert.doesNotMatch(fs.readFileSync(storyPath, 'utf8'), /useMittSupport/)
+
+    // Patcher is a no-op on non-IO cards whose <PieCard> already has `data`.
     const sb = requireFresh(
         path.join(repoRoot, 'src', 'code', 'patchPieCardForwarding')
     )
@@ -480,6 +490,7 @@ test('detectCardIsIO + patchPieCardForwarding work on a hand-crafted card', () =
     assert.equal(sb.detectCardIsIO(typesPath), false)
 
     const uiPath = path.join(projectDir, 'piecomponents', 'X', 'ui', 'X.tsx')
+    // Non-IO card with `data={data}` already present — patcher is a no-op.
     writeFile(
         uiPath,
         `import { PieCard } from '@swarm.ing/pieui'
@@ -496,14 +507,35 @@ export default function X({ data }: any) {
 `
     )
     const r1 = sb.patchPieCardForwarding(uiPath, { io: false })
-    assert.equal(r1.patched, true)
+    assert.equal(r1.patched, false)
     const ui1 = fs.readFileSync(uiPath, 'utf8')
-    assert.match(ui1, /useMittSupport=\{data\.useMittSupport \?\? false\}/)
-    // Idempotent
-    assert.equal(
-        sb.patchPieCardForwarding(uiPath, { io: false }).patched,
-        false
+    assert.doesNotMatch(ui1, /useMittSupport=/)
+
+    // Non-IO card missing `data` — patcher inserts it (and only it).
+    const uiPathMissingData = path.join(
+        projectDir,
+        'piecomponents',
+        'X2',
+        'ui',
+        'X2.tsx'
     )
+    writeFile(
+        uiPathMissingData,
+        `import { PieCard } from '@swarm.ing/pieui'
+export default function X2() {
+    return (
+        <PieCard card='X2'>
+            <div />
+        </PieCard>
+    )
+}
+`
+    )
+    const r1b = sb.patchPieCardForwarding(uiPathMissingData, { io: false })
+    assert.equal(r1b.patched, true)
+    const ui1b = fs.readFileSync(uiPathMissingData, 'utf8')
+    assert.match(ui1b, /data=\{data\}/)
+    assert.doesNotMatch(ui1b, /useMittSupport=/)
 
     // IO types
     const ioTypesPath = path.join(

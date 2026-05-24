@@ -25,7 +25,7 @@ import { PieCardProps } from './types'
  * Cleanup runs automatically on unmount or when `data.name`/the support
  * flags change.
  */
-const PieCard = ({
+const PieCard = <TStored = unknown,>({
     card,
     data,
     children,
@@ -35,7 +35,7 @@ const PieCard = ({
     centrifugeChannel = undefined,
     methods = undefined,
     stored = undefined,
-}: PieCardProps) => {
+}: PieCardProps<TStored>) => {
     const renderingLogEnabled = isRenderingLogEnabled()
     const methodsRef = useRef(methods)
     methodsRef.current = methods

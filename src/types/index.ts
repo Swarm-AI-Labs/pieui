@@ -629,6 +629,34 @@ export interface PieSimpleComponentProps<TData = unknown> {
     data: TData
 }
 
+export interface InputPieComplexContainerComponentProps<
+    TData = unknown,
+    TStored = unknown,
+> extends PieComplexContainerComponentProps<TData> {
+    stored: TStored
+}
+
+export interface InputPieContainerComponentProps<
+    TData = unknown,
+    TStored = unknown,
+> extends PieContainerComponentProps<TData> {
+    stored: TStored
+}
+
+export interface InputPieComplexComponentProps<
+    TData = unknown,
+    TStored = unknown,
+> extends PieComplexComponentProps<TData> {
+    stored: TStored
+}
+
+export interface InputPieSimpleComponentProps<
+    TData = unknown,
+    TStored = unknown,
+> extends PieSimpleComponentProps<TData> {
+    stored: TStored
+}
+
 export type PieComponentProps<TData = unknown> =
     | PieSimpleComponentProps<TData>
     | PieContainerComponentProps<TData>

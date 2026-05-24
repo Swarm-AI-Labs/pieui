@@ -65,6 +65,7 @@ const main = async () => {
         cardAction,
         cardAjax,
         cardIo,
+        cardInput,
         cardAddStoryForce,
         cardRemoteAction,
         cardPullRef,
@@ -147,6 +148,7 @@ const main = async () => {
                 addCommand(name, componentType, {
                     ajax: cardAjax,
                     io: cardIo,
+                    input: cardInput,
                 })
                 return
             }

@@ -5,8 +5,11 @@
  *   - `detectCardIsIO(typesPath)` — does the card's data interface declare
  *     IO realtime fields (`useMittSupport`, `useSocketioSupport`, …).
  *   - `patchPieCardForwarding(uiPath, options)` — adds missing forwarding
- *     attributes to every `<PieCard>` JSX element in the file so the addon's
- *     mitt-driven "Fire" buttons actually reach the card. Idempotent.
+ *     attributes to every `<PieCard>` JSX element in the file. For IO cards
+ *     this includes the realtime quartet so the addon's "Fire" buttons reach
+ *     the card; for non-IO cards only `data` is enforced (forwarding fields
+ *     the data interface doesn't declare would break typechecking).
+ *     Idempotent.
  */
 
 import fs from 'node:fs'
@@ -31,17 +34,12 @@ export const detectCardIsIO = (typesPath: string): boolean => {
 type ForwardingProp = { name: string; expr: string }
 
 const forwardingPropsFor = (isIO: boolean): ForwardingProp[] => {
-    const required: ForwardingProp[] = [
-        // `data` is read at runtime by PieCard (`data.name` becomes part of
-        // the mitt/socket event name). Without it PieCard throws
-        // "Cannot read properties of undefined (reading 'name')".
-        { name: 'data', expr: 'data' },
-        {
-            name: 'useMittSupport',
-            expr: 'data.useMittSupport ?? false',
-        },
-    ]
-    if (!isIO) return required
+    // `data` is read at runtime by PieCard (`data.name` becomes part of the
+    // mitt/socket event name). Without it PieCard throws "Cannot read
+    // properties of undefined (reading 'name')".
+    if (!isIO) {
+        return [{ name: 'data', expr: 'data' }]
+    }
     return [
         { name: 'data', expr: 'data' },
         {

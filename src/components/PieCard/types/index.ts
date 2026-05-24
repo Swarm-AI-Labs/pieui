@@ -16,14 +16,23 @@ export interface PieCardData {
 
 /**
  * Props accepted by {@link PieCard}.
+ *
+ * `TStored` is the type of the `stored` prop. Defaults to `unknown` so the
+ * default usage (`<PieCard …/>` without `stored`) stays loose; cards built
+ * with `InputPie*ComponentProps<TData, TStored>` thread their `TStored`
+ * through so `JSON.stringify(stored)` operates on a known shape.
  */
-export interface PieCardProps {
+export interface PieCardProps<TStored = unknown> {
     /** Registered name of the card component to render. */
     card: string
     /** Card data; must include a `name` used for event routing. */
     data: PieCardData
-    /** Rendered children. PieCard does not mount any UI of its own. */
-    children: ReactNode
+    /**
+     * Rendered children. PieCard does not mount any UI of its own. Optional
+     * because input-only cards (`<PieCard stored={…}/>`) often have no
+     * visible children — only the hidden form input.
+     */
+    children?: ReactNode
     /**
      * Subscribe the card's `methods` to Socket.IO events of the form
      * `pie{methodName}_{data.name}`.
@@ -55,5 +64,5 @@ export interface PieCardProps {
      * `name={data.name}` and `value={JSON.stringify(stored)}` so the value
      * can be submitted as part of a surrounding form.
      */
-    stored?: unknown
+    stored?: TStored
 }

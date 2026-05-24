@@ -31,17 +31,19 @@ export const pieCardOpeningTagFor = (
     componentName: string,
     options: CardScaffoldOptions = {}
 ): string => {
+    const storedAttr = options.input ? ' stored={stored}' : ''
     if (!options.io) {
-        return `<PieCard card='${componentName}' data={data}>`
+        return `<PieCard card='${componentName}' data={data}${storedAttr}>`
     }
 
+    const storedLine = options.input ? '\n            stored={stored}' : ''
     return `<PieCard
             card='${componentName}'
             data={data}
             useSocketioSupport={useSocketioSupport}
             useCentrifugeSupport={useCentrifugeSupport}
             useMittSupport={useMittSupport}
-            centrifugeChannel={centrifugeChannel}
+            centrifugeChannel={centrifugeChannel}${storedLine}
             methods={{
             }}
         >`

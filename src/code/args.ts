@@ -73,12 +73,13 @@ const consumeFlags = (
 ): {
     positionals: string[]
     flags: FlagState
-    boolFlags: { ajax: boolean; io: boolean; force: boolean }
+    boolFlags: { ajax: boolean; io: boolean; input: boolean; force: boolean }
 } => {
     const flags: FlagState = {}
     const positionals: string[] = []
     let ajax = false
     let io = false
+    let input = false
     let force = false
 
     for (let i = 0; i < tokens.length; i++) {
@@ -89,6 +90,10 @@ const consumeFlags = (
         }
         if (tok === '--io') {
             io = true
+            continue
+        }
+        if (tok === '--input') {
+            input = true
             continue
         }
         if (tok === '--force' || tok === '-f') {
@@ -167,7 +172,7 @@ const consumeFlags = (
         positionals.push(tok)
     }
 
-    return { positionals, flags, boolFlags: { ajax, io, force } }
+    return { positionals, flags, boolFlags: { ajax, io, input, force } }
 }
 
 export const parseArgs = (argv: string[]): ParsedArgs => {
@@ -236,6 +241,7 @@ export const parseArgs = (argv: string[]): ParsedArgs => {
         if (action === 'add') {
             result.cardAjax = boolFlags.ajax
             result.cardIo = boolFlags.io
+            result.cardInput = boolFlags.input
             if (flags.fromRaw !== undefined) result.cardAddFrom = flags.fromRaw
             if (
                 positionals[0] &&
@@ -351,7 +357,7 @@ const ALL_LINES: string[] = [
     '  self-upgrade [--pm bun|npm|pnpm|yarn]            Upgrade the globally installed pieui CLI to the latest published version',
     '',
     'Card management (mirrors `pie card ...`):',
-    '  card add [type] <Name> [--io] [--ajax] [--from <ref>]',
+    '  card add [type] <Name> [--io] [--ajax] [--input] [--from <ref>]',
     '                                                   Create a new component in piecomponents/ (or port from backend via --from)',
     '  card list [filter]                               List registered components',
     '  card pull <ref>                                  Pull a card by Name, project/Name, or r/user/Name (public alias)',
@@ -385,6 +391,7 @@ const ALL_LINES: string[] = [
     'Options for `card add`:',
     '  --io                Add realtime support fields to the generated data interface',
     '  --ajax              Add AJAX request fields to the generated data interface',
+    '  --input             Generate an InputPie*ComponentProps card with a typed `stored` prop',
     '  --from <ref>        Port from backend (Python card). <ref> can be:',
     '                        • path to a .py file or PieMetadata JSON file',
     '                        • a card name (resolved via backendComponentsDir)',
@@ -422,7 +429,7 @@ const CARD_LINES: string[] = [
     'Usage: pieui card <subcommand> [options]',
     '',
     'Subcommands:',
-    '  add [type] <Name> [--io] [--ajax] [--from <ref>]',
+    '  add [type] <Name> [--io] [--ajax] [--input] [--from <ref>]',
     '                                              Create a new component in piecomponents/ (or port from backend via --from)',
     '  list [filter]                               List registered components',
     '  pull <ref>                                  Pull a card by Name, project/Name, or r/user/Name (public alias)',
@@ -444,6 +451,7 @@ const CARD_LINES: string[] = [
     'Options for `card add`:',
     '  --io                Add realtime support fields to the generated data interface',
     '  --ajax              Add AJAX request fields to the generated data interface',
+    '  --input             Generate an InputPie*ComponentProps card with a typed `stored` prop',
     '',
     'Options for `card list` / `card list-events` / `card add-event`:',
     '  --src-dir <dir>, -s <dir>    Source directory (default: .)',
