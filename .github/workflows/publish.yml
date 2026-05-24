@@ -34,8 +34,13 @@ jobs:
             - name: Setup Node.js for npm publishing
               uses: actions/setup-node@v4
               with:
-                  node-version: '18'
+                  node-version: '22'
                   registry-url: 'https://registry.npmjs.org'
+
+            # OIDC-based Trusted Publisher requires npm >= 11.5.1.
+            # Node 22 ships npm 10, so upgrade explicitly.
+            - name: Upgrade npm
+              run: npm install -g npm@latest
 
             - name: Extract version from tag
               id: version
@@ -44,7 +49,9 @@ jobs:
                   echo "version=$VERSION" >> $GITHUB_OUTPUT
                   echo "Publishing version: $VERSION"
 
+            # No NODE_AUTH_TOKEN needed: Trusted Publisher (OIDC) is
+            # configured on npmjs.com for this repo + workflow file.
+            # npm exchanges the GitHub OIDC token for a short-lived
+            # publish token automatically.
             - name: Publish to npm
               run: npm publish --access public --provenance
-              env:
-                  NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
