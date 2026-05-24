@@ -14,6 +14,14 @@ import {
     detectCardIsIO,
     patchPieCardForwarding,
 } from '../patchPieCardForwarding'
+import {
+    findStorybookMainPath,
+    installAndWireStorybook,
+    patchStorybookMainAddons,
+    patchStorybookMainStories,
+    PIEUI_STORYBOOK_ADDON,
+    PIEUI_STORYBOOK_STORIES_GLOB,
+} from '../storybookIntegration'
 
 const COMPONENT_EXTS = ['.ts', '.tsx']
 
@@ -222,6 +230,35 @@ export const cardAddStoryCommand = (
         console.log(
             `[pieui] <PieCard> forwarding already complete in ${uiPath}`
         )
+    }
+
+    // Make sure `.storybook/main.*` knows about the pieui addon (so the
+    // methods panel renders) and includes the piecomponents/ stories glob.
+    // If Storybook isn't installed yet, install it first — otherwise users
+    // would have to re-run `pieui init` (or `bunx storybook init`) by hand
+    // after their very first story.
+    const mainPath = findStorybookMainPath(process.cwd())
+    if (!mainPath) {
+        const bunBin = process.env.PIEUI_CREATE_BUN_BIN || 'bun'
+        installAndWireStorybook(process.cwd(), bunBin)
+    } else {
+        const addedAddon = patchStorybookMainAddons(mainPath)
+        const addedStories = patchStorybookMainStories(mainPath)
+        if (addedAddon) {
+            console.log(
+                `[pieui] Added '${PIEUI_STORYBOOK_ADDON}' to ${mainPath}`
+            )
+        }
+        if (addedStories) {
+            console.log(
+                `[pieui] Added '${PIEUI_STORYBOOK_STORIES_GLOB}' to stories in ${mainPath}`
+            )
+        }
+        if (!addedAddon && !addedStories) {
+            console.log(
+                `[pieui] Storybook config already wired (${path.relative(process.cwd(), mainPath)})`
+            )
+        }
     }
 
     printRequirements(cardAddStoryRequirements(componentName))
