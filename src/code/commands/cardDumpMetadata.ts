@@ -14,6 +14,7 @@ import {
     collectComponentFiles,
     createSchemaContext,
     extractAjaxList,
+    extractDescription,
     extractEvents,
     extractEventsPayloads,
     extractImports,
@@ -104,6 +105,14 @@ export const buildCardMetadata = (componentName: string): PieMetadata => {
     const { code: eventsPropsCode, schema: eventsPropsSchema } =
         extractEventsPayloads(ctx, tsFiles, events)
 
+    const description = extractDescription(
+        ctx,
+        componentName,
+        tsFiles,
+        dataType.declaration,
+        events
+    )
+
     const inputType = findStoredAttributeType(ctx, tsFiles)
     const inputPropsCode = inputType ? inputType.declaration.getText() : null
     let inputPropsSchema: JSONSchema | null = null
@@ -132,6 +141,7 @@ export const buildCardMetadata = (componentName: string): PieMetadata => {
         events,
         propsSchema,
         propsCode,
+        description,
         eventsPropsSchema,
         eventsPropsCode,
         inputPropsCode,

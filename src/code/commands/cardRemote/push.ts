@@ -1,11 +1,8 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import {
-    extractCardMetadata,
-    serializeCardMetadata,
-} from '../../introspection/cardMetadata'
 import { loadSettings } from '../../services/settings'
 import { PieStorageError, PieStorageService } from '../../services/storage'
+import { buildCardMetadata } from '../cardDumpMetadata'
 import { parseCardRef } from './cardRef'
 
 export const cardRemotePushCommand = async (cardRef: string): Promise<void> => {
@@ -42,40 +39,21 @@ export const cardRemotePushCommand = async (cardRef: string): Promise<void> => {
         throw new Error(`Component directory not found: ${componentDir}`)
     }
 
+    const meta = buildCardMetadata(componentName)
     const service = new PieStorageService(settings)
-
-    const uploaded = await service.uploadComponentDirectory({
+    await service.pushEnvelope({
         componentName,
-        sourceDir: componentDir,
-    })
-    if (uploaded.length === 0) {
-        throw new Error(`No files uploaded for component: ${componentName}`)
-    }
-
-    const typesPath = path.join(componentDir, 'types', 'index.ts')
-    const typesSource = fs.existsSync(typesPath)
-        ? fs.readFileSync(typesPath, 'utf8')
-        : undefined
-    const metadata = extractCardMetadata(componentName, typesSource)
-    const metadataResult = await service.uploadMetadataContent({
-        componentName,
-        schemaKind: 'eventSchema',
-        content: serializeCardMetadata(metadata),
+        body: { typescript: meta },
     })
 
     const latestRevision = await latestRevisionNumber(service, componentName)
 
     console.log(`[pieui] Uploaded card: ${componentName}`)
     console.log(`[pieui] Path: ${componentDir}`)
-    console.log(`[pieui] Files uploaded: ${uploaded.length}`)
-    console.log(`[pieui] Metadata key: ${metadataResult.key}`)
+    console.log(`[pieui] Files: ${meta.files.length}`)
     if (latestRevision !== undefined) {
         console.log(`[pieui] Revision: ${componentName}@${latestRevision}`)
     }
-    console.log(
-        `[pieui] Metadata: Input=${metadata.input ? 'Yes' : 'No'}, ` +
-            `Ajax=${metadata.ajax ? 'Yes' : 'No'}, IO=${metadata.io ? 'Yes' : 'No'}`
-    )
 }
 
 const latestRevisionNumber = async (
