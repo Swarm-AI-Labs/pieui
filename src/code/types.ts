@@ -22,6 +22,7 @@ export type CardAction =
     | 'dump-metadata'
     | 'check-sync'
     | 'add-story'
+    | 'generate-preview'
 export type CardRemoteAction =
     | 'push'
     | 'pull'
@@ -64,6 +65,7 @@ export type ParsedArgs = {
     historyTo?: number
     selfUpgradePm?: string
     dumpMetadataOut?: string
+    cardGeneratePreviewOut?: string
 }
 
 export type CardScaffoldOptions = {

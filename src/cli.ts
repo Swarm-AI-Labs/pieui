@@ -21,6 +21,7 @@ import { cardViewCommand } from './code/commands/cardView'
 import { cardDumpMetadataCommand } from './code/commands/cardDumpMetadata'
 import { cardCheckSyncCommand } from './code/commands/cardCheckSync'
 import { cardAddStoryCommand } from './code/commands/cardAddStory'
+import { cardGeneratePreviewCommand } from './code/commands/cardGeneratePreview'
 import {
     cardAddFromMetaCommand,
     hasBackendSourceFor,
@@ -199,6 +200,13 @@ const main = async () => {
             if (cardAction === 'add-story') {
                 const name = requireName(componentName, 'Component name')
                 cardAddStoryCommand(name, { force: cardAddStoryForce })
+                return
+            }
+            if (cardAction === 'generate-preview') {
+                const name = requireName(componentName, 'Component name')
+                await cardGeneratePreviewCommand(name, {
+                    out: args.cardGeneratePreviewOut,
+                })
                 return
             }
             if (cardAction === 'remote') {
