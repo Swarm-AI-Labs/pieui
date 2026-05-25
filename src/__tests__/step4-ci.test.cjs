@@ -7,36 +7,79 @@ const { spawnSync } = require('node:child_process')
 
 const repoRoot = path.resolve(__dirname, '../..')
 
+// Statically parse a TS source file and collect every value-level export name
+// it surfaces (re-exports via `*` are followed recursively; `export type {...}`
+// and `type Foo` specifiers are skipped — they don't survive in the JS bundle).
+const parseSourceExports = (filePath, visited = new Set()) => {
+    const absolute = path.resolve(filePath)
+    if (visited.has(absolute)) return new Set()
+    visited.add(absolute)
+
+    if (!fs.existsSync(absolute)) return new Set()
+
+    const dir = path.dirname(absolute)
+    const raw = fs
+        .readFileSync(absolute, 'utf8')
+        .replace(/\/\*[\s\S]*?\*\//g, '')
+        .replace(/\/\/[^\n]*/g, '')
+    // Drop `export type { ... }` blocks entirely.
+    const src = raw.replace(/export\s+type\s*\{[^}]*}[^;\n]*;?/g, '')
+
+    const exports = new Set()
+    let m
+
+    const namedRe = /export\s*\{([^}]*)}/g
+    while ((m = namedRe.exec(src)) !== null) {
+        for (const piece of m[1].split(',')) {
+            const item = piece.trim()
+            if (!item) continue
+            if (/^type\s+/.test(item)) continue
+            const renamed = item.match(/^.+?\s+as\s+(\w+)$/)
+            if (renamed) {
+                exports.add(renamed[1])
+                continue
+            }
+            const id = item.match(/^(\w+)/)
+            if (id) exports.add(id[1])
+        }
+    }
+
+    const declRe =
+        /export\s+(?:const|let|var|function\s*\*?|class)\s+(\w+)/g
+    while ((m = declRe.exec(src)) !== null) {
+        exports.add(m[1])
+    }
+
+    const starRe = /export\s*\*\s*from\s*['"]([^'"]+)['"]/g
+    while ((m = starRe.exec(src)) !== null) {
+        const target = m[1]
+        if (!target.startsWith('.')) continue
+        const base = path.resolve(dir, target.replace(/\.(ts|tsx|js|jsx)$/, ''))
+        const candidates = [
+            base + '.ts',
+            base + '.tsx',
+            path.join(base, 'index.ts'),
+            path.join(base, 'index.tsx'),
+        ]
+        for (const candidate of candidates) {
+            if (fs.existsSync(candidate)) {
+                for (const name of parseSourceExports(candidate, visited)) {
+                    exports.add(name)
+                }
+                break
+            }
+        }
+    }
+
+    return exports
+}
+
 const EXPECTED_MAIN_EXPORTS = [
-    'UI',
-    'PieRoot',
-    'PieTelegramRoot',
-    'PieBaseRoot',
-    'PieMaxRoot',
-    'PieCard',
-    'registerPieComponent',
-    'useAjaxSubmit',
-    'useOpenAIWebRTC',
-    'cn',
-    'PIEBREAK',
-    'submitGlobalForm',
+    ...parseSourceExports(path.join(repoRoot, 'src', 'index.ts')),
 ]
 
 const EXPECTED_COMPONENTS_EXPORTS = [
-    'PieCard',
-    'UI',
-    'SequenceCard',
-    'BoxCard',
-    'UnionCard',
-    'AjaxGroupCard',
-    'HTMLEmbedCard',
-    'HiddenCard',
-    'AutoRedirectCard',
-    'IOEventsCard',
-    'SessionStorageCard',
-    'DeviceStorageCard',
-    'CloudStorageCard',
-    'SecureStorageCard',
+    ...parseSourceExports(path.join(repoRoot, 'src', 'components', 'index.ts')),
 ]
 
 const EXPECTED_REGISTERED = [
