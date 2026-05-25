@@ -197,29 +197,61 @@ const checkTypeDefinitions = () => {
 }
 
 const checkRuntimeExports = () => {
+    // Each named export must be (a) reachable via require() and (b) resolve to
+    // a defined value. Regex-on-bundle isn't enough: bun ≥ 1.3.10 has a known
+    // regression where re-export entries (`export { default as X } from '...'`)
+    // keep the export NAME in the footer but silently drop the underlying
+    // `require()` declaration — the bundle string still contains "PieCard"
+    // but `module.exports.PieCard` throws `ReferenceError: import_PieCard is
+    // not defined` on first access.
     const checkScript = `
 const path = require('node:path');
 const repoRoot = ${JSON.stringify(repoRoot)};
-const expectedMain = ${JSON.stringify(EXPECTED_MAIN_EXPORTS)};
-const expectedComponents = ${JSON.stringify(EXPECTED_COMPONENTS_EXPORTS)};
+const targets = [
+  { name: 'main', path: path.join(repoRoot, 'dist', 'index.js'), expected: ${JSON.stringify(EXPECTED_MAIN_EXPORTS)} },
+  { name: 'components', path: path.join(repoRoot, 'dist', 'components', 'index.js'), expected: ${JSON.stringify(EXPECTED_COMPONENTS_EXPORTS)} },
+];
 
-const main = require(path.join(repoRoot, 'dist', 'index.js'));
-const components = require(path.join(repoRoot, 'dist', 'components', 'index.js'));
+const failures = [];
+for (const { name, path: bundlePath, expected } of targets) {
+  let mod;
+  try {
+    mod = require(bundlePath);
+  } catch (err) {
+    failures.push({ bundle: name, error: 'require() threw: ' + err.message });
+    continue;
+  }
+  for (const key of expected) {
+    const hasKey = Object.prototype.hasOwnProperty.call(mod, key) || key in mod;
+    if (!hasKey) {
+      failures.push({ bundle: name, key, reason: 'missing from module.exports' });
+      continue;
+    }
+    let value;
+    try {
+      value = mod[key];
+    } catch (err) {
+      failures.push({ bundle: name, key, reason: 'getter threw: ' + err.message });
+      continue;
+    }
+    if (typeof value === 'undefined') {
+      failures.push({ bundle: name, key, reason: 'value is undefined' });
+    }
+  }
+}
 
-const hasExport = (obj, key) =>
-  Object.prototype.hasOwnProperty.call(obj, key) || key in obj;
-
-const missingMain = expectedMain.filter((key) => !hasExport(main, key));
-const missingComponents = expectedComponents.filter((key) => !hasExport(components, key));
-
-if (missingMain.length > 0 || missingComponents.length > 0) {
-  console.error(JSON.stringify({ missingMain, missingComponents }));
+if (failures.length > 0) {
+  console.error('Broken exports detected:');
+  for (const f of failures) console.error('  - ' + JSON.stringify(f));
   process.exit(1);
 }
 `
 
     const result = runCommand('node', ['-e', checkScript], repoRoot)
-    assertSucceeded(result, 'node runtime export contract check should succeed')
+    assertSucceeded(
+        result,
+        'every named export must require() cleanly and resolve to a non-undefined value'
+    )
 }
 
 const checkRegisteredComponentNamesInBundle = () => {
