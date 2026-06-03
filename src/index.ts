@@ -50,13 +50,10 @@ export { default as SocketIOContext } from './util/socket'
 export { default as CentrifugeIOContext } from './util/centrifuge'
 export { default as FallbackContext } from './util/fallback'
 export { PieConfigContext } from './util/pieConfig'
-export {
-    getMittAgentTools,
-    usePieMittAgentTools,
-    type MittAgentTool,
-    type MittAgentToolDescriptor,
-    type MittAgentToolsOptions,
-} from './util/mittAgentTools'
+// NOTE: `getMittAgentTools` / `usePieMittAgentTools` moved to the
+// `@swarm.ing/pieui/agent` subpath. They pull in `@openai/agents` (+ the OpenAI
+// & MCP SDKs), so keeping them in this main barrel forced every consumer to
+// ship the agent stack to the browser. Import them from `@swarm.ing/pieui/agent`.
 export {
     default as useOpenAIWebRTC,
     type OpenAIEvent,
