@@ -2,8 +2,10 @@
 
 import { UIConfigType, SetUiAjaxConfigurationType } from '../../types'
 import { getRegistryEntry } from '../../util/registry'
-import { Suspense, useContext, ReactNode, memo } from 'react'
+import { useContext, ReactNode, memo } from 'react'
 import FallbackContext from '../../util/fallback'
+import LazyErrorContext from '../../util/lazyError'
+import LazyBoundary from '../LazyBoundary'
 import { useIsRenderingLogEnabled } from '../../util/pieConfig'
 
 function UI({
@@ -14,6 +16,7 @@ function UI({
     setUiAjaxConfiguration?: SetUiAjaxConfigurationType
 }) {
     const Fallback: ReactNode = useContext(FallbackContext)
+    const onChunkError = useContext(LazyErrorContext)
     const renderingLogEnabled = useIsRenderingLogEnabled()
 
     if (renderingLogEnabled) {
@@ -63,12 +66,13 @@ function UI({
             )
         }
         return (
-            <Suspense
-                key={`${entry.name}`}
+            <LazyBoundary
+                name={entry.name}
                 fallback={entry.fallback ? <entry.fallback /> : Fallback}
+                onError={onChunkError}
             >
                 {node}
-            </Suspense>
+            </LazyBoundary>
         )
     }
 

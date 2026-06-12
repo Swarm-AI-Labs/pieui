@@ -23,7 +23,11 @@ export {
     getComponentMeta,
     registerMultipleComponents,
     unregisterComponent,
+    getLazyComponentNames,
+    preloadComponent,
+    prefetchLazyComponents,
 } from './util/registry'
+export { trackLazy } from './util/lazy'
 
 export type {
     PieComponentProps,

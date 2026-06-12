@@ -1,6 +1,6 @@
 import { ReactNode } from 'react'
 import { PieConfig, UIConfigType } from '../../../types'
-import { UseQueryOptions } from '@tanstack/react-query'
+import { QueryClient, UseQueryOptions } from '@tanstack/react-query'
 import { AxiosError } from 'axios'
 
 /**
@@ -50,6 +50,21 @@ export interface PieRootProps {
     config: PieConfig
     /** Optional react-query overrides; see {@link PieQueryOptions}. */
     queryOptions?: PieQueryOptions
+    /**
+     * Optional host-supplied react-query `QueryClient`. Pass a stable
+     * (module-singleton) client so the fetched UI-config cache survives a
+     * remount of the root — otherwise a fresh client is created per mount and
+     * every cached page config is discarded (causing a refetch/flash). When
+     * omitted, a per-mount client is used (previous behaviour).
+     */
+    queryClient?: QueryClient
+    /**
+     * Called when a lazy (code-split) card's chunk fails to load, after the
+     * internal boundary's retries. Use it to recover from a stale deploy — e.g.
+     * reload the page once so the fresh asset manifest is fetched. Without it,
+     * a permanently-failing chunk simply shows the card's skeleton.
+     */
+    onChunkError?: (error: unknown) => void
     /**
      * When `true`, the implicit `<form id="piedata_global_form">` wrapper is
      * not rendered. Use this when the host application owns its own form

@@ -16,6 +16,7 @@ import CentrifugeIOContext, { getCentrifuge } from '../../util/centrifuge'
 import SocketIOInitProvider from '../../providers/SocketIOInitProvider'
 import CentrifugeIOInitProvider from '../../providers/CentrifugeIOInitProvider'
 import FallbackContext from '../../util/fallback'
+import LazyErrorContext from '../../util/lazyError'
 import { UIConfigType } from '../../types'
 import { AxiosError } from 'axios'
 import UI from '../UI'
@@ -204,14 +205,21 @@ const PieRootContent = ({
  * react-query behaviour.
  */
 const PieRoot = (props: PieRootProps) => {
-    const queryClient = useMemo(() => new QueryClient(), [])
+    // Use a host-supplied QueryClient when provided, so the fetched UI-config
+    // cache survives a remount of the root (otherwise a fresh client on each
+    // mount discards every cached page config and refetches). Falls back to a
+    // per-mount client for backward compatibility.
+    const fallbackClient = useMemo(() => new QueryClient(), [])
+    const queryClient = props.queryClient ?? fallbackClient
 
     return (
         <NavigateContext.Provider value={props.onNavigate}>
             <PieConfigContext.Provider value={props.config}>
-                <QueryClientProvider client={queryClient}>
-                    <PieRootContent {...props} />
-                </QueryClientProvider>
+                <LazyErrorContext.Provider value={props.onChunkError}>
+                    <QueryClientProvider client={queryClient}>
+                        <PieRootContent {...props} />
+                    </QueryClientProvider>
+                </LazyErrorContext.Provider>
             </PieConfigContext.Provider>
         </NavigateContext.Provider>
     )

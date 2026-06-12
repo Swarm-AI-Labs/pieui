@@ -16,6 +16,7 @@ import CentrifugeIOContext, { getCentrifuge } from '../../util/centrifuge'
 import SocketIOInitProvider from '../../providers/SocketIOInitProvider'
 import CentrifugeIOInitProvider from '../../providers/CentrifugeIOInitProvider'
 import FallbackContext from '../../util/fallback'
+import LazyErrorContext from '../../util/lazyError'
 import { UIConfigType } from '../../types'
 import { AxiosError } from 'axios'
 import UI from '../UI'
@@ -202,14 +203,19 @@ const PieTelegramRootContent: React.FC<PieRootProps> = ({
  * are forwarded to `onError`.
  */
 const PieTelegramRoot: React.FC<PieRootProps> = (props) => {
-    const queryClient = useMemo(() => new QueryClient(), [])
+    // Prefer a host-supplied QueryClient so the UI-config cache survives a root
+    // remount; fall back to a per-mount client for backward compatibility.
+    const fallbackClient = useMemo(() => new QueryClient(), [])
+    const queryClient = props.queryClient ?? fallbackClient
 
     return (
         <NavigateContext.Provider value={props.onNavigate}>
             <PieConfigContext.Provider value={props.config}>
-                <QueryClientProvider client={queryClient}>
-                    <PieTelegramRootContent {...props} />
-                </QueryClientProvider>
+                <LazyErrorContext.Provider value={props.onChunkError}>
+                    <QueryClientProvider client={queryClient}>
+                        <PieTelegramRootContent {...props} />
+                    </QueryClientProvider>
+                </LazyErrorContext.Provider>
             </PieConfigContext.Provider>
         </NavigateContext.Provider>
     )
