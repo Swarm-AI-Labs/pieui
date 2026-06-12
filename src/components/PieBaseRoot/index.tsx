@@ -10,6 +10,7 @@ import CentrifugeIOContext, { getCentrifuge } from '../../util/centrifuge'
 import SocketIOInitProvider from '../../providers/SocketIOInitProvider'
 import CentrifugeIOInitProvider from '../../providers/CentrifugeIOInitProvider'
 import FallbackContext from '../../util/fallback'
+import LazyErrorContext from '../../util/lazyError'
 import {
     PieConfigContext,
     useApiServer,
@@ -90,14 +91,17 @@ const PieBaseRootContent = ({
  * when combining a PieUI widget with a non-PieUI application shell.
  */
 const PieBaseRoot = (props: PieBaseRootProps) => {
-    const [queryClient] = useState(() => new QueryClient())
+    const [fallbackClient] = useState(() => new QueryClient())
+    const queryClient = props.queryClient ?? fallbackClient
 
     return (
         <NavigateContext.Provider value={props.onNavigate}>
             <PieConfigContext.Provider value={props.config}>
-                <QueryClientProvider client={queryClient}>
-                    <PieBaseRootContent {...props} />
-                </QueryClientProvider>
+                <LazyErrorContext.Provider value={props.onError}>
+                    <QueryClientProvider client={queryClient}>
+                        <PieBaseRootContent {...props} />
+                    </QueryClientProvider>
+                </LazyErrorContext.Provider>
             </PieConfigContext.Provider>
         </NavigateContext.Provider>
     )

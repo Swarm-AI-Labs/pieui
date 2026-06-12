@@ -16,6 +16,7 @@ import CentrifugeIOContext, { getCentrifuge } from '../../util/centrifuge'
 import SocketIOInitProvider from '../../providers/SocketIOInitProvider'
 import CentrifugeIOInitProvider from '../../providers/CentrifugeIOInitProvider'
 import FallbackContext from '../../util/fallback'
+import LazyErrorContext from '../../util/lazyError'
 import { UIConfigType } from '../../types'
 import { AxiosError } from 'axios'
 import UI from '../UI'
@@ -132,7 +133,7 @@ const PieMaxRootContent: React.FC<PieRootProps> = ({
             status: error.response?.status,
             data: error.response?.data,
         })
-        onError?.()
+        onError?.(error)
         return resolvedFallback
     }
 
@@ -199,14 +200,17 @@ const PieMaxRootContent: React.FC<PieRootProps> = ({
  * loading shell while MAX finishes initialising.
  */
 const PieMaxRoot: React.FC<PieRootProps> = (props) => {
-    const queryClient = useMemo(() => new QueryClient(), [])
+    const fallbackClient = useMemo(() => new QueryClient(), [])
+    const queryClient = props.queryClient ?? fallbackClient
 
     return (
         <NavigateContext.Provider value={props.onNavigate}>
             <PieConfigContext.Provider value={props.config}>
-                <QueryClientProvider client={queryClient}>
-                    <PieMaxRootContent {...props} />
-                </QueryClientProvider>
+                <LazyErrorContext.Provider value={props.onError}>
+                    <QueryClientProvider client={queryClient}>
+                        <PieMaxRootContent {...props} />
+                    </QueryClientProvider>
+                </LazyErrorContext.Provider>
             </PieConfigContext.Provider>
         </NavigateContext.Provider>
     )

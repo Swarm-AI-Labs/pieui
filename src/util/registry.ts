@@ -1,5 +1,5 @@
 import { ComponentMetadata, ComponentRegistration } from '../types'
-import { trackLazy } from './lazy'
+import { trackLazy, preloadComponent as preloadModule } from './lazy'
 import { ComponentType } from 'react'
 
 /**
@@ -37,7 +37,11 @@ const normalizeRegistration = <TProps>(
             entry.loader,
             registration.name
         ) as ComponentType<TProps>
-        entry.loader = undefined
+        // Keep the original `loader` on the entry (do NOT null it) so the chunk
+        // can be warmed by name later — see {@link preloadComponent} /
+        // {@link prefetchLazyComponents}. The renderer resolves lazy cards via
+        // `entry.component` (the React.lazy) + `isLazy`, so retaining `loader`
+        // has no effect on rendering.
         entry.isLazy = true
     }
 
@@ -127,4 +131,82 @@ export const getAllRegisteredComponents = (): string[] => {
  */
 export const getRegistrySize = (): number => {
     return registry.size
+}
+
+/**
+ * Names of every registered code-split (lazy) component — those registered
+ * with a `loader`. Handy for driving a prefetch pass.
+ */
+export const getLazyComponentNames = (): string[] =>
+    Array.from(registry.values())
+        .filter((e) => e.isLazy && typeof e.loader === 'function')
+        .map((e) => e.name)
+
+/**
+ * Warm a single lazy component's chunk by name, so a later render resolves
+ * synchronously (no Suspense fallback flash). No-op for unknown names or
+ * eager components. Shares the same module cache as the render-time
+ * `React.lazy`, so the import runs at most once.
+ *
+ * @returns The in-flight module promise, or `undefined` when there's nothing
+ *          to preload.
+ */
+export const preloadComponent = (name: string): Promise<unknown> | undefined => {
+    const entry = registry.get(name)
+    if (!entry?.isLazy || typeof entry.loader !== 'function') return undefined
+    return preloadModule(name, entry.loader)
+}
+
+let prefetchStarted = false
+
+/**
+ * Background-warm every registered lazy chunk so the first navigation to each
+ * screen resolves its card from cache instead of waiting on the network.
+ * Idempotent (only the first call does anything). Browser-only and
+ * connection-aware: it yields to idle time, warms one chunk at a time so it
+ * never competes with what the user is waiting on, and skips entirely on
+ * metered / very slow connections. Errors are swallowed — a failed warm-up
+ * just means the chunk loads on demand later.
+ *
+ * Call this once after the first screen has settled (e.g. in an effect on the
+ * landing screen).
+ */
+export const prefetchLazyComponents = (): void => {
+    if (prefetchStarted || typeof window === 'undefined') return
+    prefetchStarted = true
+
+    const conn = (
+        navigator as Navigator & {
+            connection?: { saveData?: boolean; effectiveType?: string }
+        }
+    ).connection
+    if (conn?.saveData) return
+    if (conn?.effectiveType && ['slow-2g', '2g'].includes(conn.effectiveType)) {
+        return
+    }
+
+    const names = getLazyComponentNames()
+    const onIdle: (cb: () => void) => void =
+        'requestIdleCallback' in window
+            ? (cb) =>
+                  (
+                      window as Window & {
+                          requestIdleCallback: (
+                              cb: () => void,
+                              opts?: { timeout: number }
+                          ) => number
+                      }
+                  ).requestIdleCallback(cb, { timeout: 2000 })
+            : (cb) => window.setTimeout(cb, 300)
+
+    const warmNext = (i: number) => {
+        if (i >= names.length) return
+        onIdle(() => {
+            Promise.resolve()
+                .then(() => preloadComponent(names[i]))
+                .catch(() => {})
+                .finally(() => warmNext(i + 1))
+        })
+    }
+    warmNext(0)
 }

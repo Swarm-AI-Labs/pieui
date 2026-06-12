@@ -23,7 +23,11 @@ export {
     getComponentMeta,
     registerMultipleComponents,
     unregisterComponent,
+    getLazyComponentNames,
+    preloadComponent,
+    prefetchLazyComponents,
 } from './util/registry'
+export { trackLazy } from './util/lazy'
 
 export type {
     PieComponentProps,
@@ -50,15 +54,11 @@ export { default as SocketIOContext } from './util/socket'
 export { default as CentrifugeIOContext } from './util/centrifuge'
 export { default as FallbackContext } from './util/fallback'
 export { PieConfigContext } from './util/pieConfig'
-// NOTE: `getMittAgentTools` / `usePieMittAgentTools` moved to the
-// `@swarm.ing/pieui/agent` subpath. They pull in `@openai/agents` (+ the OpenAI
-// & MCP SDKs), so keeping them in this main barrel forced every consumer to
-// ship the agent stack to the browser. Import them from `@swarm.ing/pieui/agent`.
-export {
-    default as useOpenAIWebRTC,
-    type OpenAIEvent,
-    type UseOpenAIWebRTCReturn,
-} from './util/useOpenAIWebRTC'
+// NOTE: `getMittAgentTools` / `usePieMittAgentTools` / `useOpenAIWebRTC` moved
+// to the `@swarm.ing/pieui/agent` subpath. They pull in `@openai/agents` (+ the
+// OpenAI & MCP SDKs), so keeping them in this main barrel forced every consumer
+// to ship the agent stack to the browser. Import them from
+// `@swarm.ing/pieui/agent`.
 export { cn } from './util/tailwindCommonUtils'
 export { PIEBREAK } from './util/pieConfig'
 export { submitGlobalForm } from './util/globalForm.ts'

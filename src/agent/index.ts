@@ -16,3 +16,8 @@ export {
     type MittAgentToolDescriptor,
     type MittAgentToolsOptions,
 } from '../util/mittAgentTools'
+export {
+    default as useOpenAIWebRTC,
+    type OpenAIEvent,
+    type UseOpenAIWebRTCReturn,
+} from '../util/useOpenAIWebRTC'

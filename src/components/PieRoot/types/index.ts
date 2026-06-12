@@ -1,6 +1,6 @@
 import { ReactNode } from 'react'
 import { PieConfig, UIConfigType } from '../../../types'
-import { UseQueryOptions } from '@tanstack/react-query'
+import { QueryClient, UseQueryOptions } from '@tanstack/react-query'
 import { AxiosError } from 'axios'
 
 /**
@@ -38,8 +38,16 @@ export interface PieRootProps {
      * via `UILoading` instead of the plain `fallback`.
      */
     piecache?: Record<string, UIConfigType>
-    /** Invoked when the UI configuration request throws. */
-    onError?: () => void
+    /**
+     * Invoked on a render-blocking error: either the UI-configuration request
+     * throws, or a lazy (code-split) card's chunk fails to load after the
+     * internal boundary's retries. The triggering error is passed when
+     * available. Use it to recover from a stale deploy — e.g. reload the page
+     * once so the fresh asset manifest is fetched. Without it, a fetch failure
+     * shows the `fallback` and a permanently-failing chunk shows the card's
+     * skeleton.
+     */
+    onError?: (error?: unknown) => void
     /**
      * Navigation handler forwarded through `NavigateContext` so PieUI
      * components can route via the host application (Next.js router,
@@ -50,6 +58,14 @@ export interface PieRootProps {
     config: PieConfig
     /** Optional react-query overrides; see {@link PieQueryOptions}. */
     queryOptions?: PieQueryOptions
+    /**
+     * Optional host-supplied react-query `QueryClient`. Pass a stable
+     * (module-singleton) client so the fetched UI-config cache survives a
+     * remount of the root — otherwise a fresh client is created per mount and
+     * every cached page config is discarded (causing a refetch/flash). When
+     * omitted, a per-mount client is used (previous behaviour).
+     */
+    queryClient?: QueryClient
     /**
      * When `true`, the implicit `<form id="piedata_global_form">` wrapper is
      * not rendered. Use this when the host application owns its own form

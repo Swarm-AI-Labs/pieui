@@ -2,8 +2,10 @@
 
 import { UIConfigType, SetUiAjaxConfigurationType } from '../../types'
 import { getRegistryEntry } from '../../util/registry'
-import { Suspense, useContext, ReactNode } from 'react'
+import { useContext, ReactNode } from 'react'
 import FallbackContext from '../../util/fallback'
+import LazyErrorContext from '../../util/lazyError'
+import LazyBoundary from '../LazyBoundary'
 import { useIsRenderingLogEnabled } from '../../util/pieConfig'
 import UIRendererContext from '../../util/uiRenderer'
 
@@ -15,6 +17,7 @@ function UILoading({
     setUiAjaxConfiguration?: SetUiAjaxConfigurationType
 }) {
     const Fallback: ReactNode = useContext(FallbackContext)
+    const onError = useContext(LazyErrorContext)
     const renderingLogEnabled = useIsRenderingLogEnabled()
 
     if (renderingLogEnabled) {
@@ -76,9 +79,13 @@ function UILoading({
 
     if (entry.isLazy) {
         return (
-            <Suspense key={`${entry.name}`} fallback={Fallback}>
+            <LazyBoundary
+                name={entry.name}
+                fallback={Fallback}
+                onError={onError}
+            >
                 {node}
-            </Suspense>
+            </LazyBoundary>
         )
     }
 
