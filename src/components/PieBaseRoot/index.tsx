@@ -97,7 +97,7 @@ const PieBaseRoot = (props: PieBaseRootProps) => {
     return (
         <NavigateContext.Provider value={props.onNavigate}>
             <PieConfigContext.Provider value={props.config}>
-                <LazyErrorContext.Provider value={props.onChunkError}>
+                <LazyErrorContext.Provider value={props.onError}>
                     <QueryClientProvider client={queryClient}>
                         <PieBaseRootContent {...props} />
                     </QueryClientProvider>

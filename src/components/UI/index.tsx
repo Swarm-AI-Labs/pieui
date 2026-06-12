@@ -16,7 +16,7 @@ function UI({
     setUiAjaxConfiguration?: SetUiAjaxConfigurationType
 }) {
     const Fallback: ReactNode = useContext(FallbackContext)
-    const onChunkError = useContext(LazyErrorContext)
+    const onError = useContext(LazyErrorContext)
     const renderingLogEnabled = useIsRenderingLogEnabled()
 
     if (renderingLogEnabled) {
@@ -69,7 +69,7 @@ function UI({
             <LazyBoundary
                 name={entry.name}
                 fallback={entry.fallback ? <entry.fallback /> : Fallback}
-                onError={onChunkError}
+                onError={onError}
             >
                 {node}
             </LazyBoundary>

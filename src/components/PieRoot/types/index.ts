@@ -38,8 +38,16 @@ export interface PieRootProps {
      * via `UILoading` instead of the plain `fallback`.
      */
     piecache?: Record<string, UIConfigType>
-    /** Invoked when the UI configuration request throws. */
-    onError?: () => void
+    /**
+     * Invoked on a render-blocking error: either the UI-configuration request
+     * throws, or a lazy (code-split) card's chunk fails to load after the
+     * internal boundary's retries. The triggering error is passed when
+     * available. Use it to recover from a stale deploy — e.g. reload the page
+     * once so the fresh asset manifest is fetched. Without it, a fetch failure
+     * shows the `fallback` and a permanently-failing chunk shows the card's
+     * skeleton.
+     */
+    onError?: (error?: unknown) => void
     /**
      * Navigation handler forwarded through `NavigateContext` so PieUI
      * components can route via the host application (Next.js router,
@@ -58,13 +66,6 @@ export interface PieRootProps {
      * omitted, a per-mount client is used (previous behaviour).
      */
     queryClient?: QueryClient
-    /**
-     * Called when a lazy (code-split) card's chunk fails to load, after the
-     * internal boundary's retries. Use it to recover from a stale deploy — e.g.
-     * reload the page once so the fresh asset manifest is fetched. Without it,
-     * a permanently-failing chunk simply shows the card's skeleton.
-     */
-    onChunkError?: (error: unknown) => void
     /**
      * When `true`, the implicit `<form id="piedata_global_form">` wrapper is
      * not rendered. Use this when the host application owns its own form

@@ -17,7 +17,7 @@ function UILoading({
     setUiAjaxConfiguration?: SetUiAjaxConfigurationType
 }) {
     const Fallback: ReactNode = useContext(FallbackContext)
-    const onChunkError = useContext(LazyErrorContext)
+    const onError = useContext(LazyErrorContext)
     const renderingLogEnabled = useIsRenderingLogEnabled()
 
     if (renderingLogEnabled) {
@@ -82,7 +82,7 @@ function UILoading({
             <LazyBoundary
                 name={entry.name}
                 fallback={Fallback}
-                onError={onChunkError}
+                onError={onError}
             >
                 {node}
             </LazyBoundary>

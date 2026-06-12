@@ -135,7 +135,7 @@ const PieTelegramRootContent: React.FC<PieRootProps> = ({
             status: error.response?.status,
             data: error.response?.data,
         })
-        onError?.()
+        onError?.(error)
         return resolvedFallback
     }
 
@@ -211,7 +211,7 @@ const PieTelegramRoot: React.FC<PieRootProps> = (props) => {
     return (
         <NavigateContext.Provider value={props.onNavigate}>
             <PieConfigContext.Provider value={props.config}>
-                <LazyErrorContext.Provider value={props.onChunkError}>
+                <LazyErrorContext.Provider value={props.onError}>
                     <QueryClientProvider client={queryClient}>
                         <PieTelegramRootContent {...props} />
                     </QueryClientProvider>

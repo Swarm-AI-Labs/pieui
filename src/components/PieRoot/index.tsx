@@ -133,7 +133,7 @@ const PieRootContent = ({
                 data: error.response?.data,
             })
         }
-        onError?.()
+        onError?.(error)
         return resolvedFallback
     }
 
@@ -215,7 +215,7 @@ const PieRoot = (props: PieRootProps) => {
     return (
         <NavigateContext.Provider value={props.onNavigate}>
             <PieConfigContext.Provider value={props.config}>
-                <LazyErrorContext.Provider value={props.onChunkError}>
+                <LazyErrorContext.Provider value={props.onError}>
                     <QueryClientProvider client={queryClient}>
                         <PieRootContent {...props} />
                     </QueryClientProvider>
