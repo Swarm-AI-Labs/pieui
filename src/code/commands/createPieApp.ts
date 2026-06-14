@@ -10,7 +10,8 @@ const DEFAULT_SHARED_SIMPLE_TSX = `"use client";
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { PieTelegramRoot, PieQueryOptions } from "@swarm.ing/pieui";
+import { PieQueryOptions } from "@swarm.ing/pieui";
+import { PieTelegramRoot } from "@swarm.ing/pieui/telegram";
 
 import { usePathname, useSearchParams } from "next/navigation";
 import LoadingScreen from "@/components/LoadingScreen";

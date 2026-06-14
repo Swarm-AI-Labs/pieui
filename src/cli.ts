@@ -29,6 +29,7 @@ import {
 import { pageAddCommand } from './code/commands/pageAdd'
 import { pageViewCommand } from './code/commands/pageView'
 import { pageAjaxCommand } from './code/commands/pageAjax'
+import { registryCommand } from './code/commands/registry'
 import { createCommand } from './code/commands/create'
 import { createPieAppCommand } from './code/commands/createPieApp'
 import { loginCommand } from './code/commands/login'
@@ -81,6 +82,10 @@ const main = async () => {
         historyPerPage,
         historyFrom,
         historyTo,
+        registryAction,
+        registryPort,
+        registryApiServer,
+        registryOut,
     } = args
 
     console.log(`[pieui] CLI started with command: "${command}"`)
@@ -109,6 +114,22 @@ const main = async () => {
         case 'self-upgrade':
             await selfUpgradeCommand(args.selfUpgradePm)
             return
+
+        case 'registry': {
+            if (registryAction !== 'dev' && registryAction !== 'build') {
+                console.error(
+                    '[pieui] Error: Supported registry subcommands: dev, build'
+                )
+                printUsage()
+                process.exit(1)
+            }
+            registryCommand(registryAction, {
+                port: registryPort,
+                apiServer: registryApiServer,
+                out: registryOut,
+            })
+            return
+        }
 
         case 'postbuild':
             console.log(

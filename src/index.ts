@@ -9,9 +9,14 @@ export {
     type UIRendererProps,
 } from './util/uiRenderer'
 export { default as PieRoot } from './components/PieRoot'
-export { default as PieTelegramRoot } from './components/PieTelegramRoot'
 export { default as PieBaseRoot } from './components/PieBaseRoot'
-export { default as PieMaxRoot } from './components/PieMaxRoot'
+export { default as PiePreviewRoot } from './components/PiePreviewRoot'
+export type { PiePreviewRootProps } from './components/PiePreviewRoot'
+// NOTE: `PieTelegramRoot` (+ `useWebApp`/`useInitData`) moved to the
+// `@swarm.ing/pieui/telegram` subpath, and `PieMaxRoot` (+ `useMaxWebApp` &
+// friends) moved to `@swarm.ing/pieui/max`. They are platform-specific host
+// integrations; splitting them out keeps the main barrel free of Telegram/MAX
+// code for apps that don't target those hosts. Import them from their subpath.
 export { default as PieCard } from './components/PieCard'
 export {
     registerPieComponent,
@@ -63,5 +68,3 @@ export { cn } from './util/tailwindCommonUtils'
 export { PIEBREAK } from './util/pieConfig'
 export { submitGlobalForm } from './util/globalForm.ts'
 export { pieName } from './util/pieName'
-export { useWebApp } from './util/useWebApp'
-export { useMaxWebApp } from './util/useMaxWebApp'

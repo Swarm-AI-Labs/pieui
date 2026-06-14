@@ -34,6 +34,16 @@
             "require": "./dist/agent/index.js",
             "types": "./dist/agent/index.d.ts"
         },
+        "./telegram": {
+            "import": "./dist/telegram/index.esm.js",
+            "require": "./dist/telegram/index.js",
+            "types": "./dist/telegram/index.d.ts"
+        },
+        "./max": {
+            "import": "./dist/max/index.esm.js",
+            "require": "./dist/max/index.js",
+            "types": "./dist/max/index.d.ts"
+        },
         "./storybook": {
             "import": "./dist/storybook/index.esm.js",
             "require": "./dist/storybook/index.js",
@@ -51,8 +61,8 @@
         }
     },
     "scripts": {
-        "build": "rm -rf ./dist && rm -rf pieui-*.tgz && bun run build:clean && NODE_ENV=production bun run build:esm && NODE_ENV=production bun run build:cjs && NODE_ENV=production bun run build:components:esm && NODE_ENV=production bun run build:components:cjs && NODE_ENV=production bun run build:agent:esm && NODE_ENV=production bun run build:agent:cjs && NODE_ENV=production bun run build:storybook:esm && NODE_ENV=production bun run build:storybook:cjs && NODE_ENV=production bun run build:storybook:addon:esm && NODE_ENV=production bun run build:storybook:addon:cjs && NODE_ENV=production bun run build:storybook:addon:preset && bun run build:banner && NODE_ENV=production bun run build:types && NODE_ENV=production bun run build:cli && bun src/cli.ts postbuild --src-dir src --out-dir dist && bun pm pack",
-        "build:banner": "node -e \"const fs=require('fs');['dist/index.esm.js','dist/index.js','dist/components/index.esm.js','dist/components/index.js','dist/agent/index.esm.js','dist/agent/index.js','dist/storybook/index.esm.js','dist/storybook/index.js','dist/storybook/addon/index.esm.js','dist/storybook/addon/index.js'].forEach(f=>{if(fs.existsSync(f)){fs.writeFileSync(f,'\\\"use client\\\";\\n'+fs.readFileSync(f,'utf8'))}})\"",
+        "build": "rm -rf ./dist && rm -rf pieui-*.tgz && bun run build:clean && NODE_ENV=production bun run build:esm && NODE_ENV=production bun run build:cjs && NODE_ENV=production bun run build:components:esm && NODE_ENV=production bun run build:components:cjs && NODE_ENV=production bun run build:agent:esm && NODE_ENV=production bun run build:agent:cjs && NODE_ENV=production bun run build:telegram:esm && NODE_ENV=production bun run build:telegram:cjs && NODE_ENV=production bun run build:max:esm && NODE_ENV=production bun run build:max:cjs && NODE_ENV=production bun run build:storybook:esm && NODE_ENV=production bun run build:storybook:cjs && NODE_ENV=production bun run build:storybook:addon:esm && NODE_ENV=production bun run build:storybook:addon:cjs && NODE_ENV=production bun run build:storybook:addon:preset && bun run build:banner && NODE_ENV=production bun run build:types && NODE_ENV=production bun run build:cli && bun src/cli.ts postbuild --src-dir src --out-dir dist && bun pm pack",
+        "build:banner": "node -e \"const fs=require('fs');['dist/index.esm.js','dist/index.js','dist/components/index.esm.js','dist/components/index.js','dist/agent/index.esm.js','dist/agent/index.js','dist/telegram/index.esm.js','dist/telegram/index.js','dist/max/index.esm.js','dist/max/index.js','dist/storybook/index.esm.js','dist/storybook/index.js','dist/storybook/addon/index.esm.js','dist/storybook/addon/index.js'].forEach(f=>{if(fs.existsSync(f)){fs.writeFileSync(f,'\\\"use client\\\";\\n'+fs.readFileSync(f,'utf8'))}})\"",
         "build:clean": "rm -rf dist",
         "build:esm": "bun build src/index.ts --outfile dist/index.esm.js --format esm --target browser --jsx=automatic --jsx-import-source=react --minify --packages=external",
         "build:cjs": "bun build src/index.ts --outfile dist/index.js --format cjs --target node --jsx=automatic --jsx-import-source=react --minify --packages=external",
@@ -60,6 +70,10 @@
         "build:components:cjs": "bun build src/components/index.ts --outfile dist/components/index.js --format cjs --target node --jsx=automatic --jsx-import-source=react --minify --packages=external",
         "build:agent:esm": "bun build src/agent/index.ts --outfile dist/agent/index.esm.js --format esm --target browser --jsx=automatic --jsx-import-source=react --minify --packages=external",
         "build:agent:cjs": "bun build src/agent/index.ts --outfile dist/agent/index.js --format cjs --target node --jsx=automatic --jsx-import-source=react --minify --packages=external",
+        "build:telegram:esm": "bun build src/telegram/index.ts --outfile dist/telegram/index.esm.js --format esm --target browser --jsx=automatic --jsx-import-source=react --minify --packages=external",
+        "build:telegram:cjs": "bun build src/telegram/index.ts --outfile dist/telegram/index.js --format cjs --target node --jsx=automatic --jsx-import-source=react --minify --packages=external",
+        "build:max:esm": "bun build src/max/index.ts --outfile dist/max/index.esm.js --format esm --target browser --jsx=automatic --jsx-import-source=react --minify --packages=external",
+        "build:max:cjs": "bun build src/max/index.ts --outfile dist/max/index.js --format cjs --target node --jsx=automatic --jsx-import-source=react --minify --packages=external",
         "build:storybook:esm": "bun build src/storybook/index.tsx --outfile dist/storybook/index.esm.js --format esm --target browser --jsx=automatic --jsx-import-source=react --minify --packages=external",
         "build:storybook:cjs": "bun build src/storybook/index.tsx --outfile dist/storybook/index.js --format cjs --target node --jsx=automatic --jsx-import-source=react --minify --packages=external",
         "build:storybook:addon:esm": "bun build src/storybook/addon/index.tsx --outfile dist/storybook/addon/index.esm.js --format esm --target browser --jsx=automatic --jsx-import-source=react --minify --packages=external",
@@ -109,9 +123,16 @@
     "license": "MIT",
     "peerDependencies": {
         "react": ">=19",
-        "react-dom": ">=19"
+        "react-dom": ">=19",
+        "@openai/agents": "^0.4.5"
+    },
+    "peerDependenciesMeta": {
+        "@openai/agents": {
+            "optional": true
+        }
     },
     "devDependencies": {
+        "@openai/agents": "^0.4.5",
         "@testing-library/jest-dom": "^6.9.1",
         "@testing-library/react": "^16.3.2",
         "@types/bun": "latest",
@@ -131,22 +152,16 @@
         "typescript-json-schema": "^0.67.1"
     },
     "dependencies": {
-        "@openai/agents": "^0.4.5",
         "@tanstack/react-query": "^5.90.20",
-        "@telegram-apps/sdk": "^3.11.8",
-        "annyang": "^2.6.1",
         "axios": "^1.15.0",
         "axios-date-transformer": "^1.2.1",
         "centrifuge": "^5.5.3",
         "clsx": "^2.1.1",
         "html-react-parser": "^5.2.16",
-        "jszip": "^3.10.1",
         "mitt": "^3.0.1",
         "react-toastify": "^11.0.5",
         "socket.io-client": "^4.8.3",
         "tailwind-merge": "^3.4.0",
-        "vm2": "^3.10.3",
-        "zod": "^4.3.6",
-        "zod-from-json-schema": "^0.5.2"
+        "vm2": "^3.10.3"
     }
 }

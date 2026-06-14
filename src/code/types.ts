@@ -66,7 +66,13 @@ export type ParsedArgs = {
     selfUpgradePm?: string
     dumpMetadataOut?: string
     cardGeneratePreviewOut?: string
+    registryAction?: RegistryAction
+    registryPort?: number
+    registryApiServer?: string
+    registryOut?: string
 }
+
+export type RegistryAction = 'dev' | 'build'
 
 export type CardScaffoldOptions = {
     ajax?: boolean

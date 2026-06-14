@@ -6,6 +6,7 @@ import type {
     PageAction,
     PageAjaxAction,
     ParsedArgs,
+    RegistryAction,
 } from './types'
 
 const VALID_CARD_ACTIONS: CardAction[] = [
@@ -317,6 +318,33 @@ export const parseArgs = (argv: string[]): ParsedArgs => {
         }
     }
 
+    if (command === 'registry' && argv[1]) {
+        const action = argv[1] as RegistryAction
+        if (action === 'dev' || action === 'build') {
+            result.registryAction = action
+            const tail = argv.slice(2)
+            for (let i = 0; i < tail.length; i++) {
+                const tok = tail[i]
+                if (tok === '--port' && tail[i + 1]) {
+                    result.registryPort = parseIntFlag('--port', tail[++i])
+                } else if (tok.startsWith('--port=')) {
+                    result.registryPort = parseIntFlag(
+                        '--port',
+                        tok.slice('--port='.length)
+                    )
+                } else if (tok === '--api-server' && tail[i + 1]) {
+                    result.registryApiServer = tail[++i]
+                } else if (tok.startsWith('--api-server=')) {
+                    result.registryApiServer = tok.slice('--api-server='.length)
+                } else if (tok === '--out' && tail[i + 1]) {
+                    result.registryOut = tail[++i]
+                } else if (tok.startsWith('--out=')) {
+                    result.registryOut = tok.slice('--out='.length)
+                }
+            }
+        }
+    }
+
     return result
 }
 
@@ -329,6 +357,7 @@ export type HelpScope =
     | 'card'
     | 'card-remote'
     | 'page'
+    | 'registry'
     | 'self-upgrade'
 
 export const detectHelpScope = (argv: string[]): HelpScope | null => {
@@ -338,6 +367,7 @@ export const detectHelpScope = (argv: string[]): HelpScope | null => {
     if (c0 === 'card' && c1 === 'remote') return 'card-remote'
     if (c0 === 'card') return 'card'
     if (c0 === 'page') return 'page'
+    if (c0 === 'registry') return 'registry'
     if (c0 === 'init') return 'init'
     if (c0 === 'postbuild') return 'postbuild'
     if (c0 === 'login') return 'login'
@@ -386,6 +416,10 @@ const ALL_LINES: string[] = [
     '  page add <path>                                  Create app/<path>/page.tsx from the standard Pie page template',
     '  page view <path>                                 Print app/<path>/page.tsx source',
     '  page ajax <path> <add|remove> <handler>          Add or remove an AJAX handler in app/<path>/page.tsx',
+    '',
+    'Registry preview harness (standalone PiePreviewRoot, no app layout):',
+    '  registry dev [--port N] [--api-server URL]       Run the preview harness dev server (used by `pie card show`)',
+    '  registry build [--out DIR]                       Static-export the harness (served by `pie` with disable_serving=False)',
     '',
     'Component types for `card add`:',
     '  simple              Simple component (only data prop)',

@@ -10,8 +10,6 @@ external = [
   # Dependencies — all externalized, consumer provides them
   "@openai/agents",
   "@tanstack/react-query",
-  "@telegram-apps/sdk",
-  "annyang",
   "axios",
   "axios-date-transformer",
   "centrifuge",
@@ -21,8 +19,6 @@ external = [
   "react-toastify",
   "socket.io-client",
   "tailwind-merge",
-  "zod",
-  "zod-from-json-schema",
 
   # Dev-only (used by CLI/build tooling)
   "glob",
