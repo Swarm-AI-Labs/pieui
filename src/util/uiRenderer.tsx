@@ -1,5 +1,6 @@
 import { ComponentType, createContext } from 'react'
 import { SetUiAjaxConfigurationType, UIConfigType } from '../types'
+import { globalSingleton } from './globalSingleton'
 
 /**
  * Props accepted by any component installed as the active UI renderer.
@@ -20,8 +21,9 @@ export type UIRendererProps = {
  * `UIConfigType` subtrees (e.g. after an Ajax update) without importing the
  * renderer module themselves, which would create a circular dependency.
  */
-const UIRendererContext = createContext<ComponentType<UIRendererProps> | null>(
-    null
+const UIRendererContext = globalSingleton(
+    '@swarm.ing/pieui:context:uiRenderer',
+    () => createContext<ComponentType<UIRendererProps> | null>(null)
 )
 
 export default UIRendererContext

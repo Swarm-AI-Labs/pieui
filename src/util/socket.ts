@@ -2,8 +2,12 @@
 
 import { io, Socket } from 'socket.io-client'
 import { createContext } from 'react'
+import { globalSingleton } from './globalSingleton'
 
-const socketCache = new Map<string, Socket>()
+const socketCache = globalSingleton(
+    '@swarm.ing/pieui:socket-cache',
+    () => new Map<string, Socket>()
+)
 
 /**
  * Returns a cached Socket.IO client for the given PieUI API server, creating
@@ -39,6 +43,9 @@ export const getSocket = (apiServer: string): Socket => {
  * rendered inside a PieRoot. `PieCard` reads it to register `pie*` event
  * listeners corresponding to its `methods` map.
  */
-const SocketIOContext = createContext<Socket | null>(null)
+const SocketIOContext = globalSingleton(
+    '@swarm.ing/pieui:context:socket',
+    () => createContext<Socket | null>(null)
+)
 
 export default SocketIOContext

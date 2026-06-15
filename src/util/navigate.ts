@@ -1,6 +1,7 @@
 'use client'
 
 import { createContext } from 'react'
+import { globalSingleton } from './globalSingleton'
 
 /**
  * Signature of the navigation callback supplied to a PieRoot via its
@@ -15,6 +16,9 @@ export type NavigateFunction = (_: string) => void
  * anchor components). `undefined` means no handler was provided — consumers
  * should fall back to a native `window.location` assignment in that case.
  */
-const NavigateContext = createContext<NavigateFunction | undefined>(undefined)
+const NavigateContext = globalSingleton(
+    '@swarm.ing/pieui:context:navigate',
+    () => createContext<NavigateFunction | undefined>(undefined)
+)
 
 export default NavigateContext

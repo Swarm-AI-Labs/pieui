@@ -1,12 +1,24 @@
-let sidPromise: Promise<void> | null = null
-let sidResolve: (() => void) | null = null
+import { globalSingleton } from './globalSingleton'
+
+type SidState = {
+    promise: Promise<void> | null
+    resolve: (() => void) | null
+}
+
+// Stashed on globalThis so the provider that calls `markSidAvailable()` and the
+// waiter that calls `waitForSidAvailable()` share one promise even when they are
+// loaded from different pre-bundled entry points.
+const state = globalSingleton<SidState>(
+    '@swarm.ing/pieui:sid-state',
+    () => ({ promise: null, resolve: null })
+)
 
 /**
  * Должно вызываться из SocketIOInitProvider сразу после того, как
  * window.sid был проставлен. Резолвит любые ожидающие waitForSidAvailable().
  */
 export function markSidAvailable() {
-    sidResolve?.()
+    state.resolve?.()
 }
 
 /**
@@ -20,12 +32,12 @@ export default function waitForSidAvailable(): Promise<void> {
     if (typeof window.sid !== 'undefined') {
         return Promise.resolve()
     }
-    if (!sidPromise) {
-        sidPromise = new Promise<void>((resolve) => {
-            sidResolve = () => {
+    if (!state.promise) {
+        state.promise = new Promise<void>((resolve) => {
+            state.resolve = () => {
                 resolve()
             }
         })
     }
-    return sidPromise
+    return state.promise
 }

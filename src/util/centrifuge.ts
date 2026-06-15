@@ -2,8 +2,12 @@
 
 import { createContext } from 'react'
 import { Centrifuge } from 'centrifuge'
+import { globalSingleton } from './globalSingleton'
 
-const centrifugeCache = new Map<string, Centrifuge>()
+const centrifugeCache = globalSingleton(
+    '@swarm.ing/pieui:centrifuge-cache',
+    () => new Map<string, Centrifuge>()
+)
 
 /**
  * Returns a cached {@link Centrifuge} client for the given API/Centrifuge
@@ -56,5 +60,8 @@ export const getCentrifuge = (
  * component tree. Populated by PieRoot variants; consumers read it to create
  * subscriptions scoped to a specific `PieCard`.
  */
-const CentrifugeIOContext = createContext<Centrifuge | null>(null)
+const CentrifugeIOContext = globalSingleton(
+    '@swarm.ing/pieui:context:centrifuge',
+    () => createContext<Centrifuge | null>(null)
+)
 export default CentrifugeIOContext

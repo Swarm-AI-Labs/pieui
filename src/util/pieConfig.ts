@@ -2,6 +2,7 @@
 
 import { createContext, useContext } from 'react'
 import { PieConfig } from '../types'
+import { globalSingleton } from './globalSingleton'
 
 /**
  * React context that carries the {@link PieConfig} object supplied to a
@@ -9,7 +10,10 @@ import { PieConfig } from '../types'
  * logging flag, page processor mode) flows through this context so that
  * utilities can be plain hooks instead of reading from `process.env`.
  */
-export const PieConfigContext = createContext<PieConfig | null>(null)
+export const PieConfigContext = globalSingleton(
+    '@swarm.ing/pieui:context:pieConfig',
+    () => createContext<PieConfig | null>(null)
+)
 
 /**
  * Returns the current {@link PieConfig} from {@link PieConfigContext}.

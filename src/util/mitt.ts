@@ -2,6 +2,7 @@
 
 import mitt, { Emitter } from 'mitt'
 import { createContext, useCallback, useContext } from 'react'
+import { globalSingleton } from './globalSingleton'
 
 /**
  * Event map used by the PieUI Mitt emitter. Event names follow the convention
@@ -12,8 +13,6 @@ export type MittEvents = {
     [key: string]: any
 }
 
-let _emitter: Emitter<MittEvents> | null = null
-
 /**
  * Returns the lazily-initialized singleton Mitt emitter used for cross-component
  * PieUI messaging outside of any React context.
@@ -21,13 +20,15 @@ let _emitter: Emitter<MittEvents> | null = null
  * Prefer {@link usePieEmit} from within React components — it honours the
  * provider-supplied emitter from `MittContext` when one is available.
  *
+ * The emitter is stashed on `globalThis` so every pre-bundled entry point shares
+ * the same instance and events emitted from one bundle reach listeners in another.
+ *
  * @returns The process-wide Mitt emitter instance.
  */
 export function getEmitter(): Emitter<MittEvents> {
-    if (!_emitter) {
-        _emitter = mitt<MittEvents>()
-    }
-    return _emitter
+    return globalSingleton('@swarm.ing/pieui:mitt-emitter', () =>
+        mitt<MittEvents>()
+    )
 }
 
 /**
@@ -36,7 +37,10 @@ export function getEmitter(): Emitter<MittEvents> {
  * this context (directly or via {@link usePieEmit}) so that events flow
  * through the same emitter the surrounding roots use.
  */
-const MittContext = createContext<Emitter<MittEvents> | null>(null)
+const MittContext = globalSingleton(
+    '@swarm.ing/pieui:context:mitt',
+    () => createContext<Emitter<MittEvents> | null>(null)
+)
 
 /**
  * React hook that returns a stable emitter function bound to a specific

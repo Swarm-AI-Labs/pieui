@@ -1,6 +1,7 @@
 'use client'
 
 import { createContext, ReactNode } from 'react'
+import { globalSingleton } from './globalSingleton'
 
 /**
  * React context that carries the "loading / missing data" fallback node used
@@ -8,6 +9,9 @@ import { createContext, ReactNode } from 'react'
  * dynamic components (lazy-loaded cards, deferred UI regions) read from this
  * context so that every empty state in a tree shares the same visual.
  */
-const FallbackContext = createContext<ReactNode>(<></>)
+const FallbackContext = globalSingleton(
+    '@swarm.ing/pieui:context:fallback',
+    () => createContext<ReactNode>(<></>)
+)
 
 export default FallbackContext
