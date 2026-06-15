@@ -7,8 +7,27 @@ import { ComponentType } from 'react'
  * call to {@link registerPieComponent} writes into this `Map`, and the
  * dynamic UI renderer reads from it at render time to resolve a `card` name
  * to a concrete React component.
+ *
+ * The `Map` is stashed on `globalThis` under a shared `Symbol.for` key so that
+ * every copy of this module resolves to the SAME instance. `registry.ts` gets
+ * inlined into each pre-bundled entry point (main, `/components`, `/telegram`,
+ * `/max`, `/agent`), and without a shared backing store each bundle would own a
+ * separate `Map`. A component registered via one entry
+ * (`import "@swarm.ing/pieui/components"`) would then be invisible to a renderer
+ * loaded from another (`PieTelegramRoot` from `@swarm.ing/pieui/telegram`),
+ * surfacing as "[UI] Component not found in registry".
  */
-export const registry = new Map<string, ComponentRegistration<any>>()
+const REGISTRY_KEY = Symbol.for('@swarm.ing/pieui:component-registry')
+
+type RegistryMap = Map<string, ComponentRegistration<any>>
+
+const globalScope = globalThis as unknown as Record<
+    symbol,
+    RegistryMap | undefined
+>
+
+export const registry: RegistryMap =
+    globalScope[REGISTRY_KEY] ?? (globalScope[REGISTRY_KEY] = new Map())
 
 const normalizeRegistration = <TProps>(
     registration: ComponentRegistration<TProps>
