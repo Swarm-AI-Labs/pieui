@@ -132,3 +132,30 @@ The CLI tool `pieui postbuild` automatically discovers these registrations and c
 ### Ajax Components
 
 Special components in `src/components/Containers/AjaxGroupCard` and `src/components/Buttons/AjaxButtonCard` handle dynamic content updates through the `setUiAjaxConfiguration` callback, enabling server-driven UI updates without page reloads.
+
+#### Ajax submit variable sources (`depsNames`)
+
+`getAjaxSubmit` / `useAjaxSubmit` (`src/util/ajaxCommonUtils.ts`) collect submit
+variables from `kwargs`, runtime `extraKwargs`, and `depsNames`. Each entry in
+`depsNames` is resolved by `readAjaxKey` according to a source prefix
+(`parseDepName`); the value is submitted under the **bare key** (after the
+prefix):
+
+| `depsNames` entry      | Source                                              |
+| ---------------------- | --------------------------------------------------- |
+| `email` (no prefix)    | DOM input via `document.getElementsByName` (default)|
+| `sid`                  | `window.sid` (SocketIO; awaits `waitForSidAvailable`)|
+| `localStorage:<key>`   | `localStorage.getItem(key)`                         |
+| `sessionStorage:<key>` | `sessionStorage.getItem(key)`                       |
+| `cookie:<name>`        | parsed `document.cookie` (URL-decoded)              |
+| `url:<param>`          | `URLSearchParams(location.search).getAll(param)`    |
+
+A missing value contributes nothing (same as a missing DOM input). `localStorage:`
+/ `sessionStorage:` are the direct equivalents of wiring a `DeviceStorageCard` /
+`SessionStorageCard` hidden input into `depsNames`. There is **no** prefix for
+Telegram Cloud/Secure storage — `CloudStorageCard` / `SecureStorageCard` still
+rely on their hidden input.
+
+`depsNames` values are supplied by the backend `UIConfig` at runtime, so this is
+data interpreted by the frontend, not a CLI surface — cross-repo CLI symmetry is
+unaffected.

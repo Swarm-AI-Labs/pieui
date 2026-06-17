@@ -2,6 +2,15 @@ import { useEffect, useState } from 'react'
 import { CloudStorageCardProps } from '../types'
 import PieCard from '../../../PieCard'
 
+/**
+ * Persists `data.value` to Telegram `WebApp.CloudStorage` under `data.key` and
+ * mirrors it into a hidden input named `data.name`.
+ *
+ * Unlike DeviceStorageCard / SessionStorageCard, there is **no** `depsNames`
+ * source prefix for Telegram CloudStorage (it is async and Telegram-only). To
+ * send this value with an Ajax submit, wire this card's `data.name` into the
+ * Ajax card's `depsNames` so it is read from the rendered hidden input by name.
+ */
 const CloudStorageCard = ({ data }: CloudStorageCardProps) => {
     const {
         name,
