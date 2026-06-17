@@ -12,8 +12,12 @@
  * factory itself.
  */
 
-import { describe, test, expect, mock } from 'bun:test'
-import { getAjaxSubmit } from '../util/ajaxCommonUtils'
+import { describe, test, expect, mock, afterEach } from 'bun:test'
+import {
+    getAjaxSubmit,
+    parseDepName,
+    readAjaxKey,
+} from '../util/ajaxCommonUtils'
 
 // A minimal no-op setter that satisfies the SetUiAjaxConfigurationType shape.
 const makeSetUi = () => mock((_content: any) => {})
@@ -124,6 +128,146 @@ describe('getAjaxSubmit() — renderingLogEnabled flag', () => {
         } finally {
             console.log = originalLog
         }
+    })
+})
+
+describe('parseDepName()', () => {
+    test('treats a plain name as a DOM source', () => {
+        expect(parseDepName('email')).toEqual({ source: 'dom', key: 'email' })
+    })
+
+    test('keeps sid as its own source', () => {
+        expect(parseDepName('sid')).toEqual({ source: 'sid', key: 'sid' })
+    })
+
+    test('splits each recognized client-source prefix', () => {
+        expect(parseDepName('localStorage:token')).toEqual({
+            source: 'localStorage',
+            key: 'token',
+        })
+        expect(parseDepName('sessionStorage:foo')).toEqual({
+            source: 'sessionStorage',
+            key: 'foo',
+        })
+        expect(parseDepName('cookie:sid')).toEqual({
+            source: 'cookie',
+            key: 'sid',
+        })
+        expect(parseDepName('url:ref')).toEqual({ source: 'url', key: 'ref' })
+    })
+
+    test('preserves colons in the key after the prefix', () => {
+        expect(parseDepName('localStorage:ns:token')).toEqual({
+            source: 'localStorage',
+            key: 'ns:token',
+        })
+    })
+
+    test('treats an unrecognized prefix as a DOM name', () => {
+        expect(parseDepName('odd:name')).toEqual({
+            source: 'dom',
+            key: 'odd:name',
+        })
+    })
+})
+
+describe('readAjaxKey() — client sources', () => {
+    const w = globalThis as any
+
+    afterEach(() => {
+        delete w.localStorage
+        delete w.sessionStorage
+        if (w.document) delete w.document.cookie
+        if (w.location) delete w.location.search
+    })
+
+    const stubStorage = (entries: Record<string, string>): Storage =>
+        ({
+            getItem: (k: string) =>
+                Object.prototype.hasOwnProperty.call(entries, k)
+                    ? entries[k]
+                    : null,
+        }) as Storage
+
+    test('reads a localStorage value under its bare key', () => {
+        w.localStorage = stubStorage({ token: 'abc' })
+        expect(readAjaxKey('localStorage:token')).toEqual(['abc'])
+    })
+
+    test('returns [] for a missing localStorage key', () => {
+        w.localStorage = stubStorage({})
+        expect(readAjaxKey('localStorage:nope')).toEqual([])
+    })
+
+    test('returns [] (no throw) when storage access throws', () => {
+        w.localStorage = {
+            getItem() {
+                throw new Error('blocked')
+            },
+        }
+        expect(readAjaxKey('localStorage:token')).toEqual([])
+    })
+
+    test('reads a sessionStorage value', () => {
+        w.sessionStorage = stubStorage({ foo: 'bar' })
+        expect(readAjaxKey('sessionStorage:foo')).toEqual(['bar'])
+    })
+
+    test('reads and decodes a cookie value', () => {
+        w.document.cookie = 'a=1; sid=hello%20world; b=2'
+        expect(readAjaxKey('cookie:sid')).toEqual(['hello world'])
+    })
+
+    test('returns [] for a missing cookie', () => {
+        w.document.cookie = 'a=1'
+        expect(readAjaxKey('cookie:missing')).toEqual([])
+    })
+
+    test('reads repeated URL query params', () => {
+        w.location = { search: '?ref=one&ref=two&x=3' }
+        expect(readAjaxKey('url:ref')).toEqual(['one', 'two'])
+    })
+
+    test('returns [] for a missing URL query param', () => {
+        w.location = { search: '?x=3' }
+        expect(readAjaxKey('url:ref')).toEqual([])
+    })
+})
+
+describe('getAjaxSubmit() — field names sent to the backend', () => {
+    const w = globalThis as any
+
+    afterEach(() => {
+        delete w.localStorage
+        delete w.fetch
+    })
+
+    test('submits a prefixed dep under its bare key', async () => {
+        w.localStorage = {
+            getItem: (k: string) => (k === 'token' ? 'abc' : null),
+        }
+        let captured: FormData | undefined
+        w.fetch = mock(async (_url: string, init: any) => {
+            captured = init.body as FormData
+            return {
+                ok: true,
+                headers: { get: () => 'application/json' },
+                json: async () => ({}),
+            }
+        })
+
+        const submit = getAjaxSubmit(
+            makeSetUi(),
+            {},
+            ['localStorage:token'],
+            '/path',
+            { apiServer: 'http://api.example.com/' }
+        )
+        await submit()
+
+        expect(captured).toBeInstanceOf(FormData)
+        expect(captured!.get('token')).toBe('abc')
+        expect(captured!.get('localStorage:token')).toBeNull()
     })
 })
 

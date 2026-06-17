@@ -35,35 +35,131 @@ export type GetAjaxSubmitOptions = {
 }
 
 /**
- * Reads the value(s) for a single dep name from the DOM, following the same
- * convention used by Ajax cards. Returns an array because file inputs can
- * contribute multiple values for the same key.
+ * The origin a dep value is read from. `dom` is the default for any name
+ * without a recognized prefix.
+ */
+export type DepSource =
+    | 'dom'
+    | 'sid'
+    | 'localStorage'
+    | 'sessionStorage'
+    | 'cookie'
+    | 'url'
+
+const DEP_SOURCE_PREFIXES: Array<Exclude<DepSource, 'dom' | 'sid'>> = [
+    'localStorage',
+    'sessionStorage',
+    'cookie',
+    'url',
+]
+
+/**
+ * Splits a dep name into its source and bare key, following the magic-name
+ * convention used by Ajax cards.
  *
+ * - `'sid'` → `{ source: 'sid', key: 'sid' }` (SocketIO session id).
+ * - `'localStorage:token'` → `{ source: 'localStorage', key: 'token' }`; the
+ *   same for `sessionStorage:`, `cookie:` and `url:` prefixes.
+ * - Anything else (including a name that contains a colon but no recognized
+ *   prefix) → `{ source: 'dom', key: <name> }`.
+ *
+ * The returned `key` is what gets sent to the backend as the field name, so a
+ * prefixed dep is submitted under its bare key (`localStorage:token` → `token`).
+ */
+export const parseDepName = (
+    depName: string
+): { source: DepSource; key: string } => {
+    if (depName === 'sid') return { source: 'sid', key: 'sid' }
+
+    for (const source of DEP_SOURCE_PREFIXES) {
+        const prefix = source + ':'
+        if (depName.startsWith(prefix)) {
+            return { source, key: depName.slice(prefix.length) }
+        }
+    }
+
+    return { source: 'dom', key: depName }
+}
+
+/**
+ * Reads the value(s) for a single dep name, following the same convention used
+ * by Ajax cards. Returns an array because file inputs (and cookies / repeated
+ * URL params) can contribute multiple values for the same key.
+ *
+ * The source is determined by {@link parseDepName}:
  * - `'sid'` resolves to `window.sid`. The caller must ensure SocketIO is
  *   ready (e.g. via {@link waitForSidAvailable}) before calling this.
- * - Other names are looked up via `document.getElementsByName`; only the
- *   first match is read.
- * - `<input type="file">` returns every selected `File`.
- * - Other `<input>` / `<textarea>` returns the current `.value`.
- * - Missing inputs return `[]` (and emit a warning when `renderingLogEnabled`).
+ * - `localStorage:` / `sessionStorage:` read `getItem(key)` (try/caught, since
+ *   storage access can throw in private mode); missing/blocked → `[]`.
+ * - `cookie:` reads and `decodeURIComponent`s the matching cookie; missing →
+ *   `[]`.
+ * - `url:` reads `URLSearchParams(location.search).getAll(key)` (repeated
+ *   params supported); missing → `[]`.
+ * - DOM names are looked up via `document.getElementsByName`; only the first
+ *   match is read. `<input type="file">` returns every selected `File`; other
+ *   `<input>` / `<textarea>` returns the current `.value`.
+ * - Missing values return `[]` (and emit a warning when `renderingLogEnabled`).
  *
  * Must run in a browser environment — relies on `document` and `window`.
  *
- * @throws if `depName === 'sid'` and `window.sid` is not initialized.
+ * @throws if the resolved source is `sid` and `window.sid` is not initialized.
  */
 export const readAjaxKey = (
     depName: string,
     renderingLogEnabled: boolean = false
 ): Array<string | File> => {
-    if (depName === 'sid') {
+    const { source, key } = parseDepName(depName)
+
+    if (source === 'sid') {
         if (!window.sid) throw new Error("SocketIO isn't initialized properly")
         return [window.sid]
     }
 
-    const inputs = document.getElementsByName(depName)
+    if (source === 'localStorage' || source === 'sessionStorage') {
+        try {
+            const store =
+                source === 'localStorage'
+                    ? window.localStorage
+                    : window.sessionStorage
+            const value = store.getItem(key)
+            if (value === null) {
+                if (renderingLogEnabled) {
+                    console.warn(`No ${source} value found for key ${key}`)
+                }
+                return []
+            }
+            return [value]
+        } catch (err) {
+            if (renderingLogEnabled) {
+                console.warn(`Failed to read ${source} key ${key}:`, err)
+            }
+            return []
+        }
+    }
+
+    if (source === 'cookie') {
+        const value = readCookie(key)
+        if (value === null) {
+            if (renderingLogEnabled) {
+                console.warn(`No cookie found for key ${key}`)
+            }
+            return []
+        }
+        return [value]
+    }
+
+    if (source === 'url') {
+        const values = new URLSearchParams(window.location.search).getAll(key)
+        if (!values.length && renderingLogEnabled) {
+            console.warn(`No URL query param found for key ${key}`)
+        }
+        return values
+    }
+
+    const inputs = document.getElementsByName(key)
     if (!inputs.length) {
         if (renderingLogEnabled) {
-            console.warn(`No input found with name ${depName}`)
+            console.warn(`No input found with name ${key}`)
         }
         return []
     }
@@ -82,6 +178,27 @@ export const readAjaxKey = (
 }
 
 /**
+ * Reads and decodes a single cookie value from `document.cookie`. Returns
+ * `null` when the cookie is absent.
+ */
+const readCookie = (name: string): string | null => {
+    const cookies = document.cookie ? document.cookie.split(';') : []
+    for (const cookie of cookies) {
+        const eq = cookie.indexOf('=')
+        const cookieName = (eq === -1 ? cookie : cookie.slice(0, eq)).trim()
+        if (cookieName === name) {
+            const raw = eq === -1 ? '' : cookie.slice(eq + 1).trim()
+            try {
+                return decodeURIComponent(raw)
+            } catch {
+                return raw
+            }
+        }
+    }
+    return null
+}
+
+/**
  * Builds an async "submit" function that issues an AJAX request to
  * `api/ajax_content{pathname}` and streams (or JSON-decodes) the response
  * into a `setUiAjaxConfiguration` callback supplied by an Ajax container.
@@ -89,8 +206,10 @@ export const readAjaxKey = (
  * The returned function collects form data from:
  * 1. the static `kwargs` object,
  * 2. any `extraKwargs` passed at call time,
- * 3. named inputs from the DOM listed in `depsNames` (including `sid`,
- *    which is resolved via {@link waitForSidAvailable}), and
+ * 3. the dep names in `depsNames`, each resolved by {@link readAjaxKey} from
+ *    its source: DOM inputs by default, `sid` (resolved via
+ *    {@link waitForSidAvailable}), or the `localStorage:`, `sessionStorage:`,
+ *    `cookie:` and `url:` prefixes — submitted under the bare key, and
  * 4. file inputs (multiple files supported).
  *
  * If the server streams NDJSON, each line is parsed as a `UIEventType` and
@@ -102,8 +221,10 @@ export const readAjaxKey = (
  *
  * @param setUiAjaxConfiguration Setter provided by the enclosing Ajax card.
  * @param kwargs                 Static key/value pairs appended to the request.
- * @param depsNames              Names of DOM inputs whose current values should
- *                               also be sent.
+ * @param depsNames              Dep names whose current values should also be
+ *                               sent. Plain names read DOM inputs; the
+ *                               `localStorage:`, `sessionStorage:`, `cookie:`
+ *                               and `url:` prefixes read those client sources.
  * @param pathname               Path segment appended to `api/ajax_content`.
  * @param options                See {@link GetAjaxSubmitOptions}.
  * @returns An `async (extraKwargs?) => Promise<any>` submit function.
@@ -166,8 +287,9 @@ export const getAjaxSubmit = (
         }
 
         for (const depName of depsNames) {
+            const { key: fieldName } = parseDepName(depName)
             for (const value of readAjaxKey(depName, renderingLogEnabled)) {
-                data.append(depName, value)
+                data.append(fieldName, value)
             }
         }
 
