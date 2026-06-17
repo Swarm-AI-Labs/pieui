@@ -17,6 +17,7 @@ import {
     getAjaxSubmit,
     parseDepName,
     readAjaxKey,
+    readAjaxKeyAsync,
 } from '../util/ajaxCommonUtils'
 
 // A minimal no-op setter that satisfies the SetUiAjaxConfigurationType shape.
@@ -156,6 +157,17 @@ describe('parseDepName()', () => {
         expect(parseDepName('url:ref')).toEqual({ source: 'url', key: 'ref' })
     })
 
+    test('splits the async Telegram storage prefixes', () => {
+        expect(parseDepName('telegram:cloud:token')).toEqual({
+            source: 'telegram:cloud',
+            key: 'token',
+        })
+        expect(parseDepName('telegram:secure:pin')).toEqual({
+            source: 'telegram:secure',
+            key: 'pin',
+        })
+    })
+
     test('preserves colons in the key after the prefix', () => {
         expect(parseDepName('localStorage:ns:token')).toEqual({
             source: 'localStorage',
@@ -231,6 +243,82 @@ describe('readAjaxKey() — client sources', () => {
     test('returns [] for a missing URL query param', () => {
         w.location = { search: '?x=3' }
         expect(readAjaxKey('url:ref')).toEqual([])
+    })
+
+    test('returns [] (no DOM fallback) for an async Telegram source', () => {
+        // getElementsByName would throw on the minimal document shim; reaching
+        // it would mean the async guard failed.
+        expect(readAjaxKey('telegram:cloud:token')).toEqual([])
+        expect(readAjaxKey('telegram:secure:token')).toEqual([])
+    })
+})
+
+describe('readAjaxKeyAsync() — Telegram storage', () => {
+    const w = globalThis as any
+
+    afterEach(() => {
+        delete w.Telegram
+    })
+
+    const stubTelegram = (
+        cloud: Record<string, string>,
+        secure: Record<string, string> = {}
+    ) => {
+        const make = (entries: Record<string, string>) => ({
+            getItem: (
+                k: string,
+                cb: (e: Error | null, v?: string) => void
+            ) => cb(null, entries[k] ?? ''),
+        })
+        w.Telegram = {
+            WebApp: { CloudStorage: make(cloud), SecureStorage: make(secure) },
+        }
+    }
+
+    test('resolves a CloudStorage value', async () => {
+        stubTelegram({ token: 'abc' })
+        expect(await readAjaxKeyAsync('telegram:cloud:token')).toEqual(['abc'])
+    })
+
+    test('resolves a SecureStorage value', async () => {
+        stubTelegram({}, { pin: '1234' })
+        expect(await readAjaxKeyAsync('telegram:secure:pin')).toEqual(['1234'])
+    })
+
+    test('resolves [] for a missing key (empty string)', async () => {
+        stubTelegram({})
+        expect(await readAjaxKeyAsync('telegram:cloud:nope')).toEqual([])
+    })
+
+    test('resolves [] when WebApp storage is unavailable', async () => {
+        expect(await readAjaxKeyAsync('telegram:cloud:token')).toEqual([])
+    })
+
+    test('resolves [] when getItem reports an error', async () => {
+        w.Telegram = {
+            WebApp: {
+                CloudStorage: {
+                    getItem: (
+                        _k: string,
+                        cb: (e: Error | null, v?: string) => void
+                    ) => cb(new Error('nope')),
+                },
+            },
+        }
+        expect(await readAjaxKeyAsync('telegram:cloud:token')).toEqual([])
+    })
+
+    test('delegates synchronous sources to readAjaxKey', async () => {
+        w.localStorage = {
+            getItem: (k: string) => (k === 'token' ? 'sync' : null),
+        }
+        try {
+            expect(await readAjaxKeyAsync('localStorage:token')).toEqual([
+                'sync',
+            ])
+        } finally {
+            delete w.localStorage
+        }
     })
 })
 

@@ -45,13 +45,25 @@ export type DepSource =
     | 'sessionStorage'
     | 'cookie'
     | 'url'
+    | 'telegram:cloud'
+    | 'telegram:secure'
 
 const DEP_SOURCE_PREFIXES: Array<Exclude<DepSource, 'dom' | 'sid'>> = [
     'localStorage',
     'sessionStorage',
     'cookie',
     'url',
+    'telegram:cloud',
+    'telegram:secure',
 ]
+
+/**
+ * Sources whose values can only be read asynchronously (Telegram Cloud/Secure
+ * storage expose callback-based `getItem`). These are resolved by
+ * {@link readAjaxKeyAsync}; the synchronous {@link readAjaxKey} cannot serve
+ * them and returns `[]`.
+ */
+const ASYNC_DEP_SOURCES = new Set<DepSource>(['telegram:cloud', 'telegram:secure'])
 
 /**
  * Splits a dep name into its source and bare key, following the magic-name
@@ -59,7 +71,8 @@ const DEP_SOURCE_PREFIXES: Array<Exclude<DepSource, 'dom' | 'sid'>> = [
  *
  * - `'sid'` → `{ source: 'sid', key: 'sid' }` (SocketIO session id).
  * - `'localStorage:token'` → `{ source: 'localStorage', key: 'token' }`; the
- *   same for `sessionStorage:`, `cookie:` and `url:` prefixes.
+ *   same for `sessionStorage:`, `cookie:`, `url:`, `telegram:cloud:` and
+ *   `telegram:secure:` prefixes.
  * - Anything else (including a name that contains a colon but no recognized
  *   prefix) → `{ source: 'dom', key: <name> }`.
  *
@@ -95,6 +108,9 @@ export const parseDepName = (
  *   `[]`.
  * - `url:` reads `URLSearchParams(location.search).getAll(key)` (repeated
  *   params supported); missing → `[]`.
+ * - `telegram:cloud:` / `telegram:secure:` are asynchronous and cannot be
+ *   served here — they return `[]`. Use {@link readAjaxKeyAsync} instead (the
+ *   Ajax submit flow already does).
  * - DOM names are looked up via `document.getElementsByName`; only the first
  *   match is read. `<input type="file">` returns every selected `File`; other
  *   `<input>` / `<textarea>` returns the current `.value`.
@@ -156,6 +172,15 @@ export const readAjaxKey = (
         return values
     }
 
+    if (ASYNC_DEP_SOURCES.has(source)) {
+        if (renderingLogEnabled) {
+            console.warn(
+                `Source ${source} is async; use readAjaxKeyAsync (readAjaxKey returns [])`
+            )
+        }
+        return []
+    }
+
     const inputs = document.getElementsByName(key)
     if (!inputs.length) {
         if (renderingLogEnabled) {
@@ -199,6 +224,79 @@ const readCookie = (name: string): string | null => {
 }
 
 /**
+ * Reads a single value from Telegram `WebApp.CloudStorage` /
+ * `WebApp.SecureStorage`. Both expose a callback-based `getItem`, so this is
+ * inherently asynchronous. Resolves to `['<value>']` on success and `[]` when
+ * the store is unavailable, the key is missing/empty, or the read errors.
+ */
+const readTelegramStorage = (
+    source: 'telegram:cloud' | 'telegram:secure',
+    key: string,
+    renderingLogEnabled: boolean
+): Promise<string[]> => {
+    const webApp = window.Telegram?.WebApp
+    const store =
+        source === 'telegram:cloud'
+            ? webApp?.CloudStorage
+            : webApp?.SecureStorage
+    const label =
+        source === 'telegram:cloud'
+            ? 'Telegram CloudStorage'
+            : 'Telegram SecureStorage'
+
+    if (!store) {
+        if (renderingLogEnabled) console.warn(`${label} is not available`)
+        return Promise.resolve([])
+    }
+
+    return new Promise((resolve) => {
+        try {
+            store.getItem(key, (error, value) => {
+                if (error) {
+                    if (renderingLogEnabled) {
+                        console.warn(`Failed to read ${label} key ${key}:`, error)
+                    }
+                    resolve([])
+                    return
+                }
+                if (value == null || value === '') {
+                    if (renderingLogEnabled) {
+                        console.warn(`No ${label} value found for key ${key}`)
+                    }
+                    resolve([])
+                    return
+                }
+                resolve([value])
+            })
+        } catch (err) {
+            if (renderingLogEnabled) {
+                console.warn(`Failed to read ${label} key ${key}:`, err)
+            }
+            resolve([])
+        }
+    })
+}
+
+/**
+ * Asynchronous counterpart to {@link readAjaxKey}. Behaves identically for all
+ * synchronous sources (it delegates to `readAjaxKey`) but additionally resolves
+ * the asynchronous Telegram sources (`telegram:cloud:` / `telegram:secure:`).
+ *
+ * This is what the Ajax submit flow uses so that every supported source — sync
+ * or async — can contribute values to the request.
+ */
+export const readAjaxKeyAsync = async (
+    depName: string,
+    renderingLogEnabled: boolean = false
+): Promise<Array<string | File>> => {
+    const { source, key } = parseDepName(depName)
+    if (source === 'telegram:cloud' || source === 'telegram:secure') {
+        return readTelegramStorage(source, key, renderingLogEnabled)
+    }
+    return readAjaxKey(depName, renderingLogEnabled)
+}
+
+/**
  * Builds an async "submit" function that issues an AJAX request to
  * `api/ajax_content{pathname}` and streams (or JSON-decodes) the response
  * into a `setUiAjaxConfiguration` callback supplied by an Ajax container.
@@ -206,10 +304,11 @@ const readCookie = (name: string): string | null => {
  * The returned function collects form data from:
  * 1. the static `kwargs` object,
  * 2. any `extraKwargs` passed at call time,
- * 3. the dep names in `depsNames`, each resolved by {@link readAjaxKey} from
- *    its source: DOM inputs by default, `sid` (resolved via
+ * 3. the dep names in `depsNames`, each resolved by {@link readAjaxKeyAsync}
+ *    from its source: DOM inputs by default, `sid` (resolved via
  *    {@link waitForSidAvailable}), or the `localStorage:`, `sessionStorage:`,
- *    `cookie:` and `url:` prefixes — submitted under the bare key, and
+ *    `cookie:`, `url:`, `telegram:cloud:` and `telegram:secure:` prefixes —
+ *    submitted under the bare key, and
  * 4. file inputs (multiple files supported).
  *
  * If the server streams NDJSON, each line is parsed as a `UIEventType` and
@@ -223,8 +322,9 @@ const readCookie = (name: string): string | null => {
  * @param kwargs                 Static key/value pairs appended to the request.
  * @param depsNames              Dep names whose current values should also be
  *                               sent. Plain names read DOM inputs; the
- *                               `localStorage:`, `sessionStorage:`, `cookie:`
- *                               and `url:` prefixes read those client sources.
+ *                               `localStorage:`, `sessionStorage:`, `cookie:`,
+ *                               `url:`, `telegram:cloud:` and `telegram:secure:`
+ *                               prefixes read those client sources.
  * @param pathname               Path segment appended to `api/ajax_content`.
  * @param options                See {@link GetAjaxSubmitOptions}.
  * @returns An `async (extraKwargs?) => Promise<any>` submit function.
@@ -288,7 +388,10 @@ export const getAjaxSubmit = (
 
         for (const depName of depsNames) {
             const { key: fieldName } = parseDepName(depName)
-            for (const value of readAjaxKey(depName, renderingLogEnabled)) {
+            for (const value of await readAjaxKeyAsync(
+                depName,
+                renderingLogEnabled
+            )) {
                 data.append(fieldName, value)
             }
         }

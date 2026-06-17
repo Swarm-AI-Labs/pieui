@@ -51,8 +51,13 @@ export type {
 
 export type { PieQueryOptions } from './components/PieRoot/types'
 
-export { useAjaxSubmit, readAjaxKey } from './util/ajaxCommonUtils'
-export type { RetryPolicy } from './util/ajaxCommonUtils'
+export {
+    useAjaxSubmit,
+    readAjaxKey,
+    readAjaxKeyAsync,
+    parseDepName,
+} from './util/ajaxCommonUtils'
+export type { RetryPolicy, DepSource } from './util/ajaxCommonUtils'
 export { usePieEmit } from './util/mitt'
 export { default as MittContext, getEmitter } from './util/mitt'
 export { default as SocketIOContext } from './util/socket'

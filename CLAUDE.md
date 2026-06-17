@@ -137,24 +137,32 @@ Special components in `src/components/Containers/AjaxGroupCard` and `src/compone
 
 `getAjaxSubmit` / `useAjaxSubmit` (`src/util/ajaxCommonUtils.ts`) collect submit
 variables from `kwargs`, runtime `extraKwargs`, and `depsNames`. Each entry in
-`depsNames` is resolved by `readAjaxKey` according to a source prefix
+`depsNames` is resolved by `readAjaxKeyAsync` according to a source prefix
 (`parseDepName`); the value is submitted under the **bare key** (after the
 prefix):
 
-| `depsNames` entry      | Source                                              |
-| ---------------------- | --------------------------------------------------- |
-| `email` (no prefix)    | DOM input via `document.getElementsByName` (default)|
-| `sid`                  | `window.sid` (SocketIO; awaits `waitForSidAvailable`)|
-| `localStorage:<key>`   | `localStorage.getItem(key)`                         |
-| `sessionStorage:<key>` | `sessionStorage.getItem(key)`                       |
-| `cookie:<name>`        | parsed `document.cookie` (URL-decoded)              |
-| `url:<param>`          | `URLSearchParams(location.search).getAll(param)`    |
+| `depsNames` entry        | Source                                              |
+| ------------------------ | --------------------------------------------------- |
+| `email` (no prefix)      | DOM input via `document.getElementsByName` (default)|
+| `sid`                    | `window.sid` (SocketIO; awaits `waitForSidAvailable`)|
+| `localStorage:<key>`     | `localStorage.getItem(key)`                         |
+| `sessionStorage:<key>`   | `sessionStorage.getItem(key)`                       |
+| `cookie:<name>`          | parsed `document.cookie` (URL-decoded)              |
+| `url:<param>`            | `URLSearchParams(location.search).getAll(param)`    |
+| `telegram:cloud:<key>`   | `window.Telegram.WebApp.CloudStorage.getItem` (async)|
+| `telegram:secure:<key>`  | `window.Telegram.WebApp.SecureStorage.getItem` (async)|
 
-A missing value contributes nothing (same as a missing DOM input). `localStorage:`
-/ `sessionStorage:` are the direct equivalents of wiring a `DeviceStorageCard` /
-`SessionStorageCard` hidden input into `depsNames`. There is **no** prefix for
-Telegram Cloud/Secure storage — `CloudStorageCard` / `SecureStorageCard` still
-rely on their hidden input.
+A missing value contributes nothing (same as a missing DOM input). The storage
+prefixes are the direct equivalents of wiring a storage card's hidden input into
+`depsNames`: `localStorage:` ↔ `DeviceStorageCard`, `sessionStorage:` ↔
+`SessionStorageCard`, `telegram:cloud:` ↔ `CloudStorageCard`, `telegram:secure:`
+↔ `SecureStorageCard`.
+
+Two source families differ in timing: the Telegram Cloud/Secure stores are
+callback-based, so `readAjaxKey` (sync) returns `[]` for them and only
+`readAjaxKeyAsync` resolves them — which is why the submit loop awaits it. The
+Telegram-only cards (`CloudStorageCard` / `SecureStorageCard`) live under the
+`@swarm.ing/pieui/telegram` entry (`src/telegram/components`).
 
 `depsNames` values are supplied by the backend `UIConfig` at runtime, so this is
 data interpreted by the frontend, not a CLI surface — cross-repo CLI symmetry is
