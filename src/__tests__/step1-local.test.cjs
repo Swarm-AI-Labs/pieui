@@ -351,7 +351,10 @@ test('list-events covers built-in component methods in repository source', () =>
             new RegExp(`\\[pieui\\] Total: ${testCase.total}`)
         )
     }
-}, 20000)
+    // 8 sequential cases, each a cold-start `bun src/cli.ts` that re-transpiles
+    // the CLI and scans the whole ./src tree (~2.5s each on a loaded CI runner).
+    // The aggregate legitimately exceeds 20s, so give it generous headroom.
+}, 60000)
 
 // Verifies add-event appends a new handler and validates invalid event keys.
 test('add-event appends a methods handler for inline object literal', () => {
