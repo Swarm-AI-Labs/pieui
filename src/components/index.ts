@@ -9,8 +9,9 @@ export { default as AutoRedirectCard } from './Common/AutoRedirectCard'
 export { default as IOEventsCard } from './Common/IOEventsCard'
 export { default as SessionStorageCard } from './Common/SessionStorageCard'
 export { default as DeviceStorageCard } from './Common/DeviceStorageCard'
-export { default as CloudStorageCard } from './Common/CloudStorageCard'
-export { default as SecureStorageCard } from './Common/SecureStorageCard'
+// CloudStorageCard / SecureStorageCard are Telegram-only and live under the
+// `@swarm.ing/pieui/telegram` entry (src/telegram/components) so they only
+// register when a Telegram Mini App imports that entry.
 export { default as AjaxGroupCard } from './Containers/AjaxGroupCard'
 export { default as BoxCard } from './Containers/BoxCard'
 export { default as OneOfCard } from './Containers/OneOfCard'

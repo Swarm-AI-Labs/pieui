@@ -11,6 +11,14 @@
 export { default as PieTelegramRoot } from '../components/PieTelegramRoot'
 export { useWebApp, useInitData } from '../util/useWebApp'
 
+// Telegram-only storage cards. Importing them here registers the components
+// (registerPieComponent side-effect) whenever the Telegram entry is loaded.
+export { default as CloudStorageCard } from './components/CloudStorageCard'
+export { default as SecureStorageCard } from './components/SecureStorageCard'
+
+export type { CloudStorageCardData } from './components/CloudStorageCard/types'
+export type { SecureStorageCardData } from './components/SecureStorageCard/types'
+
 export type {
     WebApp,
     Telegram,
