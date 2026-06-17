@@ -37,9 +37,17 @@ export const getCentrifuge = (
     if (existing) return existing
 
     async function getToken() {
-        const res = await fetch(apiServer + 'api/centrifuge/gen_token')
+        // credentials: 'include' is required: apiServer is a different origin
+        // than the page (e.g. api.* vs web.*), so without it the browser does
+        // not send the auth_token cookie and gen_token responds 401/403.
+        const res = await fetch(apiServer + 'api/centrifuge/gen_token', {
+            credentials: 'include',
+        })
         if (!res.ok) {
-            if (res.status === 403) {
+            // Backend returns 401 for an absent/invalid identity (and 403 in
+            // some setups); both mean "not authorized" -> surface as an auth
+            // error so Centrifuge stops retrying instead of looping.
+            if (res.status === 401 || res.status === 403) {
                 throw new Centrifuge.UnauthorizedError(
                     'Backend is not answering'
                 )
