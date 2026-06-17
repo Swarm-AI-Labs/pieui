@@ -167,3 +167,55 @@ Add optional realtime and AJAX fields to the generated `types/index.ts`:
 ```sh
 bunx pieui card add simple LiveCard --io --ajax
 ```
+
+## AJAX `depsNames` sources
+
+An Ajax card (`AjaxGroupCard`, `AjaxButtonCard`, …) submits to
+`api/ajax_content{pathname}` via `useAjaxSubmit`. The request body is built from
+three places:
+
+1. `kwargs` — static key/value pairs from the card config.
+2. `extraKwargs` — values passed at call time.
+3. `depsNames` — names whose **current client-side value** is read and appended
+   at submit time.
+
+Each entry in `depsNames` is a "magic name": an optional source prefix plus a
+key. The value is always submitted under the **bare key** (the part after the
+prefix), so `localStorage:token` is sent as the field `token`.
+
+| `depsNames` entry         | Read from                                                     |
+| ------------------------- | ------------------------------------------------------------- |
+| `email` _(no prefix)_     | DOM input named `email` (`document.getElementsByName`)        |
+| `sid`                     | `window.sid` — SocketIO session id (awaits the socket)        |
+| `localStorage:<key>`      | `localStorage.getItem(key)`                                   |
+| `sessionStorage:<key>`    | `sessionStorage.getItem(key)`                                 |
+| `cookie:<name>`           | matching cookie from `document.cookie` (URL-decoded)          |
+| `url:<param>`             | `?<param>` query params (repeated params → multiple values)   |
+| `telegram:cloud:<key>`    | `Telegram.WebApp.CloudStorage.getItem` _(async)_              |
+| `telegram:secure:<key>`   | `Telegram.WebApp.SecureStorage.getItem` _(async)_             |
+
+Notes:
+
+- A **missing value contributes nothing** — same as an absent DOM input. The
+  field is simply omitted from the request.
+- A single entry can yield **multiple values** (a multi-file `<input>`, repeated
+  `url:` params); each is appended under the same bare key.
+- `telegram:cloud:` / `telegram:secure:` are **asynchronous**. The submit flow
+  awaits them automatically; the sync `readAjaxKey` returns `[]` for them, so use
+  `readAjaxKeyAsync` if reading directly.
+- The storage prefixes mirror the storage cards: `localStorage:` ↔
+  `DeviceStorageCard`, `sessionStorage:` ↔ `SessionStorageCard`,
+  `telegram:cloud:` ↔ `CloudStorageCard`, `telegram:secure:` ↔
+  `SecureStorageCard`. The Telegram cards live under the
+  `@swarm.ing/pieui/telegram` entry.
+
+Example — submit a DOM field, a localStorage token, a URL param and the socket
+id together:
+
+```ts
+depsNames: ['email', 'localStorage:token', 'url:ref', 'sid']
+// POST body fields: email, token, ref, sid
+```
+
+`depsNames` is normally supplied by the backend `UIConfig` at runtime — for the
+Python card field that produces it, see the `pie` repo (`deps_names`).
