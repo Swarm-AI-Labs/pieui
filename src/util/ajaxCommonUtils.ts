@@ -317,7 +317,7 @@ export const getAjaxSubmit = (
     }
 
     return async (extraKwargs: Record<string, any> = {}) => {
-        if (typeof window === 'undefined' || typeof document === 'undefined') {
+        if (!clientSources.isClient()) {
             if (renderingLogEnabled) {
                 console.warn(
                     'getAjaxSubmit called on server, skipping DOM-dependent logic'
