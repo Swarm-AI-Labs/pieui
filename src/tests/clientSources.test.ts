@@ -61,6 +61,12 @@ describe('clientSources (web) — sid', () => {
         delete w.sid
         expect(clientSources.readSid()).toBeUndefined()
     })
+
+    test('setSid writes window.sid and readSid reflects it', () => {
+        clientSources.setSid('written-sid')
+        expect(w.sid).toBe('written-sid')
+        expect(clientSources.readSid()).toBe('written-sid')
+    })
 })
 
 describe('clientSources (web) — dom input', () => {

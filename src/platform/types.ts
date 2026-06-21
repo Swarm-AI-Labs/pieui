@@ -9,6 +9,8 @@ export interface ClientSources {
     isClient(): boolean
     /** SocketIO session id, or undefined when not yet initialized. */
     readSid(): string | undefined
+    /** Stores the SocketIO session id (web: `window.sid`; native: in-memory). */
+    setSid(sid: string): void
     /**
      * Reads a value from local/session storage. May throw (e.g. blocked in
      * private mode); the caller is responsible for catching.

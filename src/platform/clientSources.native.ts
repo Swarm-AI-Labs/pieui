@@ -1,33 +1,47 @@
-import { ClientSources, PlatformNotImplementedError } from './types'
+import { ClientSources } from './types'
+import { getNativeClientConfig } from './nativeConfig'
 
 /**
- * Placeholder React Native implementation. A later plan wires real native
- * sources (MMKV for sync storage, navigation params for url, an in-memory form
- * store, a sid context). Until then every accessor that has no safe default
- * throws, so an incomplete native integration fails loudly rather than silently
- * submitting empty data.
+ * React Native implementation of {@link ClientSources}. Reads from the sources
+ * a host registers via {@link configureNativeClientSources}, with graceful
+ * "missing value" defaults (`null` / `[]`) when a source is not wired — the
+ * same semantics the web implementation produces for an absent input/key.
+ *
+ * The session id is held in module scope (set by `SocketIOInitProvider` via
+ * `setSid`) rather than on a global `window`, which does not exist on native.
  */
+let currentSid: string | undefined
+
 const clientSources: ClientSources = {
     isClient() {
         return true
     },
     readSid() {
-        return undefined
+        return currentSid
     },
-    readWebStorage() {
-        throw new PlatformNotImplementedError('readWebStorage')
+    setSid(sid) {
+        currentSid = sid
     },
-    readCookie() {
-        throw new PlatformNotImplementedError('readCookie')
+    readWebStorage(kind, key) {
+        const cfg = getNativeClientConfig()
+        const store = kind === 'local' ? cfg.storage : cfg.sessionStorage
+        return store ? store.getItem(key) : null
     },
-    readUrlParams() {
-        throw new PlatformNotImplementedError('readUrlParams')
+    readCookie(name) {
+        const cfg = getNativeClientConfig()
+        return cfg.getCookie ? cfg.getCookie(name) : null
     },
-    readDomInput() {
-        throw new PlatformNotImplementedError('readDomInput')
+    readUrlParams(key) {
+        const cfg = getNativeClientConfig()
+        return cfg.getRouteParams ? cfg.getRouteParams(key) : []
+    },
+    readDomInput(name) {
+        const cfg = getNativeClientConfig()
+        return cfg.getInput ? cfg.getInput(name) : null
     },
     submitGlobalForm() {
-        throw new PlatformNotImplementedError('submitGlobalForm')
+        const cfg = getNativeClientConfig()
+        cfg.submitForm?.()
     },
 }
 

@@ -27,6 +27,9 @@ const clientSources: ClientSources = {
     readSid() {
         return typeof window === 'undefined' ? undefined : window.sid
     },
+    setSid(sid) {
+        if (typeof window !== 'undefined') window.sid = sid
+    },
     readWebStorage(kind, key) {
         const store =
             kind === 'local' ? window.localStorage : window.sessionStorage
