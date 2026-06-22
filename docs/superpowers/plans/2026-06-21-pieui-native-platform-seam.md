@@ -584,8 +584,12 @@ The seam was originally designed around Metro's `.native.ts` extension resolutio
 - **Native path** (`/tmp/pieui-native-logic`): sets `navigator.product = 'ReactNative'` before load; proves the resolver selects the native impl and injected sources resolve with **no** `document`/`window`. ALL PASS.
 - **Real Expo app** (`/tmp/pieui-expo-test`, Expo SDK 56 / RN 0.85): `expo export --platform ios` → Metro bundles 648 modules into a 2 MB Hermes bundle; PieUI strings present in the bundle; `tsc --noEmit` against `@swarm.ing/pieui/native` exits 0.
 
+### Completed (the two follow-ups that were "open")
+
+4. **First-party React Native card variants** — ✅ `src/native/components/` provides RN variants registered under their canonical names, pulled in by the native barrel: `BoxCard`/`SequenceCard`/`OneOfCard` (`<div>`→`<View>`/`Pressable` + `Linking`/`NavigateContext`); `HiddenCard`/`DeviceStorageCard`/`SessionStorageCard` (write to the native form store + storage adapter instead of a hidden `<input>`); `IOEventsCard` (`Alert`/`Linking` instead of `react-toastify`); `HTMLEmbedCard` (stripped `<Text>` instead of `html-react-parser`, no WebRTC/AI); `AutoRedirectCard` (`Linking`/`NavigateContext`). `UnionCard`/`AjaxGroupCard` are already agnostic and reused as-is. `react-native` is an **optional peer** (+ dev for types). The CLI `list-events` scanner excludes `src/native/**` so RN variants don't double-count the canonical event contract. Verified: all 11 register at runtime and bundle in a real Expo dev + production (Hermes) build.
+5. **Async storage** — ✅ `ClientSources` gained optional `readWebStorageAsync`; `readAjaxKeyAsync` prefers it for `localStorage:`/`sessionStorage:` deps (falls back to the sync adapter, and to sync `readAjaxKey` on web), so `@react-native-async-storage/async-storage` works. `NativeStorageAdapter` also gained optional `setItem`/`removeItem` for the storage cards; `nativeFormStore` backs the hidden/storage cards by field name.
+
 ### Still open (genuinely later)
 
-- **Native leaf/container cards** — `IOEventsCard` (toast), `HTMLEmbedCard` (HTML render), and the DOM containers (`BoxCard`, `SequenceCard`, …) are intentionally **not** in the native barrel. On native the host registers its own RN components; first-party RN variants of these cards can be added later if desired.
 - **`prefetchLazyComponents()`** — left as-is; its `typeof window === 'undefined'` guard makes it an effective no-op on bare native. Revisit if a native runtime defines a partial `window`.
-- **Async-storage path** — the injected native storage adapter is synchronous (matches `readAjaxKey`'s contract; MMKV fits). True async stores (AsyncStorage) would need the `readAjaxKeyAsync` path extended.
+- **Gotcha for consumers** — when relinking a locally-packed tgz, bump/rename it or clear the lockfile + bun cache; a pinned integrity will serve a stale native bundle (cost us a debugging cycle).
