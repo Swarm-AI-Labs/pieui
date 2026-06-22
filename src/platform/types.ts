@@ -29,11 +29,3 @@ export interface ClientSources {
     /** Submits the hidden global form (`#piedata_global_form`). No-op if unmounted. */
     submitGlobalForm(): void
 }
-
-/** Thrown by platform stubs for capabilities not yet implemented on a target. */
-export class PlatformNotImplementedError extends Error {
-    constructor(method: string) {
-        super(`ClientSources.${method} is not implemented on this platform`)
-        this.name = 'PlatformNotImplementedError'
-    }
-}

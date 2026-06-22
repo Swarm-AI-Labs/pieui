@@ -1,5 +1,5 @@
 import { describe, test, expect, mock, afterEach } from 'bun:test'
-import clientSources from '../platform/clientSources'
+import clientSources from '../platform/clientSources.web'
 
 const w = globalThis as any
 

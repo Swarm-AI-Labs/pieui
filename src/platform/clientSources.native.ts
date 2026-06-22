@@ -12,7 +12,7 @@ import { getNativeClientConfig } from './nativeConfig'
  */
 let currentSid: string | undefined
 
-const clientSources: ClientSources = {
+export const nativeClientSources: ClientSources = {
     isClient() {
         return true
     },
@@ -45,4 +45,4 @@ const clientSources: ClientSources = {
     },
 }
 
-export default clientSources
+export default nativeClientSources
