@@ -5,6 +5,7 @@ import { SetUiAjaxConfigurationType, UIEventType } from '../types'
 import waitForSidAvailable from './waitForSidAvailable'
 import { usePieConfig } from './pieConfig.ts'
 import { useMemo } from 'react'
+import clientSources from '../platform/clientSources'
 
 /**
  * Retry policy configuration for AJAX requests.
@@ -127,17 +128,17 @@ export const readAjaxKey = (
     const { source, key } = parseDepName(depName)
 
     if (source === 'sid') {
-        if (!window.sid) throw new Error("SocketIO isn't initialized properly")
-        return [window.sid]
+        const sid = clientSources.readSid()
+        if (!sid) throw new Error("SocketIO isn't initialized properly")
+        return [sid]
     }
 
     if (source === 'localStorage' || source === 'sessionStorage') {
         try {
-            const store =
-                source === 'localStorage'
-                    ? window.localStorage
-                    : window.sessionStorage
-            const value = store.getItem(key)
+            const value = clientSources.readWebStorage(
+                source === 'localStorage' ? 'local' : 'session',
+                key
+            )
             if (value === null) {
                 if (renderingLogEnabled) {
                     console.warn(`No ${source} value found for key ${key}`)
@@ -154,7 +155,7 @@ export const readAjaxKey = (
     }
 
     if (source === 'cookie') {
-        const value = readCookie(key)
+        const value = clientSources.readCookie(key)
         if (value === null) {
             if (renderingLogEnabled) {
                 console.warn(`No cookie found for key ${key}`)
@@ -165,7 +166,7 @@ export const readAjaxKey = (
     }
 
     if (source === 'url') {
-        const values = new URLSearchParams(window.location.search).getAll(key)
+        const values = clientSources.readUrlParams(key)
         if (!values.length && renderingLogEnabled) {
             console.warn(`No URL query param found for key ${key}`)
         }
@@ -181,46 +182,14 @@ export const readAjaxKey = (
         return []
     }
 
-    const inputs = document.getElementsByName(key)
-    if (!inputs.length) {
+    const values = clientSources.readDomInput(key)
+    if (values === null) {
         if (renderingLogEnabled) {
             console.warn(`No input found with name ${key}`)
         }
         return []
     }
-
-    const input = inputs[0]
-    if (input instanceof HTMLInputElement) {
-        if (input.type === 'file' && input.files) {
-            return Array.from(input.files)
-        }
-        return [input.value]
-    }
-    if (input instanceof HTMLTextAreaElement) {
-        return [input.value]
-    }
-    return []
-}
-
-/**
- * Reads and decodes a single cookie value from `document.cookie`. Returns
- * `null` when the cookie is absent.
- */
-const readCookie = (name: string): string | null => {
-    const cookies = document.cookie ? document.cookie.split(';') : []
-    for (const cookie of cookies) {
-        const eq = cookie.indexOf('=')
-        const cookieName = (eq === -1 ? cookie : cookie.slice(0, eq)).trim()
-        if (cookieName === name) {
-            const raw = eq === -1 ? '' : cookie.slice(eq + 1).trim()
-            try {
-                return decodeURIComponent(raw)
-            } catch {
-                return raw
-            }
-        }
-    }
-    return null
+    return values
 }
 
 /**
@@ -293,6 +262,29 @@ export const readAjaxKeyAsync = async (
     if (source === 'telegram:cloud' || source === 'telegram:secure') {
         return readTelegramStorage(source, key, renderingLogEnabled)
     }
+    if (
+        (source === 'localStorage' || source === 'sessionStorage') &&
+        clientSources.readWebStorageAsync
+    ) {
+        try {
+            const value = await clientSources.readWebStorageAsync(
+                source === 'localStorage' ? 'local' : 'session',
+                key
+            )
+            if (value === null) {
+                if (renderingLogEnabled) {
+                    console.warn(`No ${source} value found for key ${key}`)
+                }
+                return []
+            }
+            return [value]
+        } catch (err) {
+            if (renderingLogEnabled) {
+                console.warn(`Failed to read ${source} key ${key}:`, err)
+            }
+            return []
+        }
+    }
     return readAjaxKey(depName, renderingLogEnabled)
 }
 
@@ -348,7 +340,7 @@ export const getAjaxSubmit = (
     }
 
     return async (extraKwargs: Record<string, any> = {}) => {
-        if (typeof window === 'undefined' || typeof document === 'undefined') {
+        if (!clientSources.isClient()) {
             if (renderingLogEnabled) {
                 console.warn(
                     'getAjaxSubmit called on server, skipping DOM-dependent logic'

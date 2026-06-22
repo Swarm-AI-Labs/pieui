@@ -1,4 +1,5 @@
 import { globalSingleton } from './globalSingleton'
+import clientSources from '../platform/clientSources'
 
 type SidState = {
     promise: Promise<void> | null
@@ -26,10 +27,10 @@ export function markSidAvailable() {
  * Один промис-синглтон на все вызовы — никакого polling'а.
  */
 export default function waitForSidAvailable(): Promise<void> {
-    if (typeof window === 'undefined') {
+    if (!clientSources.isClient()) {
         return Promise.resolve()
     }
-    if (typeof window.sid !== 'undefined') {
+    if (clientSources.readSid() !== undefined) {
         return Promise.resolve()
     }
     if (!state.promise) {

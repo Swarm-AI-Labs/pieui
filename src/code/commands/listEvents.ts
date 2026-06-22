@@ -187,6 +187,10 @@ export const listEventsCommand = (srcDir: string, componentName: string) => {
             '**/*.spec.*',
             '**/tests/**',
             '**/__tests__/**',
+            // React Native card variants re-implement existing cards under the
+            // same name; the canonical event contract is defined by the web
+            // components, so exclude them to avoid double-counting methods.
+            '**/native/**',
         ],
     })
 
