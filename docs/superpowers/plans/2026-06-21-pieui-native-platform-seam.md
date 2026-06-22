@@ -564,11 +564,28 @@ git commit --allow-empty -m "chore(platform): verify ClientSources seam — full
 
 ---
 
-## Notes for follow-up plans (out of scope here)
+## Completed in this branch (beyond the seam)
 
-These are explicitly **not** in this plan — they are the next slices, gated on the Phase 0 spikes:
+The follow-up slices were implemented in the same branch after the seam landed:
 
-1. **Native `ClientSources` implementation** — flesh out `clientSources.native.ts`: sync storage via `react-native-mmkv`, URL/route params from the RN navigator, an in-memory form store replacing `#piedata_global_form`, and a sid value source. Decide the sync-vs-async storage question with the storage spike first.
-2. **`window.sid` availability on native** — adapt `waitForSidAvailable.ts` / `SocketIOInitProvider.tsx` (currently set `window.sid`) to a context/store, after confirming `socket.io-client` works on Expo.
-3. **Native component variants** — `.native.tsx` for `IOEventsCard` (toast), `HTMLEmbedCard` (HTML render), and `PieBaseRoot` (`<form>` → `<View>`), plus `prefetchLazyComponents()` no-op on native in `registry.ts`.
-4. **Native entry point + packaging** — `src/native/index.ts`, a `./native` subpath in `package.json` `exports`, and the matching `build:native:*` scripts.
+1. **Native `ClientSources` implementation** — ✅ `clientSources.native.ts` is a real, dependency-free implementation backed by host-injected sources via `configureNativeClientSources` (`src/platform/nativeConfig.ts`): sync `storage`/`sessionStorage` adapters (e.g. MMKV), `getRouteParams` for `url:`, `getInput` for form fields, `submitForm` for the global submit. Unconfigured sources degrade to the web "missing value" semantics (`null`/`[]`).
+2. **Session id on native** — ✅ `setSid` is now part of the `ClientSources` contract (web → `window.sid`; native → module scope). `waitForSidAvailable.ts` and `SocketIOInitProvider.tsx` read/write the sid through the platform, so SocketIO sid works without a `window`.
+3. **Native root + packaging** — ✅ `src/native/index.ts` (curated barrel: agnostic core + `PieNativeRoot`, **excluding** DOM container/leaf cards so `react-toastify`/`html-react-parser` never enter the native graph), `PieNativeRoot` (wraps `PieBaseRoot` with `disableGlobalForm`), `./native` subpath in `exports` (with a `react-native` condition), and `build:native:*` scripts.
+
+### Platform-selection decision (changed from the original plan)
+
+The seam was originally designed around Metro's `.native.ts` extension resolution. That only works when a package ships **unbundled** source — but PieUI pre-bundles each entry with bun, which collapses `clientSources.ts`/`clientSources.native.ts` into one file (bun picks the web one). So the published `dist` cannot rely on Metro `.native` resolution.
+
+**Resolution:** a small runtime resolver (`src/platform/clientSources.ts`) selects the implementation at load time via `navigator.product === 'ReactNative'`, dispatching to `clientSources.web.ts` or `clientSources.native.ts`. Both are dependency-free of each other and of native modules, so bundling both into either entry is harmless — only the selected one executes. Each impl remains independently unit-testable by importing its file directly.
+
+### Verified with /tmp consumer projects
+
+- **Web** (`/tmp/pieui-web-test`): installs the packed tgz, renders a nested server-driven `UIConfig` through `PieBaseRoot` + `UI` via `renderToStaticMarkup`. ALL PASS.
+- **Native path** (`/tmp/pieui-native-logic`): sets `navigator.product = 'ReactNative'` before load; proves the resolver selects the native impl and injected sources resolve with **no** `document`/`window`. ALL PASS.
+- **Real Expo app** (`/tmp/pieui-expo-test`, Expo SDK 56 / RN 0.85): `expo export --platform ios` → Metro bundles 648 modules into a 2 MB Hermes bundle; PieUI strings present in the bundle; `tsc --noEmit` against `@swarm.ing/pieui/native` exits 0.
+
+### Still open (genuinely later)
+
+- **Native leaf/container cards** — `IOEventsCard` (toast), `HTMLEmbedCard` (HTML render), and the DOM containers (`BoxCard`, `SequenceCard`, …) are intentionally **not** in the native barrel. On native the host registers its own RN components; first-party RN variants of these cards can be added later if desired.
+- **`prefetchLazyComponents()`** — left as-is; its `typeof window === 'undefined'` guard makes it an effective no-op on bare native. Revisit if a native runtime defines a partial `window`.
+- **Async-storage path** — the injected native storage adapter is synchronous (matches `readAjaxKey`'s contract; MMKV fits). True async stores (AsyncStorage) would need the `readAjaxKeyAsync` path extended.
