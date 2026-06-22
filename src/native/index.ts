@@ -15,6 +15,9 @@
  * route / form sources once at startup via `configureNativeClientSources`.
  */
 
+// Register the built-in React Native card variants (side-effect import).
+import './components'
+
 // Native roots & wiring
 export { default as PieNativeRoot } from './PieNativeRoot'
 export { default as PieBaseRoot } from '../components/PieBaseRoot'
@@ -24,7 +27,24 @@ export {
     resetNativeClientSources,
     type NativeClientConfig,
     type NativeStorageAdapter,
+    type NativeAsyncStorageAdapter,
 } from '../platform/nativeConfig'
+export {
+    setNativeField,
+    clearNativeField,
+    readNativeField,
+} from '../platform/nativeFormStore'
+export {
+    BoxCard,
+    SequenceCard,
+    OneOfCard,
+    HiddenCard,
+    DeviceStorageCard,
+    SessionStorageCard,
+    IOEventsCard,
+    HTMLEmbedCard,
+    AutoRedirectCard,
+} from './components'
 
 // Dynamic UI rendering core
 export { default as UI } from '../components/UI'
