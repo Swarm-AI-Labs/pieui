@@ -15,9 +15,14 @@ import {
     configureNativeClientSources,
     resetNativeClientSources,
 } from '../platform/nativeConfig'
+import {
+    setNativeField,
+    resetNativeFields,
+} from '../platform/nativeFormStore'
 
 afterEach(() => {
     resetNativeClientSources()
+    resetNativeFields()
 })
 
 describe('native clientSources — defaults when unconfigured', () => {
@@ -87,5 +92,38 @@ describe('native clientSources — sid', () => {
     test('setSid stores the value and readSid returns it', () => {
         nativeClientSources.setSid('native-sid')
         expect(nativeClientSources.readSid()).toBe('native-sid')
+    })
+})
+
+describe('native clientSources — built-in form store', () => {
+    test('readDomInput falls back to the native form store', () => {
+        setNativeField('email', ['a@b.c'])
+        expect(nativeClientSources.readDomInput('email')).toEqual(['a@b.c'])
+        expect(nativeClientSources.readDomInput('missing')).toBeNull()
+    })
+
+    test('an explicit getInput overrides the form store', () => {
+        setNativeField('email', ['from-store'])
+        configureNativeClientSources({ getInput: () => ['from-getter'] })
+        expect(nativeClientSources.readDomInput('email')).toEqual(['from-getter'])
+    })
+})
+
+describe('native clientSources — async storage', () => {
+    test('readWebStorageAsync reads an injected async adapter', async () => {
+        configureNativeClientSources({
+            asyncStorage: {
+                getItem: async (k) => (k === 'token' ? 'async-abc' : null),
+            },
+        })
+        expect(await nativeClientSources.readWebStorageAsync!('local', 'token')).toBe('async-abc')
+        expect(await nativeClientSources.readWebStorageAsync!('local', 'nope')).toBeNull()
+    })
+
+    test('readWebStorageAsync falls back to the sync adapter', async () => {
+        configureNativeClientSources({
+            sessionStorage: { getItem: (k) => (k === 'foo' ? 'sync-bar' : null) },
+        })
+        expect(await nativeClientSources.readWebStorageAsync!('session', 'foo')).toBe('sync-bar')
     })
 })

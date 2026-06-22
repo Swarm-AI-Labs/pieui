@@ -1,5 +1,6 @@
 import { ClientSources } from './types'
 import { getNativeClientConfig } from './nativeConfig'
+import { readNativeField } from './nativeFormStore'
 
 /**
  * React Native implementation of {@link ClientSources}. Reads from the sources
@@ -27,6 +28,14 @@ export const nativeClientSources: ClientSources = {
         const store = kind === 'local' ? cfg.storage : cfg.sessionStorage
         return store ? store.getItem(key) : null
     },
+    async readWebStorageAsync(kind, key) {
+        const cfg = getNativeClientConfig()
+        const asyncStore =
+            kind === 'local' ? cfg.asyncStorage : cfg.asyncSessionStorage
+        if (asyncStore) return asyncStore.getItem(key)
+        const syncStore = kind === 'local' ? cfg.storage : cfg.sessionStorage
+        return syncStore ? syncStore.getItem(key) : null
+    },
     readCookie(name) {
         const cfg = getNativeClientConfig()
         return cfg.getCookie ? cfg.getCookie(name) : null
@@ -37,7 +46,7 @@ export const nativeClientSources: ClientSources = {
     },
     readDomInput(name) {
         const cfg = getNativeClientConfig()
-        return cfg.getInput ? cfg.getInput(name) : null
+        return cfg.getInput ? cfg.getInput(name) : readNativeField(name)
     },
     submitGlobalForm() {
         const cfg = getNativeClientConfig()

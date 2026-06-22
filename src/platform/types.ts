@@ -16,6 +16,16 @@ export interface ClientSources {
      * private mode); the caller is responsible for catching.
      */
     readWebStorage(kind: 'local' | 'session', key: string): string | null
+    /**
+     * Optional asynchronous storage read. Present only on platforms whose
+     * storage is async-only (e.g. React Native AsyncStorage). When defined,
+     * `readAjaxKeyAsync` prefers it over the synchronous {@link readWebStorage}
+     * for `localStorage:` / `sessionStorage:` deps. May reject; caller catches.
+     */
+    readWebStorageAsync?(
+        kind: 'local' | 'session',
+        key: string
+    ): Promise<string | null>
     /** Reads and URL-decodes a single cookie; null when absent. */
     readCookie(name: string): string | null
     /** Reads every value for a repeated URL query param. */

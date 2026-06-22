@@ -262,6 +262,29 @@ export const readAjaxKeyAsync = async (
     if (source === 'telegram:cloud' || source === 'telegram:secure') {
         return readTelegramStorage(source, key, renderingLogEnabled)
     }
+    if (
+        (source === 'localStorage' || source === 'sessionStorage') &&
+        clientSources.readWebStorageAsync
+    ) {
+        try {
+            const value = await clientSources.readWebStorageAsync(
+                source === 'localStorage' ? 'local' : 'session',
+                key
+            )
+            if (value === null) {
+                if (renderingLogEnabled) {
+                    console.warn(`No ${source} value found for key ${key}`)
+                }
+                return []
+            }
+            return [value]
+        } catch (err) {
+            if (renderingLogEnabled) {
+                console.warn(`Failed to read ${source} key ${key}:`, err)
+            }
+            return []
+        }
+    }
     return readAjaxKey(depName, renderingLogEnabled)
 }
 

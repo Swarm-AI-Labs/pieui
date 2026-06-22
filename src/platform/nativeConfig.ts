@@ -8,16 +8,39 @@
  * same "missing value" semantics as the web implementation (`null` / `[]`).
  */
 
-/** Minimal synchronous key/value reader (the contract `readAjaxKey` needs). */
+/**
+ * Synchronous key/value store. `getItem` satisfies the synchronous
+ * {@link readAjaxKey} contract; the optional writers back the native
+ * `DeviceStorageCard` / `SessionStorageCard` so they can persist values
+ * (e.g. MMKV's `getString` / `set` / `delete`).
+ */
 export interface NativeStorageAdapter {
     getItem(key: string): string | null
+    setItem?(key: string, value: string): void
+    removeItem?(key: string): void
+}
+
+/**
+ * Asynchronous key/value reader, for stores that are async-only such as
+ * `@react-native-async-storage/async-storage`. Used by the `readAjaxKeyAsync`
+ * submit path (which already awaits its sources).
+ */
+export interface NativeAsyncStorageAdapter {
+    getItem(key: string): Promise<string | null>
 }
 
 export interface NativeClientConfig {
-    /** Backs `localStorage:` dep sources. Must be synchronous (e.g. MMKV). */
+    /** Backs `localStorage:` dep sources synchronously (e.g. MMKV). */
     storage?: NativeStorageAdapter
-    /** Backs `sessionStorage:` dep sources. Must be synchronous. */
+    /** Backs `sessionStorage:` dep sources synchronously. */
     sessionStorage?: NativeStorageAdapter
+    /**
+     * Async backing for `localStorage:` deps (e.g. AsyncStorage). Preferred by
+     * the async submit path; falls back to {@link storage} when absent.
+     */
+    asyncStorage?: NativeAsyncStorageAdapter
+    /** Async backing for `sessionStorage:` deps; falls back to {@link sessionStorage}. */
+    asyncSessionStorage?: NativeAsyncStorageAdapter
     /** Backs `cookie:` dep sources. Usually unused on native. */
     getCookie?: (name: string) => string | null
     /** Backs `url:` dep sources — typically the current route's query params. */
