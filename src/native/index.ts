@@ -44,6 +44,8 @@ export {
     IOEventsCard,
     HTMLEmbedCard,
     AutoRedirectCard,
+    UnionCard,
+    AjaxGroupCard,
 } from './components'
 
 // Dynamic UI rendering core

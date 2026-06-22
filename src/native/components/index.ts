@@ -23,6 +23,13 @@ import IOEventsCard from './IOEventsCard'
 import HTMLEmbedCard from './HTMLEmbedCard'
 import AutoRedirectCard from './AutoRedirectCard'
 
+// Already platform-agnostic — reuse the web components directly. Imported as
+// values (not bare side-effect imports) so the bundler/minifier cannot drop the
+// registration; `sideEffects` only marks CSS, so a bare `import '…'` would be
+// tree-shaken out of the pre-bundled native entry.
+import UnionCard from '../../components/Containers/UnionCard/ui/UnionCard'
+import AjaxGroupCard from '../../components/Containers/AjaxGroupCard/ui/AjaxGroupCard'
+
 const NATIVE_CARDS: Array<{ name: string; component: any }> = [
     { name: 'BoxCard', component: BoxCard },
     { name: 'SequenceCard', component: SequenceCard },
@@ -33,15 +40,13 @@ const NATIVE_CARDS: Array<{ name: string; component: any }> = [
     { name: 'IOEventsCard', component: IOEventsCard },
     { name: 'HTMLEmbedCard', component: HTMLEmbedCard },
     { name: 'AutoRedirectCard', component: AutoRedirectCard },
+    { name: 'UnionCard', component: UnionCard },
+    { name: 'AjaxGroupCard', component: AjaxGroupCard },
 ]
 
 for (const card of NATIVE_CARDS) {
     registerPieComponent(card)
 }
-
-// Already platform-agnostic — importing self-registers them via registerPieComponent.
-import '../../components/Containers/UnionCard'
-import '../../components/Containers/AjaxGroupCard'
 
 export {
     BoxCard,
@@ -53,4 +58,6 @@ export {
     IOEventsCard,
     HTMLEmbedCard,
     AutoRedirectCard,
+    UnionCard,
+    AjaxGroupCard,
 }
