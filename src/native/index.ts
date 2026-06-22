@@ -21,6 +21,10 @@ import './components'
 // Native roots & wiring
 export { default as PieNativeRoot } from './PieNativeRoot'
 export { default as PieBaseRoot } from '../components/PieBaseRoot'
+// PieRoot fetches the UIConfig from `${config.apiServer}/api/content{path}` via
+// react-query + axios (both RN-compatible). On native, pass `disableGlobalForm`
+// (there is no HTML form) and wire native sources via configureNativeClientSources.
+export { default as PieRoot } from '../components/PieRoot'
 export {
     configureNativeClientSources,
     getNativeClientConfig,
