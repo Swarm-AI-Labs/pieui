@@ -78,6 +78,17 @@ export default {
   images: { unoptimized: true },
   typescript: { ignoreBuildErrors: true },
   transpilePackages: ['@swarm.ing/pieui'],
+  experimental: {
+    // Next 16 defaults Turbopack's persistent dev disk cache ON. Its
+    // shared-string-table (.sst) serializer splits long escaped Tailwind
+    // arbitrary-value selectors (e.g. \`py-[max(1.25rem,env(safe-area-inset-top))]\`)
+    // mid-token across a string-table boundary, then reassembles them corrupted
+    // on read-back -> \`env(safe-area-%<ctrl>top)\` -> "Parsing CSS source code
+    // failed". A fresh \`.next\` compiles clean once; the next restart reads the
+    // poisoned cache and breaks. Disable the persistent cache so the harness
+    // recompiles from source every time (in-memory caching still applies).
+    turbopackFileSystemCacheForDev: false,
+  },
   // The workspace root must be the frontend project: that's where node_modules
   // (incl. \`next\`) lives and where the card registry + cards are imported from
   // (outside this harness dir). The app dir stays this harness (cwd).
