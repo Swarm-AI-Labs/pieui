@@ -65,4 +65,12 @@ export interface PieCardProps<TStored = unknown> {
      * can be submitted as part of a surrounding form.
      */
     stored?: TStored
+    /**
+     * Invoked when a Centrifuge subscription reconnects but cannot recover
+     * the full stream of missed publications (the disconnect outlived the
+     * server history buffer, or the channel has no history). The card should
+     * respond by refetching its current state so the UI does not stay stale.
+     * `reason` is `'gap'` for a failed recovery. No-op by default.
+     */
+    onResync?: (info: { channel: string; reason: 'gap' }) => void
 }
