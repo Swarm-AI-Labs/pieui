@@ -5,6 +5,10 @@ import { isRenderingLogEnabled } from '../../util/pieConfig'
 import CentrifugeIOContext from '../../util/centrifuge'
 import SocketIOContext from '../../util/socket'
 import MittContext from '../../util/mitt'
+import {
+    shouldResync,
+    isUnrecoverableChannel,
+} from '../../util/centrifugeRecovery'
 import { PieCardProps } from './types'
 
 /**
@@ -35,10 +39,13 @@ const PieCard = <TStored = unknown,>({
     centrifugeChannel = undefined,
     methods = undefined,
     stored = undefined,
+    onResync = undefined,
 }: PieCardProps<TStored>) => {
     const renderingLogEnabled = isRenderingLogEnabled()
     const methodsRef = useRef(methods)
     methodsRef.current = methods
+    const onResyncRef = useRef(onResync)
+    onResyncRef.current = onResync
 
     // const name = data.name;
     if (renderingLogEnabled) {
@@ -136,7 +143,13 @@ const PieCard = <TStored = unknown,>({
                     `[PieCard] Centrifuge subscribing to channel: ${channelName}`
                 )
             }
-            const subscription = centrifuge.newSubscription(channelName)
+            // Request a recoverable/positioned subscription so the server
+            // replays publications missed during a disconnect (requires
+            // history on the server namespace — see docs/realtime-recovery.md).
+            const subscription = centrifuge.newSubscription(channelName, {
+                recoverable: true,
+                positioned: true,
+            })
 
             subscription.on('publication', (ctx) => {
                 if (renderingLogEnabled) {
@@ -146,6 +159,29 @@ const PieCard = <TStored = unknown,>({
                     )
                 }
                 methodsRef.current?.[methodName]?.(ctx.data)
+            })
+
+            subscription.on('subscribed', (ctx) => {
+                if (isUnrecoverableChannel(ctx)) {
+                    console.warn(
+                        `[PieCard] Centrifuge channel ${channelName} is not ` +
+                            `recoverable — enable history on the server ` +
+                            `namespace for exact replay; relying on resync ` +
+                            `fallback only.`
+                    )
+                }
+                if (shouldResync(ctx)) {
+                    if (renderingLogEnabled) {
+                        console.log(
+                            `[PieCard] Centrifuge recovery gap on ` +
+                                `${channelName}; requesting resync`
+                        )
+                    }
+                    onResyncRef.current?.({
+                        channel: channelName,
+                        reason: 'gap',
+                    })
+                }
             })
 
             subscription.subscribe()
