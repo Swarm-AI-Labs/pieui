@@ -5,11 +5,13 @@ loss across a flaky connection there are two layers.
 
 ## 1. Exact replay (server history)
 
-`PieCard` creates each Centrifuge subscription with `{ recoverable: true,
-positioned: true }`, so on reconnect the client asks the server to replay the
-publications it missed. centrifuge-js delivers those recovered publications, in
-order, through the normal `publication` handler — no per-message client code is
-needed.
+Recovery is **opt-in per card**, driven by the backend `UIConfig`: set
+`centrifugeRecoverable` on the `PieCard` and its subscriptions are created with
+`{ recoverable: true, positioned: true }`, so on reconnect the client asks the
+server to replay the publications it missed. centrifuge-js delivers those
+recovered publications, in order, through the normal `publication` handler — no
+per-message client code is needed. When the flag is absent (default) PieCard
+keeps its prior plain-subscription behaviour.
 
 This only works if the Centrifugo namespace serving `pie*` channels **retains
 history**. Required server namespace config:
@@ -38,6 +40,7 @@ card's `onResync({ channel, reason: 'gap' })` so it can refetch current state:
     data={data}
     useCentrifugeSupport
     centrifugeChannel={channel}
+    centrifugeRecoverable
     methods={methods}
     onResync={() => refetchCardState()}
 />

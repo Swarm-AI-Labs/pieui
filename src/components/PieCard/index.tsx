@@ -37,6 +37,7 @@ const PieCard = <TStored = unknown,>({
     useCentrifugeSupport = false,
     useMittSupport = false,
     centrifugeChannel = undefined,
+    centrifugeRecoverable = false,
     methods = undefined,
     stored = undefined,
     onResync = undefined,
@@ -143,13 +144,17 @@ const PieCard = <TStored = unknown,>({
                     `[PieCard] Centrifuge subscribing to channel: ${channelName}`
                 )
             }
-            // Request a recoverable/positioned subscription so the server
-            // replays publications missed during a disconnect (requires
+            // Opt-in recovery (driven by the backend UIConfig): when enabled,
+            // request a recoverable/positioned subscription so the server
+            // replays publications missed during a disconnect (also requires
             // history on the server namespace — see docs/realtime-recovery.md).
-            const subscription = centrifuge.newSubscription(channelName, {
-                recoverable: true,
-                positioned: true,
-            })
+            // Default keeps the prior plain-subscription behaviour.
+            const subscription = centrifugeRecoverable
+                ? centrifuge.newSubscription(channelName, {
+                      recoverable: true,
+                      positioned: true,
+                  })
+                : centrifuge.newSubscription(channelName)
 
             subscription.on('publication', (ctx) => {
                 if (renderingLogEnabled) {
@@ -162,7 +167,9 @@ const PieCard = <TStored = unknown,>({
             })
 
             subscription.on('subscribed', (ctx) => {
-                if (isUnrecoverableChannel(ctx)) {
+                // Only surface the misconfiguration when this card actually
+                // asked for recovery — otherwise stay silent.
+                if (centrifugeRecoverable && isUnrecoverableChannel(ctx)) {
                     console.warn(
                         `[PieCard] Centrifuge channel ${channelName} is not ` +
                             `recoverable — enable history on the server ` +
@@ -199,7 +206,13 @@ const PieCard = <TStored = unknown,>({
                 centrifuge.removeSubscription(subscription)
             })
         }
-    }, [centrifuge, centrifugeChannel, data.name, useCentrifugeSupport])
+    }, [
+        centrifuge,
+        centrifugeChannel,
+        centrifugeRecoverable,
+        data.name,
+        useCentrifugeSupport,
+    ])
 
     useEffect(() => {
         if (!mitt || !useMittSupport || !data.name) {

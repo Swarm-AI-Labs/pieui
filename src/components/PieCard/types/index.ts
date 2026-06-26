@@ -53,6 +53,16 @@ export interface PieCardProps<TStored = unknown> {
     /** Channel suffix appended to Centrifuge subscriptions. */
     centrifugeChannel?: string
     /**
+     * When `true`, Centrifuge subscriptions are created as
+     * `{ recoverable: true, positioned: true }` so the server replays
+     * publications missed during a disconnect. Defaults to `false`, which
+     * preserves the prior behaviour (plain subscription, no recovery).
+     * Recovery additionally requires history on the server namespace — see
+     * `docs/realtime-recovery.md`. Driven by the backend `UIConfig`, like the
+     * other realtime flags.
+     */
+    centrifugeRecoverable?: boolean
+    /**
      * Map of method name → handler. Keys become part of the realtime event
      * names the card listens for; the handler receives the event payload.
      * Handlers are accessed via a ref so updating the map between renders
