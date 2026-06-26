@@ -20,6 +20,11 @@ const centrifugeCache = globalSingleton(
  * calls with the same arguments always return the same instance — which is
  * important because `Centrifuge` holds a live WebSocket connection.
  *
+ * Message recovery (exact replay of missed publications on reconnect)
+ * requires history retention on the server namespace — see
+ * `docs/realtime-recovery.md`. PieCard requests recoverable subscriptions and
+ * provides a resync fallback for gaps the history buffer cannot cover.
+ *
  * @param apiServer        Base URL of the PieUI API server (must end with `/`).
  * @param centrifugeServer WebSocket URL of the Centrifuge server. When
  *                         omitted, the function returns `null` and the
