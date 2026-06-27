@@ -251,7 +251,15 @@ export class Web {
             }
             res.setHeader('Access-Control-Allow-Credentials', 'true')
             res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS')
-            res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
+            res.setHeader('Vary', 'Origin')
+            // Echo the requested headers (credentialed requests cannot use a
+            // wildcard, so reflect exactly what the client asked to send).
+            const reqHeaders = req.headers['access-control-request-headers']
+            res.setHeader(
+                'Access-Control-Allow-Headers',
+                (Array.isArray(reqHeaders) ? reqHeaders.join(',') : reqHeaders) ||
+                    'Content-Type'
+            )
             if (req.method === 'OPTIONS') {
                 res.sendStatus(204)
                 return
