@@ -9,6 +9,8 @@ import {
     shouldResync,
     isUnrecoverableChannel,
 } from '../../util/centrifugeRecovery'
+import { getOrCreateSubscription } from '../../util/centrifugeSubscription'
+import type { PublicationContext, SubscribedContext } from 'centrifuge'
 import { PieCardProps } from './types'
 
 /**
@@ -143,15 +145,20 @@ const PieCard = <TStored = unknown,>({
                     `[PieCard] Centrifuge subscribing to channel: ${channelName}`
                 )
             }
-            // Request a recoverable/positioned subscription so the server
-            // replays publications missed during a disconnect (requires
-            // history on the server namespace — see docs/realtime-recovery.md).
-            const subscription = centrifuge.newSubscription(channelName, {
-                recoverable: true,
-                positioned: true,
-            })
+            // Dedupe by channel name: reuse an existing subscription instead of
+            // calling newSubscription again, which throws if the channel is
+            // already registered (e.g. the same card briefly mounted twice
+            // during a tree rebuild). Request a recoverable/positioned
+            // subscription so the server replays publications missed during a
+            // disconnect (requires history on the server namespace — see
+            // docs/realtime-recovery.md).
+            const { subscription, createdHere } = getOrCreateSubscription(
+                centrifuge,
+                channelName,
+                { recoverable: true, positioned: true }
+            )
 
-            subscription.on('publication', (ctx) => {
+            const onPublication = (ctx: PublicationContext) => {
                 if (renderingLogEnabled) {
                     console.log(
                         `[PieCard] Centrifuge received data on ${channelName}:`,
@@ -159,9 +166,9 @@ const PieCard = <TStored = unknown,>({
                     )
                 }
                 methodsRef.current?.[methodName]?.(ctx.data)
-            })
+            }
 
-            subscription.on('subscribed', (ctx) => {
+            const onSubscribed = (ctx: SubscribedContext) => {
                 if (isUnrecoverableChannel(ctx)) {
                     console.warn(
                         `[PieCard] Centrifuge channel ${channelName} is not ` +
@@ -182,22 +189,33 @@ const PieCard = <TStored = unknown,>({
                         reason: 'gap',
                     })
                 }
-            })
+            }
 
+            subscription.on('publication', onPublication)
+            subscription.on('subscribed', onSubscribed)
             subscription.subscribe()
-            return subscription
+            return { subscription, createdHere, onPublication, onSubscribed }
         })
 
         return () => {
-            subscriptions.forEach((subscription) => {
-                if (renderingLogEnabled) {
-                    console.log(
-                        `[PieCard] Centrifuge unsubscribing from channel`
-                    )
+            subscriptions.forEach(
+                ({ subscription, createdHere, onPublication, onSubscribed }) => {
+                    if (renderingLogEnabled) {
+                        console.log(
+                            `[PieCard] Centrifuge unsubscribing from channel`
+                        )
+                    }
+                    // Remove only our own listeners so a reused subscription
+                    // keeps serving its original owner; tear the subscription
+                    // down only if this effect created it.
+                    subscription.off('publication', onPublication)
+                    subscription.off('subscribed', onSubscribed)
+                    if (createdHere) {
+                        subscription.unsubscribe()
+                        centrifuge.removeSubscription(subscription)
+                    }
                 }
-                subscription.unsubscribe()
-                centrifuge.removeSubscription(subscription)
-            })
+            )
         }
     }, [centrifuge, centrifugeChannel, data.name, useCentrifugeSupport])
 
