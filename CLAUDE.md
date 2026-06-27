@@ -88,6 +88,20 @@ The library uses a registry-based component system where components are register
 - **PieStaticRoot**: For static UI configurations (no API fetch)
 - **PieBaseRoot**: Base implementation shared by other roots
 
+### Express Backend (`@swarm.ing/pieui/server`)
+
+The `src/server` entry is a TypeScript/Express mirror of the Python `pie`
+FastAPI runtime — it produces the UIConfig the frontend roots fetch. Pages
+extend `AsyncPage` and expose `getContent`/`process`; `Card.generate()` matches
+pie's wire format (own props that are `instanceof Card` become children, the
+rest become camelCased `data`, `card` defaults to the class name). `Web` exposes
+the same routes as pie (`/api/content`, `/api/process`, `/api/ajax_content`,
+`/api/support`, `/api/centrifuge/gen_token`) and wires Centrifuge publishing.
+See `docs/express-backend.md`, including the documented v1 divergences from pie
+(non-string `process` returns 204; typed-page per-field parsing and static
+serving are follow-ups). This is a runtime, not a CLI surface — cross-repo CLI
+symmetry is unaffected.
+
 ### Real-time Communication
 
 PieCard component integrates three communication methods:
