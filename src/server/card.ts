@@ -1,9 +1,5 @@
 import type { SocketIOEvent } from './types'
 
-function camelCase(s: string): string {
-    return s.replace(/_([a-z0-9])/g, (_, c: string) => c.toUpperCase())
-}
-
 function isCardRecord(v: unknown): v is Record<string, Card> {
     if (typeof v !== 'object' || v === null || Array.isArray(v)) return false
     const vals = Object.values(v)
@@ -11,14 +7,21 @@ function isCardRecord(v: unknown): v is Record<string, Card> {
 }
 
 /**
- * Base card. Mirrors pie's `Card` dataclass: `generate()` splits own properties
- * into `data` (scalars, camelCased) vs children (values that are `instanceof
- * Card`), producing the `{ ...children, card, data }` wire format the PieUI
- * frontend consumes.
+ * Base card. A server card mirrors its frontend counterpart 1:1: parameterise
+ * it with the component's `*Data` interface and pass those fields (plus any
+ * child `Card`s) to the constructor — no per-card constructor needed.
+ *
+ * `generate()` splits own properties into `data` (scalars) vs children (values
+ * that are `instanceof Card`). Field names are used verbatim — TS fields are
+ * already camelCase, so no key transformation is applied.
  */
-export class Card {
+export class Card<D extends object = Record<string, never>> {
     /** Registered frontend component name; defaults to the class name. */
     card: string = this.constructor.name
+
+    constructor(props?: Partial<D>) {
+        if (props) Object.assign(this, props)
+    }
 
     /** Serialise to the PieUI `{ ...children, card, data }` wire format. */
     generate(): Record<string, unknown> {
@@ -26,25 +29,24 @@ export class Card {
         const children: Record<string, unknown> = {}
         for (const key of Object.keys(this)) {
             if (key === 'card') continue
-            const value = (this as Record<string, unknown>)[key]
-            const outKey = camelCase(key)
+            const value = (this as unknown as Record<string, unknown>)[key]
             if (value instanceof Card) {
-                children[outKey] = value.generate()
+                children[key] = value.generate()
             } else if (
                 Array.isArray(value) &&
                 value.length > 0 &&
                 value.every((v) => v instanceof Card)
             ) {
-                children[outKey] = (value as Card[]).map((v) => v.generate())
+                children[key] = (value as Card[]).map((v) => v.generate())
             } else if (isCardRecord(value)) {
-                children[outKey] = Object.fromEntries(
+                children[key] = Object.fromEntries(
                     Object.entries(value).map(([k, v]) => [
                         k,
                         (v as Card).generate(),
                     ])
                 )
             } else {
-                data[outKey] = value
+                data[key] = value
             }
         }
         return { ...children, card: this.card, data }
@@ -84,16 +86,20 @@ export class Card {
         return this.generate()
     }
 
-    /** Build a realtime event named `pie{method}_{name}`. Mirrors pie create_event. */
-    createEvent(method: string, data: Record<string, unknown> = {}): SocketIOEvent {
-        const name = (this as Record<string, unknown>).name
+    /** Build a realtime event named `pie{method}_{name}`. */
+    createEvent(
+        method: string,
+        data: Record<string, unknown> = {}
+    ): SocketIOEvent {
+        const name = (this as unknown as Record<string, unknown>).name
         if (typeof name !== 'string') {
             throw new Error('Card.createEvent requires a string `name`')
         }
+        const self = this as unknown as Record<string, unknown>
         const io =
-            (this as Record<string, unknown>).useSocketioSupport ||
-            (this as Record<string, unknown>).useCentrifugeSupport ||
-            (this as Record<string, unknown>).useMittSupport
+            self.useSocketioSupport ||
+            self.useCentrifugeSupport ||
+            self.useMittSupport
         if (!io) {
             throw new Error(
                 'Card.createEvent requires an IO support flag enabled'
@@ -104,7 +110,9 @@ export class Card {
 }
 
 /** Input-bearing card (form field). `parse` validates a raw submitted value. */
-export class InputCard extends Card {
+export class InputCard<
+    D extends object = Record<string, never>,
+> extends Card<D> {
     parse(raw: unknown): unknown {
         return raw
     }

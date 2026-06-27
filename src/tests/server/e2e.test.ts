@@ -4,7 +4,9 @@ import { Web, AsyncPage, UnionCard, HiddenCard } from '../../server'
 class Home extends AsyncPage {
     constructor() {
         super(true)
-        this.fields = new UnionCard([new HiddenCard('email')])
+        this.fields = new UnionCard({
+            content: [new HiddenCard({ name: 'email' })],
+        })
     }
     async getContent(ctx: Record<string, unknown>) {
         return this.fields!.fill(ctx)
@@ -25,16 +27,13 @@ describe('e2e: content + process', () => {
         )
         expect(await r.json()).toEqual({
             card: 'UnionCard',
-            data: { name: null },
+            data: {},
             content: [
                 {
                     card: 'HiddenCard',
                     data: {
                         name: 'email',
                         value: 'a@b.c',
-                        useSocketioSupport: false,
-                        useCentrifugeSupport: false,
-                        centrifugeChannel: null,
                     },
                 },
             ],

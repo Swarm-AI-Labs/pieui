@@ -6,7 +6,9 @@ import { UnionCard, HiddenCard } from '../../server/cards'
 class Home extends AsyncPage {
     constructor() {
         super()
-        this.fields = new UnionCard([new HiddenCard('email')])
+        this.fields = new UnionCard({
+            content: [new HiddenCard({ name: 'email' })],
+        })
     }
     async getContent(ctx: Record<string, unknown>) {
         return this.fields!.fill(ctx)
@@ -26,9 +28,6 @@ describe('GET /api/content', () => {
         expect(body.content[0].data).toEqual({
             name: 'email',
             value: 'q',
-            useSocketioSupport: false,
-            useCentrifugeSupport: false,
-            centrifugeChannel: null,
         })
     })
 

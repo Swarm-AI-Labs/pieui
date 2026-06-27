@@ -5,7 +5,9 @@ import { UnionCard, HiddenCard } from '../../server/cards'
 class P extends AsyncPage {
     constructor() {
         super()
-        this.fields = new UnionCard([new HiddenCard('email')])
+        this.fields = new UnionCard({
+            content: [new HiddenCard({ name: 'email' })],
+        })
     }
     async getContent(ctx: Record<string, unknown>) {
         return this.fields!.fill(ctx)
@@ -20,9 +22,6 @@ describe('AsyncPage', () => {
         expect(out.content[0].data).toEqual({
             name: 'email',
             value: 'z',
-            useSocketioSupport: false,
-            useCentrifugeSupport: false,
-            centrifugeChannel: null,
         })
     })
     test('registerAjax stores a POST handler', () => {

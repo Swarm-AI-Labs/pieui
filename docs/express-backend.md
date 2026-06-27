@@ -14,7 +14,9 @@ import { Web, AsyncPage, UnionCard, HiddenCard } from '@swarm.ing/pieui/server'
 class HomePage extends AsyncPage {
     constructor() {
         super(true)
-        this.fields = new UnionCard([new HiddenCard('email')])
+        this.fields = new UnionCard({
+            content: [new HiddenCard({ name: 'email' })],
+        })
     }
     async getContent(ctx: Record<string, unknown>) {
         return this.fields!.fill(ctx)
@@ -56,8 +58,24 @@ my-app/
 
 A page is a class extending `AsyncPage`; a card is a class extending `Card`
 (or `InputCard` for form fields). Property values that are `Card` instances
-become children in the generated tree; everything else becomes `data`
-(camelCased keys). The `card` field defaults to the class name.
+become children in the generated tree; everything else becomes `data`. Field
+names are emitted verbatim — no key transformation — because a server card
+binds 1:1 to its frontend counterpart's `*Data` interface, whose fields are
+already camelCase. The `card` field defaults to the class name.
+
+Each built-in card is a one-liner parameterised by the frontend `*Data` type;
+the base `Card` supplies an auto-constructor (`new Card(props)` →
+`Object.assign(this, props)`), so no per-card constructor is needed:
+
+```ts
+// 1:1 with the frontend HiddenCard component
+export class HiddenCard extends InputCard<HiddenCardData> {}
+// containers add a typed child slot
+export class UnionCard extends Card<UnionCardData & { content: Card[] }> {}
+
+new HiddenCard({ name: 'email' })        // runtime value filled later via fill()
+new UnionCard({ content: [/* … */] })    // child cards become tree nodes
+```
 
 ## Route table (all under `adminSubdomain`, default `/`)
 
@@ -67,7 +85,7 @@ become children in the generated tree; everything else becomes `data`
 | POST | `/api/process/{pathname}` | `page.process(data)` → 303 redirect (string) |
 | POST | `/api/ajax_content/{pathname}` | registered POST ajax handler → JSON |
 | GET | `/api/ajax_content/{pathname}` | registered GET ajax handler → JSON |
-| GET | `/api/support/{name}` | `{ socketio, centrifuge }` flags |
+| GET | `/api/support/{name}` | bare `boolean` (whether `name` has realtime support) |
 | GET | `/api/centrifuge/gen_token` | `{ token }` HS256 JWT (`sub` from cookies) |
 
 `ctx` = cookies (those in `cookieKeys`) merged with query params. `process`

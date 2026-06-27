@@ -12,7 +12,7 @@ guide, route table, directory convention, and the pie→TS contract.
 Modules:
 
 - `card.ts` — `Card` (`generate`/`fill`/`inputChildLoc`/`createEvent`), `InputCard` (`parse`)
-- `cards/` — built-in cards (`HiddenCard`, `UnionCard`, `AjaxGroupCard`, `OneOfCard`, `HTMLEmbedCard`, `IOCard`)
+- `cards/` — built-in cards, one class per file (`HiddenCard`, `UnionCard`, `AjaxGroupCard`, `OneOfCard`, `HTMLEmbedCard`)
 - `page.ts` — `AsyncPage` (`getContent`/`process`/`registerAjax`/`emit`)
 - `form.ts` — `form2dict` + `aggregate` (by_underscore)
 - `web.ts` — `Web` (Express app + all routes + publisher wiring)
