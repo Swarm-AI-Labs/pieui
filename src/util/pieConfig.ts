@@ -80,6 +80,25 @@ export const usePageProcessor = () => {
 export const getPageProcessor = usePageProcessor
 
 /**
+ * Convenience hook returning the `onLinkLost` callback from the current
+ * {@link PieConfig}, or `undefined` when the consumer did not provide one.
+ * Used by the realtime Init providers to notify the app of a dropped link.
+ */
+export const useOnLinkLost = () => {
+    const { onLinkLost } = usePieConfig()
+    return onLinkLost
+}
+
+/**
+ * Convenience hook returning the `onLinkRestored` callback from the current
+ * {@link PieConfig}, or `undefined` when the consumer did not provide one.
+ */
+export const useOnLinkRestored = () => {
+    const { onLinkRestored } = usePieConfig()
+    return onLinkRestored
+}
+
+/**
  * Separator token used by {@link pieName} to build nested component names
  * of the form `parent{PIEBREAK}child`. Keeping it in one place ensures the
  * UI configuration generator and the runtime agree on the delimiter.

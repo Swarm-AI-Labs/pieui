@@ -45,6 +45,7 @@ export type {
     InputPieContainerComponentProps,
     InputPieComplexContainerComponentProps,
     PieConfig,
+    PieLinkSource,
     UIConfigType,
     SetUiAjaxConfigurationType,
 } from './types'
@@ -63,7 +64,11 @@ export { default as MittContext, getEmitter } from './util/mitt'
 export { default as SocketIOContext } from './util/socket'
 export { default as CentrifugeIOContext } from './util/centrifuge'
 export { default as FallbackContext } from './util/fallback'
-export { PieConfigContext } from './util/pieConfig'
+export {
+    PieConfigContext,
+    useOnLinkLost,
+    useOnLinkRestored,
+} from './util/pieConfig'
 // NOTE: `getMittAgentTools` / `usePieMittAgentTools` / `useOpenAIWebRTC` moved
 // to the `@swarm.ing/pieui/agent` subpath. They pull in `@openai/agents` (+ the
 // OpenAI & MCP SDKs), so keeping them in this main barrel forced every consumer

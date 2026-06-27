@@ -671,9 +671,25 @@ export interface ComponentRegistration<TProps> {
     isLazy?: boolean
 }
 
+/** Realtime transport a {@link PieConfig} link callback refers to. */
+export type PieLinkSource = 'centrifuge' | 'socketio'
+
 export interface PieConfig {
     apiServer: string
     centrifugeServer?: string
     enableRenderingLog?: boolean
     pageProcessor?: string
+    /**
+     * Called when a realtime transport drops after having been connected
+     * (Centrifuge enters `connecting`/`disconnected`, or Socket.IO emits a
+     * non-deliberate `disconnect`). Not fired for the initial connect or for a
+     * client-initiated disconnect. `detail` is the underlying transport
+     * context/reason. Use it to surface an offline indicator.
+     */
+    onLinkLost?: (source: PieLinkSource, detail?: unknown) => void
+    /**
+     * Called when a realtime transport reconnects after a previous loss. Not
+     * fired on the initial connect.
+     */
+    onLinkRestored?: (source: PieLinkSource) => void
 }
