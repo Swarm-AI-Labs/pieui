@@ -140,7 +140,10 @@
         "react": ">=19",
         "react-dom": ">=19",
         "@openai/agents": "^0.4.5",
-        "react-native": ">=0.74"
+        "react-native": ">=0.74",
+        "express": "^5.0.0",
+        "jsonwebtoken": "^9.0.0",
+        "cookie-parser": "^1.4.0"
     },
     "peerDependenciesMeta": {
         "@openai/agents": {
@@ -148,9 +151,21 @@
         },
         "react-native": {
             "optional": true
+        },
+        "express": {
+            "optional": true
+        },
+        "jsonwebtoken": {
+            "optional": true
+        },
+        "cookie-parser": {
+            "optional": true
         }
     },
     "devDependencies": {
+        "cookie-parser": "^1.4.7",
+        "express": "^5.2.1",
+        "jsonwebtoken": "^9.0.3",
         "@openai/agents": "^0.4.5",
         "@testing-library/jest-dom": "^6.9.1",
         "@testing-library/react": "^16.3.2",
@@ -180,10 +195,7 @@
         "axios-date-transformer": "^1.2.1",
         "centrifuge": "^5.5.3",
         "clsx": "^2.1.1",
-        "cookie-parser": "^1.4.7",
-        "express": "^5.2.1",
         "html-react-parser": "^5.2.16",
-        "jsonwebtoken": "^9.0.3",
         "mitt": "^3.0.1",
         "react-toastify": "^11.0.5",
         "socket.io-client": "^4.8.3",
