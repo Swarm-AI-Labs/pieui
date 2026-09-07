@@ -9,6 +9,7 @@ import { PieTelegramRoot } from '@swarm.ing/pieui/telegram'
 import { PieMaxRoot } from '@swarm.ing/pieui/max'
 
 import { loadPieConfig } from '../util/loadPieConfig'
+import { preloadComponent } from '../util/registry'
 import type { PieConfig } from '../types'
 import type { PieRootKind } from '../util/contentRequest'
 
@@ -76,6 +77,30 @@ export interface PieServerPageProps {
  * витрины, лендинги. Экран мини-аппа так не отрисовать — его конфиг зависит от
  * `initData`, которого на сервере нет.
  */
+/**
+ * Имена карточек, встречающихся в конфиге.
+ *
+ * Обход общий, по всему дереву: форма конфига — забота бэкенда, а `content`
+ * бывает и одним узлом, и списком, и словарём узлов.
+ */
+function cardNames(config: unknown): string[] {
+    const names = new Set<string>()
+    const stack: unknown[] = [config]
+
+    while (stack.length) {
+        const node = stack.pop()
+        if (!node || typeof node !== 'object') continue
+        if (Array.isArray(node)) {
+            stack.push(...node)
+            continue
+        }
+        const record = node as Record<string, unknown>
+        if (typeof record.card === 'string') names.add(record.card)
+        stack.push(...Object.values(record))
+    }
+    return Array.from(names)
+}
+
 export default async function PieServerPage({
     config,
     pathname,
@@ -107,6 +132,23 @@ export default async function PieServerPage({
         if (fallback === undefined) throw error
         return <>{fallback}</>
     }
+
+    // Прогрев чанков ПЕРЕД рендером. Карточки регистрируются лениво
+    // (`React.lazy`), и на сервере нерасхоложенный `lazy` отдаёт заглушку
+    // Suspense: HTML уходит со скелетом вместо страницы — то есть ровно с тем,
+    // ради чего серверный рендер и затевался, только теперь ещё и дороже.
+    //
+    // Реестр — глобальный синглтон, поэтому карточки должен зарегистрировать
+    // сам хост: серверный компонент, рендерящий эту страницу, обязан
+    // импортировать свой реестр. Для незарегистрированных имён прогрев ничего
+    // не делает, и такая карточка честно приедет на клиенте.
+    await Promise.all(
+        cardNames(initialConfig).map((name) =>
+            // Сбой одного чанка не должен ронять страницу: эта карточка
+            // догрузится на клиенте, остальные отрисуются сервером.
+            preloadComponent(name)?.catch(() => undefined),
+        ),
+    )
 
     const Root =
         clientRoot === 'telegram'
