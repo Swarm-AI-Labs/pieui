@@ -685,11 +685,31 @@ export interface PieConfig {
      * non-deliberate `disconnect`). Not fired for the initial connect or for a
      * client-initiated disconnect. `detail` is the underlying transport
      * context/reason. Use it to surface an offline indicator.
+     *
+     * Also fired — even before the first connect, or again while already
+     * lost — when the link will not come back by itself:
+     * - `{ reason: 'support' }`: `api/support/{centrifuge|socketIO}` got no
+     *   answer (the backend is down, e.g. mid-deploy). It is asked again
+     *   until it answers; the transport then connects as usual.
+     * - `{ code: 1, reason: 'unauthorized' }` (Centrifuge): the realtime
+     *   token was refused and {@link PieConfig.onUnauthorized} did not renew
+     *   the session. The client stays stopped; a reload or a new sign-in is
+     *   the way out.
      */
     onLinkLost?: (source: PieLinkSource, detail?: unknown) => void
     /**
      * Called when a realtime transport reconnects after a previous loss. Not
-     * fired on the initial connect.
+     * fired on the initial connect. Also closes a `{ reason: 'support' }`
+     * loss when the backend finally answers that the transport is off.
      */
     onLinkRestored?: (source: PieLinkSource) => void
+    /**
+     * Called when the backend refused the realtime token (`gen_token`
+     * answered 401/403), so the session behind it is gone. Renew the session
+     * and resolve `true` when it is live again: the client then reconnects by
+     * itself with a fresh token. `false` (or no callback) leaves it stopped
+     * and reports `onLinkLost(source, { reason: 'unauthorized' })`. Asked at
+     * most once per 30 s.
+     */
+    onUnauthorized?: (source: PieLinkSource) => Promise<boolean> | boolean
 }

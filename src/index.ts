@@ -99,6 +99,7 @@ export {
     PieConfigContext,
     useOnLinkLost,
     useOnLinkRestored,
+    useOnUnauthorized,
 } from './util/pieConfig'
 // NOTE: `getMittAgentTools` / `usePieMittAgentTools` / `useOpenAIWebRTC` moved
 // to the `@swarm.ing/pieui/agent` subpath. They pull in `@openai/agents` (+ the
