@@ -99,6 +99,15 @@ export const useOnLinkRestored = () => {
 }
 
 /**
+ * Convenience hook returning the `onUnauthorized` callback from the current
+ * {@link PieConfig}, or `undefined` when the consumer did not provide one.
+ */
+export const useOnUnauthorized = () => {
+    const { onUnauthorized } = usePieConfig()
+    return onUnauthorized
+}
+
+/**
  * Separator token used by {@link pieName} to build nested component names
  * of the form `parent{PIEBREAK}child`. Keeping it in one place ensures the
  * UI configuration generator and the runtime agree on the delimiter.
